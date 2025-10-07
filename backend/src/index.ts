@@ -23,7 +23,7 @@ import { setupFirebase } from './config/firebase';
 import { initializeDatabase } from './scripts/initDatabase';
 
 const app = express();
-const PORT = process.env.PORT || 8800; // Changed to 8800 as required
+const PORT = process.env.PORT || 8800;
 const API_PREFIX = process.env.API_PREFIX || '/api';
 
 // Initialize Firebase Admin (for token verification)
