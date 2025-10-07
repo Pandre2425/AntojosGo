@@ -227,7 +227,7 @@ export default function HomeScreen() {
           <Ionicons name="search-outline" size={20} color="#666" />
           <TextInput
             style={styles.searchInput}
-            placeholder="Buscar restaurantes, platillos..."
+            placeholder="Ej: 'Quiero tacos cerca de mí' o 'Tengo antojo de pizza'"
             value={searchQuery}
             onChangeText={setSearchQuery}
             onSubmitEditing={handleSearch}
@@ -237,6 +237,30 @@ export default function HomeScreen() {
               <Ionicons name="close-circle-outline" size={20} color="#666" />
             </TouchableOpacity>
           ) : null}
+        </View>
+        
+        {/* AI Suggestions */}
+        <View style={styles.aiSuggestions}>
+          <Text style={styles.aiSuggestionsTitle}>💡 Prueba con IA:</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            {[
+              'Quiero pizza italiana cerca',
+              'Antojo de tacos mexicanos',
+              'Algo saludable para cenar',
+              'Comida japonesa barata'
+            ].map((suggestion, index) => (
+              <TouchableOpacity
+                key={index}
+                style={styles.suggestionChip}
+                onPress={() => {
+                  setSearchQuery(suggestion);
+                  handleSearch();
+                }}
+              >
+                <Text style={styles.suggestionText}>{suggestion}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
         </View>
       </View>
 
