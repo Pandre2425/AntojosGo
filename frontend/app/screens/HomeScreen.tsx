@@ -42,7 +42,33 @@ export default function HomeScreen() {
 
   useEffect(() => {
     loadRestaurants();
+    getUserLocation();
   }, []);
+
+  const getUserLocation = async () => {
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert(
+          'Permisos de ubicación',
+          'Los permisos de ubicación nos ayudan a mostrarte restaurantes cercanos.',
+          [{ text: 'OK' }]
+        );
+        return;
+      }
+
+      const location = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+      });
+
+      setUserLocation({
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
+      });
+    } catch (error) {
+      console.error('Error getting location:', error);
+    }
+  };
 
   const loadRestaurants = async () => {
     try {
