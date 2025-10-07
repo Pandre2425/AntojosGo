@@ -40,7 +40,7 @@ interface MenuItem {
   category: string;
 }
 
-const API_BASE_URL = Constants.expoConfig?.extra?.apiUrl || process.env.EXPO_PUBLIC_BACKEND_URL || 'http://localhost:8001';
+const API_BASE_URL = Constants.expoConfig?.extra?.apiUrl || process.env.EXPO_PUBLIC_BACKEND_URL || 'http://localhost:8800';
 
 class ApiService {
   private baseUrl: string;
