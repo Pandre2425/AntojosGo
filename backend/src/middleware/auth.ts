@@ -1,5 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { verifyFirebaseToken } from '../config/firebase';
+import { supabase } from '../config/supabase';
+import jwt from 'jsonwebtoken';
 
 export interface AuthRequest extends Request {
   user?: any;
