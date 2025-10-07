@@ -176,7 +176,7 @@ export default function HomeScreen() {
           searchQuery.length > 15) {
         
         try {
-          const aiResults = await apiService.getAIRecommendations(searchQuery, 19.4326, -99.1332);
+          const aiResults = await apiService.getAIRecommendations(searchQuery, userLocation.latitude, userLocation.longitude);
           if (aiResults.success && aiResults.results) {
             // Convert AI results to Restaurant format
             const convertedResults = aiResults.results.map((result: any) => ({
