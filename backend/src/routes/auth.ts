@@ -3,6 +3,8 @@ import { supabase, User } from '../config/supabase';
 import { verifyFirebaseToken } from '../config/firebase';
 import { validateBody, schemas } from '../middleware/validation';
 import { v4 as uuidv4 } from 'uuid';
+import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
 
 const router = express.Router();
 
