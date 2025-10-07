@@ -18,6 +18,7 @@ import type { RootStackParamList } from "../navigation/AppNavigation";
 import { apiService, Restaurant } from '../services/api';
 import MapView, { Marker, PROVIDER_DEFAULT } from 'react-native-maps';
 import RestaurantMarker from '../components/RestaurantMarker';
+import * as Location from 'expo-location';
 
 type HomeNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
