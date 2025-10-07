@@ -20,7 +20,7 @@ import { errorHandler } from './middleware/errorHandler';
 import { setupFirebase } from './config/firebase';
 
 const app = express();
-const PORT = process.env.PORT || 8001;
+const PORT = process.env.PORT || 8800;
 const API_PREFIX = process.env.API_PREFIX || '/api';
 
 // Initialize Firebase Admin (for token verification)
