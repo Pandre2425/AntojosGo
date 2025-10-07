@@ -288,7 +288,7 @@ export default function HomeScreen() {
                   // Trigger AI search immediately
                   try {
                     setIsLoading(true);
-                    const aiResults = await apiService.getAIRecommendations(suggestion, 19.4326, -99.1332);
+                    const aiResults = await apiService.getAIRecommendations(suggestion, userLocation.latitude, userLocation.longitude);
                     if (aiResults.success && aiResults.results) {
                       const convertedResults = aiResults.results.map((result: any) => ({
                         id: result.id || Math.random().toString(),
