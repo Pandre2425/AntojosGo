@@ -105,7 +105,7 @@ router.post('/login', validateBody(schemas.login), async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // For development, we'll find user by email
+    // Find user by email
     const { data: user, error } = await supabase
       .from('users')
       .select('*')
@@ -119,16 +119,43 @@ router.post('/login', validateBody(schemas.login), async (req, res) => {
       });
     }
 
-    res.json({
-      success: true,
-      token: `temp_token_${user.id}`, // Temporary token for development
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        profileImage: user.profile_image
+    // Verify password
+    if (user.password_hash) {
+      // JWT authentication
+      const isValidPassword = await comparePasswords(password, user.password_hash);
+      if (!isValidPassword) {
+        return res.status(401).json({
+          success: false,
+          error: 'Invalid credentials'
+        });
       }
-    });
+
+      // Generate JWT token
+      const token = generateJWT(user.id, user.email);
+
+      res.json({
+        success: true,
+        token,
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          profileImage: user.profile_image
+        }
+      });
+    } else {
+      // Legacy temp token system for backward compatibility
+      res.json({
+        success: true,
+        token: `temp_token_${user.id}`,
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          profileImage: user.profile_image
+        }
+      });
+    }
 
   } catch (error) {
     console.error('Login error:', error);
