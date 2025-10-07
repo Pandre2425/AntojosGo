@@ -35,6 +35,10 @@ export default function HomeScreen() {
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [isLoading, setIsLoading] = useState(true);
   const [showMap, setShowMap] = useState(true);
+  const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number }>({
+    latitude: 19.4326, // Default to Mexico City
+    longitude: -99.1332
+  });
 
   useEffect(() => {
     loadRestaurants();
