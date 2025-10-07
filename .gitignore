@@ -99,3 +99,7 @@ android-sdk/ -e
 *.env.*
 
 frontend/nul
+-e 
+# Environment files
+*.env
+*.env.*
