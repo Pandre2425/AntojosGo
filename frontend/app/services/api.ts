@@ -28,6 +28,16 @@ interface Restaurant {
   phone: string;
   images: string[];
   menu: MenuItem[];
+  // Additional fields that might come from backend
+  category?: string;
+  coordinates?: {
+    latitude: number;
+    longitude: number;
+  };
+  image_url?: string;
+  google_place_id?: string;
+  source?: string;
+  distance?: number;
 }
 
 interface MenuItem {
