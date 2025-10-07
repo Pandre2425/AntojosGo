@@ -175,6 +175,66 @@ class ApiService {
       throw error;
     }
   }
+
+  async getAIRecommendations(query: string, latitude?: number, longitude?: number, preferences?: any): Promise<{
+    success: boolean;
+    query: string;
+    interpretation: any;
+    results: Restaurant[];
+    count: number;
+  }> {
+    try {
+      const response = await fetch(`${this.baseUrl}/ai/recommendations`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          query,
+          latitude,
+          longitude,
+          preferences,
+        }),
+      });
+      
+      return await response.json();
+    } catch (error) {
+      console.error('API AI recommendations error:', error);
+      throw error;
+    }
+  }
+
+  async uploadImage(imageUri: string, token: string, folder?: string): Promise<{
+    success: boolean;
+    url?: string;
+    provider?: string;
+  }> {
+    try {
+      const formData = new FormData();
+      
+      // Convert image URI to blob for upload
+      const response = await fetch(imageUri);
+      const blob = await response.blob();
+      
+      formData.append('image', blob as any, 'image.jpg');
+      if (folder) {
+        formData.append('folder', folder);
+      }
+
+      const uploadResponse = await fetch(`${this.baseUrl}/upload/image`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        body: formData,
+      });
+      
+      return await uploadResponse.json();
+    } catch (error) {
+      console.error('API upload image error:', error);
+      throw error;
+    }
+  }
 }
 
 export const apiService = new ApiService();
