@@ -108,6 +108,39 @@ router.get('/search', optionalAuth, async (req: AuthRequest, res) => {
   }
 });
 
+// Get restaurant by ID (must come after /search route)
+router.get('/:id', optionalAuth, async (req: AuthRequest, res) => {
+  try {
+    const { id } = req.params;
+
+    const { data: restaurant, error } = await supabase
+      .from('restaurants')
+      .select(`
+        *,
+        foods (*)
+      `)
+      .eq('id', id)
+      .single();
+
+    if (error) {
+      console.error('Database error:', error);
+      return res.status(404).json({
+        success: false,
+        error: 'Restaurant not found'
+      });
+    }
+
+    res.json(restaurant);
+
+  } catch (error) {
+    console.error('Get restaurant error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error'
+    });
+  }
+});
+
 // Helper function to calculate distance between two points
 function calculateDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
   const R = 6371; // Earth's radius in kilometers
