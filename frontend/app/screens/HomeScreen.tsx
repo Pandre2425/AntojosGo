@@ -373,8 +373,8 @@ export default function HomeScreen() {
             style={styles.mapView}
             provider={PROVIDER_DEFAULT}
             initialRegion={{
-              latitude: 19.4326,
-              longitude: -99.1332,
+              latitude: userLocation.latitude,
+              longitude: userLocation.longitude,
               latitudeDelta: 0.05,
               longitudeDelta: 0.05,
             }}
