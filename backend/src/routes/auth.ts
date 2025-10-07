@@ -8,6 +8,30 @@ import bcrypt from 'bcryptjs';
 
 const router = express.Router();
 
+// JWT utility functions
+const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_fallback';
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
+
+function generateJWT(userId: string, email: string): string {
+  return jwt.sign(
+    { 
+      id: userId, 
+      email,
+      type: 'access'
+    }, 
+    JWT_SECRET, 
+    { expiresIn: JWT_EXPIRES_IN }
+  );
+}
+
+function hashPassword(password: string): Promise<string> {
+  return bcrypt.hash(password, 12);
+}
+
+function comparePasswords(password: string, hashedPassword: string): Promise<boolean> {
+  return bcrypt.compare(password, hashedPassword);
+}
+
 // Register endpoint
 router.post('/register', validateBody(schemas.register), async (req, res) => {
   try {
