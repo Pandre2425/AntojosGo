@@ -254,7 +254,8 @@ export default function HomeScreen() {
                 style={styles.suggestionChip}
                 onPress={() => {
                   setSearchQuery(suggestion);
-                  handleSearch();
+                  // Trigger search after setting the query
+                  setTimeout(() => handleSearch(), 100);
                 }}
               >
                 <Text style={styles.suggestionText}>{suggestion}</Text>
