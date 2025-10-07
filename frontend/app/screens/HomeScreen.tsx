@@ -137,6 +137,41 @@ export default function HomeScreen() {
     
     try {
       setIsLoading(true);
+      
+      // If the query sounds like a natural request, use AI recommendations
+      if (searchQuery.toLowerCase().includes('quiero') || 
+          searchQuery.toLowerCase().includes('antojo') || 
+          searchQuery.toLowerCase().includes('cerca') ||
+          searchQuery.length > 15) {
+        
+        try {
+          const aiResults = await apiService.getAIRecommendations(searchQuery, 19.4326, -99.1332);
+          if (aiResults.success && aiResults.results) {
+            // Convert AI results to Restaurant format
+            const convertedResults = aiResults.results.map(result => ({
+              id: result.id || Math.random().toString(),
+              name: result.name,
+              description: result.description || '',
+              address: result.address || '',
+              latitude: result.coordinates?.latitude || 19.4326,
+              longitude: result.coordinates?.longitude || -99.1332,
+              cuisineType: result.category || 'General',
+              rating: result.rating || 4.0,
+              priceRange: result.price_range || '$$',
+              hours: result.hours || 'No disponible',
+              phone: result.phone || '',
+              images: result.image_url ? [result.image_url] : [],
+              menu: []
+            }));
+            setRestaurants(convertedResults);
+            return;
+          }
+        } catch (aiError) {
+          console.log('AI search failed, falling back to regular search:', aiError);
+        }
+      }
+      
+      // Regular search fallback
       const results = await apiService.searchRestaurants(searchQuery);
       setRestaurants(results);
     } catch (error) {
