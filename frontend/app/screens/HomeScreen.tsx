@@ -252,10 +252,36 @@ export default function HomeScreen() {
               <TouchableOpacity
                 key={index}
                 style={styles.suggestionChip}
-                onPress={() => {
+                onPress={async () => {
                   setSearchQuery(suggestion);
-                  // Trigger search after setting the query
-                  setTimeout(() => handleSearch(), 100);
+                  // Trigger AI search immediately
+                  try {
+                    setIsLoading(true);
+                    const aiResults = await apiService.getAIRecommendations(suggestion, 19.4326, -99.1332);
+                    if (aiResults.success && aiResults.results) {
+                      const convertedResults = aiResults.results.map((result: any) => ({
+                        id: result.id || Math.random().toString(),
+                        name: result.name || 'Restaurante',
+                        description: result.description || '',
+                        address: result.address || '',
+                        latitude: result.coordinates?.latitude || result.latitude || 19.4326,
+                        longitude: result.coordinates?.longitude || result.longitude || -99.1332,
+                        cuisineType: result.category || result.cuisineType || 'General',
+                        rating: result.rating || 4.0,
+                        priceRange: result.price_range || result.priceRange || '$$',
+                        hours: result.hours || 'No disponible',
+                        phone: result.phone || '',
+                        images: result.image_url ? [result.image_url] : (result.images || []),
+                        menu: result.menu || []
+                      }));
+                      setRestaurants(convertedResults);
+                    }
+                  } catch (error) {
+                    console.error('AI search error:', error);
+                    Alert.alert('Info', 'Usando datos de ejemplo (IA no disponible)');
+                  } finally {
+                    setIsLoading(false);
+                  }
                 }}
               >
                 <Text style={styles.suggestionText}>{suggestion}</Text>
