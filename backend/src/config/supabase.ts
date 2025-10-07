@@ -19,8 +19,9 @@ export interface User {
   id: string;
   name: string;
   email: string;
+  password_hash?: string;
   profile_image?: string;
-  firebase_uid: string;
+  firebase_uid?: string;
   preferences?: any;
   location?: {
     latitude: number;
