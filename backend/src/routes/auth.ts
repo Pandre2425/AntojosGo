@@ -37,21 +37,36 @@ router.post('/register', validateBody(schemas.register), async (req, res) => {
   try {
     const { name, email, password } = req.body;
 
-    // For now, we'll create a simple user record
-    // In production, this should integrate with Firebase Auth
+    // Check if user already exists
+    const { data: existingUser } = await supabase
+      .from('users')
+      .select('email')
+      .eq('email', email)
+      .single();
+
+    if (existingUser) {
+      return res.status(409).json({
+        success: false,
+        error: 'User already exists with this email'
+      });
+    }
+
+    // Hash password
+    const hashedPassword = await hashPassword(password);
     const userId = uuidv4();
     
-    const userData: Omit<User, 'created_at' | 'updated_at'> = {
+    const userData = {
       id: userId,
       name,
       email,
-      firebase_uid: `temp_${userId}` // Temporary UID for development
+      password_hash: hashedPassword,
+      firebase_uid: null // Will be set if Firebase auth is used later
     };
 
     const { data, error } = await supabase
       .from('users')
       .insert(userData)
-      .select()
+      .select('id, name, email, profile_image')
       .single();
 
     if (error) {
@@ -62,9 +77,12 @@ router.post('/register', validateBody(schemas.register), async (req, res) => {
       });
     }
 
-    res.json({
+    // Generate JWT token
+    const token = generateJWT(data.id, data.email);
+
+    res.status(201).json({
       success: true,
-      token: `temp_token_${userId}`, // Temporary token for development
+      token,
       user: {
         id: data.id,
         name: data.name,
