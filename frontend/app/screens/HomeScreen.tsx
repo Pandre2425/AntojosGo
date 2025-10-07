@@ -447,6 +447,27 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#333',
   },
+  aiSuggestions: {
+    marginTop: 12,
+  },
+  aiSuggestionsTitle: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 8,
+  },
+  suggestionChip: {
+    backgroundColor: '#FFF3E0',
+    borderColor: '#FF6600',
+    borderWidth: 1,
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    marginRight: 8,
+  },
+  suggestionText: {
+    fontSize: 12,
+    color: '#FF6600',
+  },
   filtersContainer: {
     paddingHorizontal: 20,
     paddingVertical: 12,
