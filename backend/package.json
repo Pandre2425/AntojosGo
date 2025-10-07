@@ -42,7 +42,9 @@
     "typescript": "^5.2.2",
     "ts-node-dev": "^2.0.0",
     "jest": "^29.7.0",
-    "@types/jest": "^29.5.8"
+    "@types/jest": "^29.5.8",
+    "@types/jsonwebtoken": "^9.0.5",
+    "@types/bcryptjs": "^2.4.6"
   },
   "keywords": ["food", "restaurant", "ai", "recommendations", "mobile-app"],
   "author": "AntojosGo Team",
