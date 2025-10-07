@@ -148,20 +148,20 @@ export default function HomeScreen() {
           const aiResults = await apiService.getAIRecommendations(searchQuery, 19.4326, -99.1332);
           if (aiResults.success && aiResults.results) {
             // Convert AI results to Restaurant format
-            const convertedResults = aiResults.results.map(result => ({
+            const convertedResults = aiResults.results.map((result: any) => ({
               id: result.id || Math.random().toString(),
-              name: result.name,
+              name: result.name || 'Restaurante',
               description: result.description || '',
               address: result.address || '',
-              latitude: result.coordinates?.latitude || 19.4326,
-              longitude: result.coordinates?.longitude || -99.1332,
-              cuisineType: result.category || 'General',
+              latitude: result.coordinates?.latitude || result.latitude || 19.4326,
+              longitude: result.coordinates?.longitude || result.longitude || -99.1332,
+              cuisineType: result.category || result.cuisineType || 'General',
               rating: result.rating || 4.0,
-              priceRange: result.price_range || '$$',
+              priceRange: result.price_range || result.priceRange || '$$',
               hours: result.hours || 'No disponible',
               phone: result.phone || '',
-              images: result.image_url ? [result.image_url] : [],
-              menu: []
+              images: result.image_url ? [result.image_url] : (result.images || []),
+              menu: result.menu || []
             }));
             setRestaurants(convertedResults);
             return;
