@@ -71,40 +71,7 @@ router.get('/', optionalAuth, validateQuery(schemas.restaurantSearch), async (re
   }
 });
 
-// Get restaurant by ID
-router.get('/:id', optionalAuth, async (req: AuthRequest, res) => {
-  try {
-    const { id } = req.params;
-
-    const { data: restaurant, error } = await supabase
-      .from('restaurants')
-      .select(`
-        *,
-        foods (*)
-      `)
-      .eq('id', id)
-      .single();
-
-    if (error) {
-      console.error('Database error:', error);
-      return res.status(404).json({
-        success: false,
-        error: 'Restaurant not found'
-      });
-    }
-
-    res.json(restaurant);
-
-  } catch (error) {
-    console.error('Get restaurant error:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Internal server error'
-    });
-  }
-});
-
-// Search restaurants
+// Search restaurants (must come before /:id route)
 router.get('/search', optionalAuth, async (req: AuthRequest, res) => {
   try {
     const { q } = req.query;
