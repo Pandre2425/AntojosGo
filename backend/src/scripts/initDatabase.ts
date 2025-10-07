@@ -14,6 +14,7 @@ export async function initializeDatabase() {
             id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
             name VARCHAR(255) NOT NULL,
             email VARCHAR(255) UNIQUE NOT NULL,
+            password_hash VARCHAR(255),
             profile_image TEXT,
             firebase_uid VARCHAR(255) UNIQUE,
             preferences JSONB DEFAULT '{}',
