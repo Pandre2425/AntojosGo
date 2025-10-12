@@ -13,7 +13,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import MapView, { Marker, Region } from 'react-native-maps';
+import MapboxGL from '@rnmapbox/maps';
 import * as Location from 'expo-location';
 import * as ImagePicker from 'expo-image-picker';
 
@@ -53,7 +53,7 @@ export default function RestaurantOnboardingScreen() {
     hours: '',
   });
 
-  const [mapRegion, setMapRegion] = useState<Region>({
+  const [mapRegion, setMapRegion] = useState({
     latitude: 19.4326,
     longitude: -99.1332,
     latitudeDelta: 0.01,
@@ -157,6 +157,8 @@ export default function RestaurantOnboardingScreen() {
     }
   };
 
+  const { latitude, longitude } = restaurantData;
+
   const renderStep = () => {
     switch (step) {
       case 1:
@@ -219,22 +221,21 @@ export default function RestaurantOnboardingScreen() {
 
             <View style={styles.mapContainer}>
               <Text style={styles.label}>Ubicación en el Mapa</Text>
-              <MapView
-                style={styles.map}
-                region={mapRegion}
-                onPress={handleMapPress}
-                showsUserLocation
-                showsMyLocationButton
-              >
-                <Marker
-                  coordinate={{
-                    latitude: restaurantData.latitude,
-                    longitude: restaurantData.longitude,
-                  }}
-                  title={restaurantData.name || 'Mi Restaurante'}
+              <MapboxGL.MapView style={{ flex: 1 }}>
+                <MapboxGL.Camera
+                zoomLevel={14}
+                centerCoordinate={[longitude, latitude]}
                 />
-              </MapView>
-              <TouchableOpacity style={styles.locationButton} onPress={getCurrentLocation}>
+                
+                <MapboxGL.PointAnnotation
+                id="selected-location"
+                coordinate={[longitude, latitude]}
+                >
+                  <View style={styles.marker} />
+                  </MapboxGL.PointAnnotation>
+                </MapboxGL.MapView>
+              
+                <TouchableOpacity style={styles.locationButton} onPress={getCurrentLocation}>
                 <Ionicons name="location" size={16} color="#FFFFFF" />
                 <Text style={styles.locationButtonText}>Usar mi ubicación</Text>
               </TouchableOpacity>
@@ -515,6 +516,10 @@ const styles = StyleSheet.create({
     color: '#666',
   },
   mapContainer: {
+    height: 250,
+    borderRadius: 12,
+    overflow: 'hidden',
+    marginTop: 10,
     marginBottom: 20,
   },
   map: {
@@ -581,4 +586,14 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     marginRight: 8,
   },
+    marker: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: '#FF6600',
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+  },
+  
+
 });

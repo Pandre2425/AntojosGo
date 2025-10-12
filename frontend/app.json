@@ -7,33 +7,53 @@
     "icon": "./assets/images/icon.png",
     "scheme": "antojosgo",
     "userInterfaceStyle": "automatic",
+    "entryPoint": "./app/index.tsx",
     "newArchEnabled": true,
-    "ios": {
-      "supportsTablet": true
+
+    "splash": {
+      "image": "./assets/images/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#000000"
     },
+    "assetBundlePatterns": ["**/*"],
+
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.antojosgo.app",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "We use your location to find nearby restaurants matching your cravings."
+      },
+      "config": {
+        "mapbox_access_token": "pk.eyJ1IjoicGFuZHJlLTI0MjUiLCJhIjoiY21mYmE1dHFzMDc4NzJxcTNmczRkZmtrcCJ9.AoSHLd1bfEAnVfY4FUmXWw"
+      }
+    },  
+
     "android": {
+      "package": "com.antojosgo.app",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#000"
+        "backgroundColor": "#000000"
       },
-      "edgeToEdgeEnabled": true
+      "permissions": ["ACCESS_COARSE_LOCATION", "ACCESS_FINE_LOCATION"],
+      "config": {
+        "mapbox_access_token": "YOUR_MAPBOX_ACCESS_TOKEN"
+      }
     },
+
     "web": {
       "bundler": "metro",
       "output": "single",
       "favicon": "./assets/images/favicon.png"
     },
+
     "plugins": [
       [
-        "expo-splash-screen",
+        "@rnmapbox/maps",
         {
-          "image": "./assets/images/splash-icon.png",
-          "imageWidth": 200,
-          "resizeMode": "contain",
-          "backgroundColor": "#000"
+          "MAPBOX_ACCESS_TOKEN": "YOUR_MAPBOX_ACCESS_TOKEN"
         }
       ],
-      "expo-font"
+      "expo-location"
     ]
   }
 }

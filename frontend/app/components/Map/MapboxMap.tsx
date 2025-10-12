@@ -1,15 +1,17 @@
-import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, Alert, Dimensions } from 'react-native';
-import MapView, { Marker, Region } from 'react-native-maps';
-import * as Location from 'expo-location';
-import { Restaurant, restaurantService } from '../../services/supabaseClient';
+import React, { useEffect, useState } from "react";
+import { View, StyleSheet, Alert, Dimensions } from "react-native";
+import MapboxGL from "@rnmapbox/maps";
+import * as Location from "expo-location";
+import { Restaurant, restaurantService } from "../../services/supabaseClient";
 
-const { width, height } = Dimensions.get('window');
+const { width, height } = Dimensions.get("window");
+
+// Configura tu token de Mapbox (en .env o directo)
+MapboxGL.setAccessToken(process.env.EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN || "YOUR_MAPBOX_ACCESS_TOKEN");
 
 interface MapboxMapProps {
   restaurants?: Restaurant[];
   onRestaurantPress?: (restaurant: Restaurant) => void;
-  initialRegion?: Region;
   showUserLocation?: boolean;
   style?: any;
 }
@@ -17,20 +19,11 @@ interface MapboxMapProps {
 const MapboxMap: React.FC<MapboxMapProps> = ({
   restaurants: propRestaurants,
   onRestaurantPress,
-  initialRegion,
   showUserLocation = true,
-  style
+  style,
 }) => {
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [userLocation, setUserLocation] = useState<Location.LocationObject | null>(null);
-  const [region, setRegion] = useState<Region>(
-    initialRegion || {
-      latitude: 19.4326, // Mexico City default
-      longitude: -99.1332,
-      latitudeDelta: 0.05,
-      longitudeDelta: 0.05,
-    }
-  );
 
   useEffect(() => {
     if (propRestaurants) {
@@ -38,7 +31,7 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
     } else {
       loadRestaurants();
     }
-    
+
     if (showUserLocation) {
       getUserLocation();
     }
@@ -49,40 +42,25 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
       const restaurantData = await restaurantService.getAllRestaurants();
       setRestaurants(restaurantData);
     } catch (error) {
-      console.error('Error loading restaurants:', error);
-      Alert.alert('Error', 'No se pudieron cargar los restaurantes');
+      console.error("Error loading restaurants:", error);
+      Alert.alert("Error", "No se pudieron cargar los restaurantes");
     }
   };
 
   const getUserLocation = async () => {
     try {
-      // Request permission to access location
       const { status } = await Location.requestForegroundPermissionsAsync();
-      
-      if (status !== 'granted') {
-        Alert.alert(
-          'Permisos requeridos',
-          'Se necesita acceso a la ubicación para mostrar restaurantes cercanos'
-        );
+      if (status !== "granted") {
+        Alert.alert("Permisos requeridos", "Se necesita acceso a la ubicación para mostrar restaurantes cercanos");
         return;
       }
 
-      // Get current position
       const location = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Balanced,
+        accuracy: Location.Accuracy.High,
       });
-      
       setUserLocation(location);
-      
-      // Update map region to user's location
-      setRegion({
-        latitude: location.coords.latitude,
-        longitude: location.coords.longitude,
-        latitudeDelta: 0.05,
-        longitudeDelta: 0.05,
-      });
     } catch (error) {
-      console.error('Error getting user location:', error);
+      console.error("Error getting user location:", error);
     }
   };
 
@@ -94,53 +72,62 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
 
   const getMarkerColor = (category: string): string => {
     const colors: { [key: string]: string } = {
-      mexican: '#FF6B35',
-      italian: '#4ECDC4',
-      'fast-food': '#FFE66D',
-      asian: '#FF6B6B',
-      desserts: '#A8E6CF',
-      beverages: '#DCEDC8',
+      mexican: "#FF6B35",
+      italian: "#4ECDC4",
+      "fast-food": "#FFE66D",
+      asian: "#FF6B6B",
+      desserts: "#A8E6CF",
+      beverages: "#DCEDC8",
     };
-    return colors[category] || '#6C5CE7';
+    return colors[category] || "#6C5CE7";
   };
 
   return (
     <View style={[styles.container, style]}>
-      <MapView
+      <MapboxGL.MapView
         style={styles.map}
-        region={region}
-        onRegionChangeComplete={setRegion}
-        showsUserLocation={showUserLocation}
-        showsMyLocationButton={true}
-        mapType="standard"
+        zoomEnabled
+        logoEnabled={false}
+        styleURL="mapbox://styles/mapbox/streets-v12"
       >
-        {/* Restaurant markers */}
-        {restaurants.map((restaurant) => (
-          <Marker
-            key={restaurant.id}
-            coordinate={{
-              latitude: restaurant.coordinates.latitude,
-              longitude: restaurant.coordinates.longitude,
-            }}
-            title={restaurant.name}
-            description={restaurant.description}
-            pinColor={getMarkerColor(restaurant.category)}
-            onPress={() => handleMarkerPress(restaurant)}
-          />
-        ))}
-        
-        {/* User location marker (if available and showUserLocation is false) */}
-        {!showUserLocation && userLocation && (
-          <Marker
-            coordinate={{
-              latitude: userLocation.coords.latitude,
-              longitude: userLocation.coords.longitude,
-            }}
-            title="Mi ubicación"
-            pinColor="blue"
+        {/* Posición del usuario */}
+        {showUserLocation && (
+          <MapboxGL.UserLocation
+            visible
+            showsUserHeadingIndicator={true}
+            androidRenderMode="gps"
           />
         )}
-      </MapView>
+
+        {/* Cámara centrada */}
+        <MapboxGL.Camera
+          zoomLevel={14}
+          centerCoordinate={
+            userLocation
+              ? [userLocation.coords.longitude, userLocation.coords.latitude]
+              : [-99.1332, 19.4326]
+          }
+          animationMode="flyTo"
+          animationDuration={1000}
+        />
+
+        {/* Marcadores de restaurantes */}
+        {restaurants.map((restaurant) => (
+          <MapboxGL.PointAnnotation
+            key={restaurant.id}
+            id={restaurant.id.toString()}
+            coordinate={[restaurant.coordinates.longitude, restaurant.coordinates.latitude]}
+            onSelected={() => handleMarkerPress(restaurant)}
+          >
+            <View
+              style={[
+                styles.marker,
+                { backgroundColor: getMarkerColor(restaurant.category || "default") },
+              ]}
+            />
+          </MapboxGL.PointAnnotation>
+        ))}
+      </MapboxGL.MapView>
     </View>
   );
 };
@@ -148,11 +135,18 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
   },
   map: {
-    width: '100%',
-    height: '100%',
+    width: "100%",
+    height: "100%",
+  },
+  marker: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    borderColor: "#fff",
+    borderWidth: 2,
   },
 });
 

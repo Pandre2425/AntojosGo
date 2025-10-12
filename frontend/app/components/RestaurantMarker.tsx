@@ -1,51 +1,49 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { Marker } from 'react-native-maps';
-import { Ionicons } from '@expo/vector-icons';
-import { Restaurant } from '../services/api';
+import React from "react";
+import { View, Text, StyleSheet } from "react-native";
+import MapboxGL from "@rnmapbox/maps";
+import { Restaurant } from "../services/api";
 
 interface RestaurantMarkerProps {
   restaurant: Restaurant;
+  onPress?: (restaurant: Restaurant) => void;
 }
 
-export default function RestaurantMarker({ restaurant }: RestaurantMarkerProps) {
+export default function RestaurantMarker({ restaurant, onPress }: RestaurantMarkerProps) {
+  if (!restaurant?.coordinates) return null;
+
+  const { latitude, longitude } = restaurant.coordinates;
+
   return (
-    <Marker
-      coordinate={{
-        latitude: restaurant.latitude || 19.4326, // Default to Mexico City if no coordinates
-        longitude: restaurant.longitude || -99.1332,
-      }}
-      title={restaurant.name}
-      description={restaurant.description}
+    <MapboxGL.PointAnnotation
+      id={restaurant.id.toString()}
+      coordinate={[longitude, latitude]}
+      onSelected={() => onPress && onPress(restaurant)}
     >
       <View style={styles.markerContainer}>
         <View style={styles.marker}>
-          <Ionicons name="restaurant" size={20} color="#FFFFFF" />
+          <Text style={styles.icon}>🍽</Text>
         </View>
         <View style={styles.markerTriangle} />
       </View>
-    </Marker>
+    </MapboxGL.PointAnnotation>
   );
 }
 
 const styles = StyleSheet.create({
   markerContainer: {
-    alignItems: 'center',
+    alignItems: "center",
   },
   marker: {
-    backgroundColor: '#FF6600',
+    backgroundColor: "#FF6600",
     borderRadius: 20,
     width: 40,
     height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     borderWidth: 2,
-    borderColor: '#FFFFFF',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
+    borderColor: "#FFFFFF",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
     elevation: 5,
@@ -53,15 +51,19 @@ const styles = StyleSheet.create({
   markerTriangle: {
     width: 0,
     height: 0,
-    backgroundColor: 'transparent',
-    borderStyle: 'solid',
+    backgroundColor: "transparent",
+    borderStyle: "solid",
     borderLeftWidth: 6,
     borderRightWidth: 6,
     borderBottomWidth: 0,
     borderTopWidth: 8,
-    borderLeftColor: 'transparent',
-    borderRightColor: 'transparent',
-    borderTopColor: '#FF6600',
+    borderLeftColor: "transparent",
+    borderRightColor: "transparent",
+    borderTopColor: "#FF6600",
     marginTop: -1,
+  },
+  icon: {
+    fontSize: 18,
+    color: "#fff",
   },
 });

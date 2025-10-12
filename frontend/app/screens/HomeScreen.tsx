@@ -16,7 +16,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/AppNavigation";
 import { apiService, Restaurant } from '../services/api';
-import MapView, { Marker, PROVIDER_DEFAULT } from 'react-native-maps';
+import MapboxGL from '@rnmapbox/maps';
 import RestaurantMarker from '../components/RestaurantMarker';
 import * as Location from 'expo-location';
 
@@ -369,25 +369,24 @@ export default function HomeScreen() {
       {/* Content */}
       <View style={styles.content}>
         {showMap ? (
-          <MapView
-            style={styles.mapView}
-            provider={PROVIDER_DEFAULT}
-            initialRegion={{
-              latitude: userLocation.latitude,
-              longitude: userLocation.longitude,
-              latitudeDelta: 0.05,
-              longitudeDelta: 0.05,
-            }}
-            showsUserLocation={true}
-            showsMyLocationButton={true}
-          >
-            {filteredRestaurants.map((restaurant) => (
-              <RestaurantMarker
-                key={restaurant.id} 
-                restaurant={restaurant}
-              />
-            ))}
-          </MapView>
+          <MapboxGL.MapView style={styles.map}>
+            <MapboxGL.Camera
+              zoomLevel={12}
+              centerCoordinate={[userLocation?.longitude || -99.1332, userLocation?.latitude || 19.4326]}
+            />
+            
+            {restaurants.map((r) => (
+              <MapboxGL.PointAnnotation
+              key={r.id}
+              id={r.id.toString()}
+              coordinate={[r.longitude, r.latitude]}
+              title={r.name}
+              >
+                <RestaurantMarker restaurant={r} />
+                </MapboxGL.PointAnnotation>
+              ))}
+          </MapboxGL.MapView>
+
         ) : (
           <ScrollView style={styles.restaurantsList}>
             {isLoading ? (
@@ -713,5 +712,13 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 4.65,
     elevation: 8,
+  },
+
+    map: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
+    borderRadius: 12,
+    overflow: 'hidden',
   },
 });
