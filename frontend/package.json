@@ -58,6 +58,7 @@
   },
   "devDependencies": {
     "@babel/core": "^7.28.4",
+    "@expo/config-plugins": "^54.0.2",
     "@types/node": "^24.7.0",
     "@types/react": "^19.2.2",
     "@types/react-dom": "^19.2.1",

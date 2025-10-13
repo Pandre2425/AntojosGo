@@ -141,6 +141,9 @@ importers:
       '@babel/core':
         specifier: ^7.28.4
         version: 7.28.4
+      '@expo/config-plugins':
+        specifier: ^54.0.2
+        version: 54.0.2
       '@types/node':
         specifier: ^24.7.0
         version: 24.7.0

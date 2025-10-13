@@ -1,3 +1,5 @@
+nodelinker: hoisted
+
 onlyBuiltDependencies:
   - '@firebase/util'
   - protobufjs
