@@ -2,7 +2,7 @@
 
 // Importa los SDKs que vas a usar de Firebase
 import { initializeApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
+import { initializeAuth, getReactNativePersistence } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getMessaging } from "firebase/messaging"; // si usas notificaciones push más adelante
 
