@@ -17,9 +17,10 @@ const firebaseConfig = {
 };
 
 // Implementación de persistencia personalizada usando AsyncStorage para React Native
-const customAsyncStoragePersistence: Persistence = {
-  type: 'LOCAL',
-  async _isAvailable(): Promise<boolean> {
+// Compatible con Firebase Auth Persistence interface
+const customAsyncStoragePersistence = {
+  type: 'LOCAL' as const,
+  async _isAvailable() {
     try {
       const testKey = '__firebase_auth_test__';
       await AsyncStorage.setItem(testKey, 'test');
@@ -29,14 +30,14 @@ const customAsyncStoragePersistence: Persistence = {
       return false;
     }
   },
-  async _set(key: string, value: any): Promise<void> {
+  async _set(key: string, value: any) {
     await AsyncStorage.setItem(key, JSON.stringify(value));
   },
   async _get<T>(key: string): Promise<T | null> {
     const data = await AsyncStorage.getItem(key);
     return data ? JSON.parse(data) : null;
   },
-  async _remove(key: string): Promise<void> {
+  async _remove(key: string) {
     await AsyncStorage.removeItem(key);
   }
 };
