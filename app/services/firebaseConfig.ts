@@ -4,7 +4,7 @@
 import { initializeApp } from "firebase/app";
 import { initializeAuth, getReactNativePersistence } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
-import { getMessaging } from "firebase/messaging"; // si usas notificaciones push más adelante
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const firebaseConfig = {
   apiKey: "AIzaSyA2Y8stOohDV9qp9fHK7brxAblVLjkOv6U",
