@@ -47,8 +47,9 @@ const app = initializeApp(firebaseConfig);
 // Exporta los servicios que usaremos en la app
 export { firebaseConfig, app };
 // Inicializa Auth con persistencia de React Native usando AsyncStorage
+// @ts-ignore - Custom persistence implementation for React Native
 export const auth = initializeAuth(app, {
-  persistence: customAsyncStoragePersistence
+  persistence: customAsyncStoragePersistence as any
 });
 export const db = getFirestore(app);
 // export const messaging = getMessaging(app); // lo activamos cuando configures FCM
