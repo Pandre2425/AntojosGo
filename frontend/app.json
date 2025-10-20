@@ -7,14 +7,14 @@
     "icon": "./assets/images/icon.png",
     "scheme": "antojosgo",
     "userInterfaceStyle": "automatic",
-    "entryPoint": "./app/index.tsx",
     "newArchEnabled": true,
 
     "splash": {
       "image": "./assets/images/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#000000"
+      "backgroundColor": "#ffffff"
     },
+
     "assetBundlePatterns": ["**/*"],
 
     "ios": {
@@ -22,11 +22,8 @@
       "bundleIdentifier": "com.antojosgo.app",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "We use your location to find nearby restaurants matching your cravings."
-      },
-      "config": {
-        "mapbox_access_token": "pk.eyJ1IjoicGFuZHJlLTI0MjUiLCJhIjoiY21mYmE1dHFzMDc4NzJxcTNmczRkZmtrcCJ9.AoSHLd1bfEAnVfY4FUmXWw"
       }
-    },  
+    },
 
     "android": {
       "package": "com.antojosgo.app",
@@ -34,10 +31,10 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#000000"
       },
-      "permissions": ["ACCESS_COARSE_LOCATION", "ACCESS_FINE_LOCATION"],
-      "config": {
-        "mapbox_access_token": "pk.eyJ1IjoicGFuZHJlLTI0MjUiLCJhIjoiY21mYmE1dHFzMDc4NzJxcTNmczRkZmtrcCJ9.AoSHLd1bfEAnVfY4FUmXWw"
-      }
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION"
+      ]
     },
 
     "web": {
@@ -47,7 +44,6 @@
     },
 
     "plugins": [
-      "./plugins/fix-gradle-config",
       [
         "@rnmapbox/maps",
         {
@@ -55,6 +51,10 @@
         }
       ],
       "expo-location"
-    ]
+    ],
+
+    "extra": {
+      "mapboxAccessToken": "pk.eyJ1IjoicGFuZHJlLTI0MjUiLCJhIjoiY21mYmE1dHFzMDc4NzJxcTNmczRkZmtrcCJ9.AoSHLd1bfEAnVfY4FUmXWw"
+    }
   }
 }
