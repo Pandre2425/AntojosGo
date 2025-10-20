@@ -16,6 +16,30 @@ const firebaseConfig = {
   measurementId: "G-MP2SLB9VLZ"
 };
 
+// Implementación de persistencia personalizada usando AsyncStorage para React Native
+const customAsyncStoragePersistence: Persistence = {
+  type: 'LOCAL',
+  async _isAvailable(): Promise<boolean> {
+    try {
+      const testKey = '__firebase_auth_test__';
+      await AsyncStorage.setItem(testKey, 'test');
+      await AsyncStorage.removeItem(testKey);
+      return true;
+    } catch {
+      return false;
+    }
+  },
+  async _set(key: string, value: any): Promise<void> {
+    await AsyncStorage.setItem(key, JSON.stringify(value));
+  },
+  async _get<T>(key: string): Promise<T | null> {
+    const data = await AsyncStorage.getItem(key);
+    return data ? JSON.parse(data) : null;
+  },
+  async _remove(key: string): Promise<void> {
+    await AsyncStorage.removeItem(key);
+  }
+};
 // Inicializa Firebase (asegúrate de inicializar solo una vez)
 const app = initializeApp(firebaseConfig);
 
