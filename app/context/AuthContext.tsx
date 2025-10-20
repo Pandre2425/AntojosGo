@@ -7,7 +7,7 @@ import {
   onAuthStateChanged,
   updateProfile,
   User as FirebaseUser,
-} from "firebase/auth";
+} from "firebase/auth/react-native";
 import { auth } from "../services/firebaseConfig";
 import { apiService } from "../services/api";
 
