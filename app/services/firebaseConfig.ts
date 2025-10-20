@@ -2,7 +2,7 @@
 
 // Importa los SDKs que vas a usar de Firebase
 import { initializeApp } from "firebase/app";
-import { initializeAuth, Persistence } from "firebase/auth";
+import { initializeAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
