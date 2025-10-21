@@ -71,16 +71,16 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
     }
   };
 
-  const getMarkerColor = (category: string): string => {
-    const colors: { [key: string]: string } = {
-      mexican: "#FF6B35",
-      italian: "#4ECDC4",
-      "fast-food": "#FFE66D",
-      asian: "#FF6B6B",
-      desserts: "#A8E6CF",
-      beverages: "#DCEDC8",
+  const getMarkerIcon = (category: string): { name: string; color: string } => {
+    const icons: { [key: string]: { name: string; color: string } } = {
+      mexican: { name: "restaurant", color: "#FF6B35" },
+      italian: { name: "local-pizza", color: "#4ECDC4" },
+      "fast-food": { name: "fastfood", color: "#FFE66D" },
+      asian: { name: "ramen-dining", color: "#FF6B6B" },
+      desserts: { name: "cake", color: "#A8E6CF" },
+      beverages: { name: "local-cafe", color: "#DCEDC8" },
     };
-    return colors[category] || "#6C5CE7";
+    return icons[category] || { name: "restaurant", color: "#6C5CE7" };
   };
 
   return (
