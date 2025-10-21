@@ -113,21 +113,26 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
         />
 
         {/* Marcadores de restaurantes */}
-        {restaurants.map((restaurant) => (
-          <MapboxGL.PointAnnotation
-            key={restaurant.id}
-            id={restaurant.id.toString()}
-            coordinate={[restaurant.coordinates.longitude, restaurant.coordinates.latitude]}
-            onSelected={() => handleMarkerPress(restaurant)}
-          >
-            <View
-              style={[
-                styles.marker,
-                { backgroundColor: getMarkerColor(restaurant.category || "default") },
-              ]}
-            />
-          </MapboxGL.PointAnnotation>
-        ))}
+        {restaurants.map((restaurant) => {
+          const markerIcon = getMarkerIcon(restaurant.category || "default");
+          return (
+            <MapboxGL.PointAnnotation
+              key={restaurant.id}
+              id={restaurant.id.toString()}
+              coordinate={[restaurant.coordinates.longitude, restaurant.coordinates.latitude]}
+              onSelected={() => handleMarkerPress(restaurant)}
+            >
+              <View style={styles.markerContainer}>
+                <MaterialIcons
+                  name={markerIcon.name as any}
+                  size={24}
+                  color={markerIcon.color}
+                  style={styles.markerIcon}
+                />
+              </View>
+            </MapboxGL.PointAnnotation>
+          );
+        })}
       </MapboxGL.MapView>
     </View>
   );
