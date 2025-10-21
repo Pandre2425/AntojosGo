@@ -23,6 +23,14 @@
       "android": { "buildType": "apk" },
       "env": {
         "EXPO_PUBLIC_BACKEND_URL": "http://localhost:8800"
+        "EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN": "pk.eyJ1IjoicGFuZHJlLTI0MjUiLCJhIjoiY21mYmE1dHFzMDc4NzJxcTNmczRkZmtrcCJ9.AoSHLd1bfEAnVfY4FUmXWw",
+        "EXPO_PUBLIC_FIREBASE_API_KEY": "AIzaSyA2Y8stOohDV9qp9fHK7brxAblVLjkOv6U",
+        "EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN": "antojosgo-96e1c.firebaseapp.com",
+        "EXPO_PUBLIC_FIREBASE_PROJECT_ID": "antojosgo-96e1c",
+        "EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET": "antojosgo-96e1c.firebasestorage.app",
+        "EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID": "271111365438",
+        "EXPO_PUBLIC_FIREBASE_APP_ID": "1:271111365438:web:487d870f97389d9851826f",
+        "EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID": "G-MP2SLB9VLZ"
       }
     },
     "production": {
