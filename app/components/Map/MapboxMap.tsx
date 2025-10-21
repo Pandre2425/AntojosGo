@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { View, StyleSheet, Alert, Dimensions } from "react-native";
 import MapboxGL from "@rnmapbox/maps";
 import * as Location from "expo-location";
+import { MaterialIcons } from "@expo/vector-icons";
 import { Restaurant, restaurantService } from "../../services/supabaseClient";
 
 const { width, height } = Dimensions.get("window");
