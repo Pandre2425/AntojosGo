@@ -54,7 +54,7 @@
     ],
 
     "extra": {
-      "mapboxAccessToken": "pk.eyJ1IjoicGFuZHJlLTI0MjUiLCJhIjoiY21mYmE1dHFzMDc4NzJxcTNmczRkZmtrcCJ9.AoSHLd1bfEAnVfY4FUmXWw"
+      "mapboxAccessToken": "EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN"
     }
   }
 }
