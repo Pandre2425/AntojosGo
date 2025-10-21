@@ -7,13 +7,13 @@ import { getFirestore } from "firebase/firestore";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyA2Y8stOohDV9qp9fHK7brxAblVLjkOv6U",
-  authDomain: "antojosgo-96e1c.firebaseapp.com",
-  projectId: "antojosgo-96e1c",
-  storageBucket: "antojosgo-96e1c.firebasestorage.app",
-  messagingSenderId: "271111365438",
-  appId: "1:271111365438:web:487d870f97389d9851826f",
-  measurementId: "G-MP2SLB9VLZ"
+  apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY!,
+  authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN!,
+  projectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID!,
+  storageBucket: process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET!,
+  messagingSenderId: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID!,
+  appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID!,
+  measurementId: process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID!,
 };
 
 // Implementación de persistencia personalizada usando AsyncStorage para React Native
