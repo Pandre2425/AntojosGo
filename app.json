@@ -47,7 +47,7 @@
       [
         "@rnmapbox/maps",
         {
-          "MAPBOX_ACCESS_TOKEN": "pk.eyJ1IjoicGFuZHJlLTI0MjUiLCJhIjoiY21mYmE1dHFzMDc4NzJxcTNmczRkZmtrcCJ9.AoSHLd1bfEAnVfY4FUmXWw"
+          "MAPBOX_ACCESS_TOKEN": "EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN"
         }
       ],
       "expo-location"
