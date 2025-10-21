@@ -4,6 +4,5 @@ nodelinker: hoisted
 
 onlyBuiltDependencies:
   - '@firebase/util'
-  - magick
   - protobufjs
   - unrs-resolver
