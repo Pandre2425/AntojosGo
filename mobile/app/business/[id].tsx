@@ -1,0 +1,38 @@
+import { useEffect, useRef, useState } from 'react'
+import { Redirect, useLocalSearchParams } from 'expo-router'
+import { useSession } from '../../src/session'
+import { Action, Card, Field, Loading, Message, Page, ScreenBoundary, Title } from '../../src/ui'
+import Branches from '../../src/branches'
+import { loadBusinessProfile, saveBusinessProfile } from '../../../modules/restaurants/data/owned-restaurants'
+import { businessProfileSchema } from '../../../shared/contracts/restaurants'
+export default function Business() {
+  const { id } = useLocalSearchParams<{ id: string }>()
+  const { session, ready } = useSession()
+  const [form, setForm] = useState({ name: '', description: '' })
+  const [error, setError] = useState('')
+  const [loaded, setLoaded] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const [retry, setRetry] = useState(0)
+  const lock = useRef(false)
+  useEffect(() => {
+    if (!session) return
+    let active = true; const controller = new AbortController(); setLoaded(false); setError('')
+    loadBusinessProfile(session.user.id, id, controller.signal).then(data => { if (active) { setForm({ name: data.name, description: data.description || '' }); setLoaded(true) } }).catch(() => { if (active) setError('No pudimos cargar el negocio. Reintenta.') })
+    return () => { active = false; controller.abort() }
+  }, [id, session?.user.id, retry])
+  if (!ready) return <Page><Loading /></Page>
+  if (!session) return <Redirect href="/" />
+  async function save() {
+    if (lock.current) return
+    const parsed = businessProfileSchema.safeParse(form)
+    if (!parsed.success) { setError(parsed.error.issues[0].message); return }
+    lock.current = true; setBusy(true); setError('')
+    try { await saveBusinessProfile(session!.user.id, id, parsed.data, new AbortController().signal); setError('Perfil guardado.') }
+    catch (e) { setError(e instanceof Error ? e.message : 'No pudimos guardar.') }
+    finally { lock.current = false; setBusy(false) }
+  }
+  return <Page><Title>Mi negocio</Title><Message>{error}</Message>{!loaded ? error ? <Action title="Reintentar" onPress={() => setRetry(v => v + 1)} /> : <Loading /> : <>
+    <Card><Field label="Nombre comercial" value={form.name} onChangeText={name => setForm(v => ({ ...v, name }))} maxLength={100} editable={!busy} /><Field label="Descripción" value={form.description} onChangeText={description => setForm(v => ({ ...v, description }))} maxLength={2000} multiline editable={!busy} /><Action title={busy ? 'Guardando…' : 'Guardar perfil'} onPress={save} disabled={busy} /></Card>
+    <ScreenBoundary><Branches restaurantId={id} /></ScreenBoundary>
+  </>}</Page>
+}

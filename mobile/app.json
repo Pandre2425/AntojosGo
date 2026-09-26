@@ -1,0 +1,25 @@
+{
+  "expo": {
+    "name": "AntojosGo Expo",
+    "slug": "antojosgo-mobile",
+    "scheme": "antojosgo",
+    "version": "0.1.0",
+    "platforms": ["android"],
+    "userInterfaceStyle": "light",
+    "android": {
+      "package": "com.antojosgo.mobile",
+      "softwareKeyboardLayoutMode": "resize",
+      "permissions": ["ACCESS_COARSE_LOCATION", "ACCESS_FINE_LOCATION"]
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "AntojosGo usa tu ubicación para ordenar sedes cercanas. Si la niegas, puedes buscar por municipio o nombre."
+        }
+      ]
+    ]
+  }
+}

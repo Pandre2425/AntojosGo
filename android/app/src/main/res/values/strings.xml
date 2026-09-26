@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">AntojosGo</string>
+    <string name="title_activity_main">AntojosGo</string>
+    <string name="package_name">com.antojosgo.app</string>
+    <string name="custom_url_scheme">com.antojosgo.app</string>
+</resources>
