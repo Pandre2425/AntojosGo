@@ -16,6 +16,7 @@ module.exports = ({ config }) => {
       ...(config.plugins ?? []),
       ['expo-build-properties', { android: { usesCleartextTraffic: process.env.ALLOW_HTTP_API === '1' } }],
       './plugins/with-ninja-path',
+      './plugins/with-release-signing',
     ],
     extra: {
       ...config.extra,

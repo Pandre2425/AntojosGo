@@ -268,7 +268,14 @@ Planes verificados el 6 de octubre de 2026:
 
 El script comprueba primero que el backend responde. El APK resultante solo permite HTTPS y no muestra el selector de servidor.
 
-**Repartir el APK:** pasa el archivo `app-release.apk` (por Drive o WhatsApp) o usa Firebase App Distribution, que es gratis y no pide tarjeta. En el teléfono hay que permitir «instalar apps desconocidas». Mientras el APK esté firmado con la clave de depuración, para actualizarlo hay que desinstalar la versión anterior si se compiló en otra computadora.
+**Repartir el APK:** pasa el archivo `app-release.apk` (por Drive o WhatsApp) o usa Firebase App Distribution, que es gratis y no pide tarjeta. En el teléfono hay que permitir «instalar apps desconocidas».
+
+**Firma del APK.** El APK se firma con la clave propia del proyecto (SHA-1 `21:35:7A:F7:21:3C:67:D2:9C:FC:7C:D5:72:0B:A4:DE:01:9D:C6:D6`), nunca con la clave pública de depuración de React Native. Las actualizaciones solo se instalan encima si llevan esta misma firma.
+
+- La clave está en `C:\Users\pablo\.antojosgo\antojosgo-release.jks`, y su contraseña en el bloque `ANTOJOSGO_RELEASE_*` de `C:\Users\pablo\.gradle\gradle.properties`. Ninguno de los dos está en git.
+- **Guarda una copia de ambos** en un lugar seguro, fuera de esta computadora. Si se pierden, no se pueden publicar actualizaciones: todos tendrían que desinstalar y reinstalar.
+- Para compilar en otra computadora, copia los dos archivos a las mismas rutas.
+- `scripts/build-apk.ps1` se niega a compilar sin la clave, y al terminar verifica con `apksigner` que el APK no quedó firmado con la clave de depuración.
 
 **Publicar una actualización del APK** (la app avisa al abrirse):
 
