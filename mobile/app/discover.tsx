@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Redirect, router } from 'expo-router'
+import { router } from 'expo-router'
 import MapView, { Marker } from 'react-native-maps'
 import { View } from 'react-native'
 import { useSession } from '../src/session'
@@ -56,17 +56,15 @@ export default function Discover() {
   }, [])
 
   useEffect(() => {
-    if (!session) return
     active.current = true
     setGpsNote('Busca por platillo, restaurante o municipio. Puedes activar tu ubicación para buscar cerca.')
     void load('', null)
     return () => { active.current = false; request.current++ }
-  }, [session?.user.id, load])
+  }, [load])
 
   useEffect(() => { map.current?.animateToRegion(regionFor(items, coords)) }, [items, coords])
 
   if (!ready) return <Page><Loading /></Page>
-  if (!session) return <Redirect href="/" />
 
   const mapRegion = regionFor(items, coords)
 
@@ -126,7 +124,7 @@ export default function Discover() {
           <Action title="Ver sede" onPress={() => router.push({ pathname: '/sede/[id]', params: { id: item.id } })} disabled={busy} />
         </Card>
       ))}
-      <Action title="Volver al inicio" secondary onPress={() => router.replace('/home')} disabled={busy} />
+      <Action title="Volver al inicio" secondary onPress={() => router.replace(session ? '/home' : '/')} disabled={busy} />
     </Page>
   )
 }

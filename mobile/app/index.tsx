@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { Redirect } from 'expo-router'
+import { Redirect, router } from 'expo-router'
 import { supabase } from '../src/supabase'
 import { useSession } from '../src/session'
 import { Action, Card, Field, Loading, Message, Page, Title } from '../src/ui'
@@ -36,5 +36,5 @@ export default function Access() {
     <Message>{supabase ? message : 'Falta la configuración pública de Supabase. Revisa mobile/.env.local.'}</Message>
     <Action title={busy ? 'Procesando…' : register ? 'Crear cuenta' : 'Iniciar sesión'} onPress={submit} disabled={busy || !supabase} />
     <Action title={register ? 'Ya tengo cuenta' : 'Crear una cuenta'} secondary onPress={() => { setRegister(!register); setMessage('') }} disabled={busy} />
-  </Card><ServerSettings /></Page>
+  </Card><Action title="Buscar restaurantes sin cuenta" secondary onPress={() => router.push('/discover')} disabled={busy} /><ServerSettings /></Page>
 }

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type FormEvent } from 'react'
 import { webApi } from '@/lib/web-api'
-import { businessProfileSchema, type OwnedRestaurant } from '@/shared/contracts/restaurants'
+import { businessProfileSchema, RESTAURANT_CATEGORIES, type OwnedRestaurant } from '@/shared/contracts/restaurants'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
 import { Label } from './ui/label'
@@ -13,6 +13,7 @@ export default function BusinessProfileEditor({ userId, restaurant, onSaved, onC
 }) {
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
+  const [category, setCategory] = useState('')
   const [loading, setLoading] = useState(true)
   const [ready, setReady] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -23,7 +24,7 @@ export default function BusinessProfileEditor({ userId, restaurant, onSaved, onC
     let active = true
     setLoading(true); setError('')
     webApi.getRestaurant(restaurant.id).then((profile) => {
-      if (active) { setName(profile.name); setDescription(profile.description || ''); setReady(true) }
+      if (active) { setName(profile.name); setDescription(profile.description || ''); setCategory(profile.category || ''); setReady(true) }
     }).catch((err) => { if (active) setError(err.message) })
       .finally(() => { if (active) setLoading(false) })
     return () => { active = false }
@@ -33,12 +34,12 @@ export default function BusinessProfileEditor({ userId, restaurant, onSaved, onC
     event.preventDefault()
     if (busy) return
     setError(''); setNotice('')
-    const parsed = businessProfileSchema.safeParse({ name, description })
+    const parsed = businessProfileSchema.safeParse({ name, description, category: category || null })
     if (!parsed.success) { setError(parsed.error.issues[0].message); return }
     setBusy(true)
     try {
       const saved = await webApi.updateRestaurant(restaurant.id, parsed.data)
-      setName(saved.name); setDescription(saved.description || '')
+      setName(saved.name); setDescription(saved.description || ''); setCategory(saved.category || '')
       onSaved(saved); setNotice('Perfil guardado.')
     } catch (err) { setError(err instanceof Error ? err.message : 'No pudimos guardar el perfil.') }
     finally { setBusy(false) }
@@ -53,6 +54,7 @@ export default function BusinessProfileEditor({ userId, restaurant, onSaved, onC
     {loading ? <p role="status">Cargando perfil…</p> : !ready ? <Button onClick={() => setRetry((v) => v + 1)}>Reintentar carga</Button> :
       <form onSubmit={save} className="space-y-4">
         <div className="space-y-2"><Label htmlFor="profile-business-name">Nombre comercial</Label><Input id="profile-business-name" value={name} onChange={(e) => setName(e.target.value)} minLength={2} maxLength={100} required disabled={busy}/></div>
+        <div className="space-y-2"><Label htmlFor="profile-category">Tipo de comida</Label><select id="profile-category" value={category} onChange={(e) => setCategory(e.target.value)} disabled={busy} className="h-9 w-full rounded-md border bg-transparent px-3 text-sm"><option value="">Sin categoría</option>{RESTAURANT_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}</select><p className="text-sm text-muted-foreground">Ayuda a que te encuentren: buscar «{category || 'mariscos'}» muestra tu restaurante.</p></div>
         <div className="space-y-2"><Label htmlFor="profile-description">Descripción del restaurante</Label><Textarea id="profile-description" value={description} onChange={(e) => setDescription(e.target.value)} maxLength={2000} rows={5} disabled={busy} placeholder="Cuéntales qué hace especial a tu restaurante"/><p className="text-sm text-muted-foreground">{description.length}/2000 caracteres</p></div>
         <Button type="submit" disabled={busy}>{busy ? 'Guardando…' : 'Guardar perfil'}</Button>
       </form>}

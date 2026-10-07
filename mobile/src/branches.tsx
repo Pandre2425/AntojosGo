@@ -2,11 +2,13 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { router, useFocusEffect } from 'expo-router'
 import { randomUUID } from 'expo-crypto'
 import { api } from './api'
-import { branchInputSchema, type BranchInput, type RestaurantBranch } from '../../shared/contracts/branches'
-import { Action, Card, Field, Loading, Message, Title } from './ui'
-const empty: BranchInput = { name: '', department: '', municipality: '', address: '' }
+import { Switch, Text, View } from 'react-native'
+import { branchInputSchema, type RestaurantBranch } from '../../shared/contracts/branches'
+import { Action, Card, Field, Loading, Message, Title, colors } from './ui'
+type TextField = 'name' | 'department' | 'municipality' | 'address'
+const empty = { name: '', department: '', municipality: '', address: '', phone: '', whatsapp: false }
 const statusLabels: Record<RestaurantBranch['status'], string> = { draft: 'Borrador privado', published: 'Publicada', inactive: 'Inactiva' }
-const labels: Record<keyof BranchInput, string> = { name: 'Nombre de la sede', department: 'Departamento', municipality: 'Municipio', address: 'Dirección' }
+const labels: Record<TextField, string> = { name: 'Nombre de la sede', department: 'Departamento', municipality: 'Municipio', address: 'Dirección' }
 export default function Branches({ restaurantId }: { restaurantId: string }) {
   const [rows, setRows] = useState<RestaurantBranch[]>([])
   const [form, setForm] = useState(empty)
@@ -38,7 +40,7 @@ export default function Branches({ restaurantId }: { restaurantId: string }) {
   async function create() {
     if (lock.current) return
     const parsed = branchInputSchema.safeParse(form)
-    if (!parsed.success) { setSaveError('Completa nombre, departamento, municipio y dirección.'); return }
+    if (!parsed.success) { setSaveError(parsed.error.issues[0]?.path[0] === 'phone' ? parsed.error.issues[0].message : 'Completa nombre, departamento, municipio y dirección.'); return }
     lock.current = true; setBusy(true); setSaveError('')
     try {
       if (editing) { await api.updateBranch(editing, parsed.data); setEditing(null) }
@@ -50,8 +52,8 @@ export default function Branches({ restaurantId }: { restaurantId: string }) {
   }
   return <><Title>Sedes</Title><Message>{error}</Message>
     <Action title="Actualizar sedes" secondary onPress={() => setRetry(v => v + 1)} disabled={loading || busy} />
-    {loading ? <Loading /> : error ? null : rows.length ? rows.map(row => <Card key={row.id}><Title>{row.name}</Title><Message>{row.address}</Message><Message>{row.municipality}, {row.department}</Message><Message>{row.latitude === null ? 'Ubicación pendiente' : 'Ubicación guardada'} · {statusLabels[row.status]}</Message><Action title="Seleccionar ubicación en el mapa" onPress={() => router.push({ pathname: '/location/[id]', params: { id: row.id } })} disabled={busy} /><Action title="Editar datos" secondary onPress={() => { setEditing(row.id); setSaveError(''); setForm({ name: row.name, department: row.department, municipality: row.municipality, address: row.address }) }} disabled={busy} />{row.status === 'inactive' ? null : <Action title={row.status === 'published' ? 'Despublicar' : 'Publicar sede'} secondary onPress={() => togglePublish(row)} disabled={busy || (row.status !== 'published' && row.latitude === null)} />}{row.status === 'draft' && row.latitude === null ? <Message>Guarda la ubicación para poder publicar.</Message> : null}</Card>) : <Message>No hay sedes en esta página.</Message>}
+    {loading ? <Loading /> : error ? null : rows.length ? rows.map(row => <Card key={row.id}><Title>{row.name}</Title><Message>{row.address}</Message><Message>{row.municipality}, {row.department}</Message><Message>{row.latitude === null ? 'Ubicación pendiente' : 'Ubicación guardada'} · {statusLabels[row.status]}</Message><Action title="Seleccionar ubicación en el mapa" onPress={() => router.push({ pathname: '/location/[id]', params: { id: row.id } })} disabled={busy} /><Action title={row.opening_hours?.length ? 'Editar horario' : 'Agregar horario'} secondary onPress={() => router.push({ pathname: '/hours/[id]', params: { id: row.id } })} disabled={busy} /><Action title="Editar datos" secondary onPress={() => { setEditing(row.id); setSaveError(''); setForm({ name: row.name, department: row.department, municipality: row.municipality, address: row.address, phone: row.phone ?? '', whatsapp: row.whatsapp }) }} disabled={busy} />{row.status === 'inactive' ? null : <Action title={row.status === 'published' ? 'Despublicar' : 'Publicar sede'} secondary onPress={() => togglePublish(row)} disabled={busy || (row.status !== 'published' && row.latitude === null)} />}{row.status === 'draft' && row.latitude === null ? <Message>Guarda la ubicación para poder publicar.</Message> : null}</Card>) : <Message>No hay sedes en esta página.</Message>}
     <Message>Página {page + 1}</Message><Action title="Anterior" secondary disabled={page === 0 || loading || busy} onPress={() => setPage(v => v - 1)} /><Action title="Siguiente" secondary disabled={!more || loading || busy} onPress={() => setPage(v => v + 1)} />
-    <Card><Title>{editing ? 'Editar sede' : 'Añadir sede'}</Title>{(Object.keys(labels) as (keyof BranchInput)[]).map(key => <Field key={key} label={labels[key]} value={form[key]} onChangeText={value => setForm(v => ({ ...v, [key]: value }))} maxLength={key === 'address' ? 300 : 100} editable={!busy} />)}<Message>{saveError}</Message><Action title={busy ? 'Guardando…' : editing ? 'Guardar cambios' : 'Guardar sede'} onPress={create} disabled={busy} />{editing ? <Action title="Cancelar edición" secondary onPress={() => { setEditing(null); setForm(empty); setSaveError('') }} disabled={busy} /> : null}</Card>
+    <Card><Title>{editing ? 'Editar sede' : 'Añadir sede'}</Title>{(Object.keys(labels) as TextField[]).map(key => <Field key={key} label={labels[key]} value={form[key]} onChangeText={value => setForm(v => ({ ...v, [key]: value }))} maxLength={key === 'address' ? 300 : 100} editable={!busy} />)}<Field label="Teléfono (opcional)" value={form.phone} onChangeText={phone => setForm(v => ({ ...v, phone }))} keyboardType="phone-pad" maxLength={20} editable={!busy} placeholder="Ej. 7765 4321" /><View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}><Text style={{ color: colors.green, fontSize: 16, flex: 1 }}>Este número recibe WhatsApp</Text><Switch accessibilityLabel="Este número recibe WhatsApp" value={form.whatsapp} onValueChange={whatsapp => setForm(v => ({ ...v, whatsapp }))} disabled={busy} /></View><Message>{saveError}</Message><Action title={busy ? 'Guardando…' : editing ? 'Guardar cambios' : 'Guardar sede'} onPress={create} disabled={busy} />{editing ? <Action title="Cancelar edición" secondary onPress={() => { setEditing(null); setForm(empty); setSaveError('') }} disabled={busy} /> : null}</Card>
   </>
 }

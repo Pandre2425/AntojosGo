@@ -1,22 +1,23 @@
 import { useEffect, useState } from 'react'
-import { Image, View } from 'react-native'
-import { Redirect, router, useLocalSearchParams } from 'expo-router'
+import { Image, Linking, View } from 'react-native'
+import { router, useLocalSearchParams } from 'expo-router'
 import { useSession } from '../../src/session'
 import { api } from '../../src/api'
 import { ApiError } from '../../../lib/api-client'
-import type { PublicCatalogItem, PublicDish } from '../../../modules/catalog/data/public-catalog'
+import type { PublicBranchExtras, PublicCatalogItem, PublicDish } from '../../../modules/catalog/data/public-catalog'
+import { describeHours, isOpenNow } from '../../../shared/contracts/hours'
+import { phoneUrl, whatsappUrl } from '../../../shared/contracts/branches'
 import { Action, Card, Loading, Message, Page, Title } from '../../src/ui'
 
 export default function SedeDetail() {
-  const { session, ready } = useSession()
   const { id } = useLocalSearchParams<{ id: string }>()
-  const [data, setData] = useState<{ branch: PublicCatalogItem; menu: PublicDish[] } | null>(null)
+  const [data, setData] = useState<{ branch: PublicCatalogItem & PublicBranchExtras; menu: PublicDish[] } | null>(null)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
   const [retry, setRetry] = useState(0)
 
   useEffect(() => {
-    if (!session || !id) return
+    if (!id) return
     let active = true
     setLoading(true); setError('')
     api.getPublicBranch(String(id))
@@ -24,10 +25,8 @@ export default function SedeDetail() {
       .catch((e) => { if (active) { setData(null); setError(e instanceof ApiError && e.status === 404 ? 'Esta sede no está publicada o no existe.' : e instanceof Error ? e.message : 'No pudimos cargar la sede.') } })
       .finally(() => { if (active) setLoading(false) })
     return () => { active = false }
-  }, [session?.user.id, id, retry])
+  }, [id, retry])
 
-  if (!ready) return <Page><Loading /></Page>
-  if (!session) return <Redirect href="/" />
   const item = data?.branch
   return (
     <Page>
@@ -38,9 +37,13 @@ export default function SedeDetail() {
       {item ? (
         <Card>
           <Title>{item.name}</Title>
-          <Message>Sede: {item.branch_name}</Message>
+          <Message>Sede: {item.branch_name}{item.category ? ` · ${item.category}` : ''}</Message>
           <Message>{item.address}, {item.municipality}, {item.department}</Message>
           {item.description ? <Message>{item.description}</Message> : <Message>Sin información de descripción.</Message>}
+          <FavoriteToggle branchId={item.id} />
+          <HoursInfo hours={item.opening_hours ?? []} />
+          {item.phone ? <Action title={`Llamar · ${item.phone}`} secondary onPress={() => void Linking.openURL(phoneUrl(item.phone!))} /> : null}
+          {item.phone && item.whatsapp ? <Action title="Escribir por WhatsApp" secondary onPress={() => void Linking.openURL(whatsappUrl(item.phone!))} /> : null}
           {item.latitude != null && item.longitude != null ? (
             <Message>Ubicación: {item.latitude.toFixed(5)}, {item.longitude.toFixed(5)}</Message>
           ) : (
@@ -62,4 +65,32 @@ export default function SedeDetail() {
       <Action title="Volver a buscar" secondary onPress={() => router.back()} />
     </Page>
   )
+}
+
+function HoursInfo({ hours }: { hours: NonNullable<PublicBranchExtras['opening_hours']> }) {
+  const open = isOpenNow(hours)
+  if (open === null) return <Message>Horario sin información.</Message>
+  return <><Message>{open ? 'Abierto ahora' : 'Cerrado ahora'}</Message><Message>{describeHours(hours).join('\n')}</Message></>
+}
+
+/** Only for signed-in diners; guests can browse without an account. */
+function FavoriteToggle({ branchId }: { branchId: string }) {
+  const { session } = useSession()
+  const [saved, setSaved] = useState<boolean | null>(null)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+  useEffect(() => {
+    if (!session) return
+    let active = true
+    api.listFavorites().then(rows => { if (active) setSaved(rows.some(r => r.id === branchId)) }).catch(() => { if (active) setSaved(null) })
+    return () => { active = false }
+  }, [session?.user.id, branchId])
+  if (!session || saved === null) return null
+  async function toggle() {
+    setBusy(true); setError('')
+    try { await (saved ? api.removeFavorite(branchId) : api.addFavorite(branchId)); setSaved(!saved) }
+    catch (e) { setError(e instanceof Error ? e.message : 'No pudimos guardar el favorito.') }
+    finally { setBusy(false) }
+  }
+  return <><Action title={busy ? 'Guardando…' : saved ? 'Quitar de favoritos' : 'Guardar en favoritos'} secondary={saved} onPress={toggle} disabled={busy} /><Message>{error}</Message></>
 }

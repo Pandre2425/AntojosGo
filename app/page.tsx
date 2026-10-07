@@ -8,14 +8,16 @@ import ModuleBoundary, { ModuleLoading } from "@/components/module-boundary"
 import MobileDiscover from "@/components/mobile-discover"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Search, Compass, User, ChefHat } from "lucide-react"
+import { Search, Compass, Heart, User, ChefHat } from "lucide-react"
 const CustomerCatalog = dynamic(() => import("@/components/customer-catalog"), { loading: ModuleLoading })
+const FavoriteBranches = dynamic(() => import("@/components/customer-catalog").then((m) => m.FavoriteBranches), { loading: ModuleLoading })
 const UserProfile = dynamic(() => import("@/components/user-profile"), { loading: ModuleLoading })
 
-type Tab = "home" | "search" | "profile"
+type Tab = "home" | "search" | "favorites" | "profile"
 const tabs: { id: Tab; label: string; icon: typeof Compass }[] = [
   { id: "home", label: "Descubrir", icon: Compass },
   { id: "search", label: "Explorar", icon: Search },
+  { id: "favorites", label: "Favoritos", icon: Heart },
   { id: "profile", label: "Mi perfil", icon: User },
 ]
 
@@ -45,6 +47,7 @@ export default function AntojosGoApp() {
         <ModuleBoundary key={activeTab} name="esta sección">
           {activeTab === "home" && <MobileDiscover name={typeof user?.user_metadata?.display_name === "string" ? user.user_metadata.display_name : undefined} onSearch={(query) => { setInitialQuery(query); setActiveTab("search") }} />}
           {activeTab === "search" && <CustomerCatalog initialQuery={initialQuery} />}
+          {activeTab === "favorites" && <FavoriteBranches onLogin={() => setShowAuth(true)} />}
           {activeTab === "profile" && (
             <Card className="border-primary/20">
               <CardHeader className="pb-2"><CardTitle className="text-lg flex items-center gap-2"><User className="w-5 h-5 text-primary" />Mi perfil</CardTitle></CardHeader>

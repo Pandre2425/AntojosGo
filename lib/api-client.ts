@@ -1,5 +1,6 @@
 import { createBoundedFetch } from './bounded-fetch'
-import type { PublicCatalogItem, PublicDish } from '../modules/catalog/data/public-catalog'
+import type { PublicBranchExtras, PublicCatalogItem, PublicDish } from '../modules/catalog/data/public-catalog'
+import type { OpeningHours } from '../shared/contracts/hours'
 import type { AccountProfile } from '../shared/contracts/accounts'
 import type { BranchInput, BranchLocation, RestaurantBranch } from '../shared/contracts/branches'
 import type { Dish, DishInput, DishPatch } from '../shared/contracts/menu'
@@ -67,6 +68,7 @@ export function createApiClient({ baseUrl, getToken, refreshToken }: Options) {
     getBranch: (id: string) => call<RestaurantBranch>('GET', `/branches/${id}`),
     updateBranch: (id: string, input: BranchInput) => call<RestaurantBranch>('PATCH', `/branches/${id}`, input),
     saveLocation: (id: string, location: BranchLocation) => call<RestaurantBranch>('PUT', `/branches/${id}/location`, location),
+    saveHours: (id: string, hours: OpeningHours) => call<RestaurantBranch>('PUT', `/branches/${id}/hours`, hours),
     setPublished: (id: string, publish: boolean) => call<{ status: RestaurantBranch['status'] }>('POST', `/branches/${id}/${publish ? 'publish' : 'unpublish'}`),
     listDishes: (restaurantId: string) => call<{ items: Dish[] }>('GET', `/restaurants/${restaurantId}/dishes`).then(r => r.items),
     createDish: (restaurantId: string, input: DishInput) => call<Dish>('POST', `/restaurants/${restaurantId}/dishes`, input),
@@ -77,9 +79,12 @@ export function createApiClient({ baseUrl, getToken, refreshToken }: Options) {
       call<{ path: string; token: string; signedUrl: string; maxBytes: number; contentType: string }>('POST', `/dishes/${id}/image/upload-url`, { contentType }),
     confirmDishImage: (id: string, path: string) => call<{ image_url: string }>('PUT', `/dishes/${id}/image`, { path }),
     removeDishImage: (id: string) => call<{ image_url: null }>('DELETE', `/dishes/${id}/image`),
+    listFavorites: () => call<{ items: PublicCatalogItem[] }>('GET', '/me/favorites').then(r => r.items),
+    addFavorite: (branchId: string) => call<{ ok: true }>('PUT', `/me/favorites/${branchId}`),
+    removeFavorite: (branchId: string) => call<{ ok: true }>('DELETE', `/me/favorites/${branchId}`),
     searchCatalog: (params: { q?: string; lat?: number; lng?: number; radiusMeters?: number; limit?: number }) =>
       call<{ items: PublicCatalogItem[]; count: number }>('GET', `/catalog/search${qs(params)}`, undefined, {}, false),
-    getPublicBranch: (id: string) => call<{ branch: PublicCatalogItem; menu: PublicDish[] }>('GET', `/branches/${id}/public`, undefined, {}, false),
+    getPublicBranch: (id: string) => call<{ branch: PublicCatalogItem & PublicBranchExtras; menu: PublicDish[] }>('GET', `/branches/${id}/public`, undefined, {}, false),
   }
 }
 

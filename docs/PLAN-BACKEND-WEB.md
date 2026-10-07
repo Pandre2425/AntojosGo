@@ -217,6 +217,15 @@ Problemas resueltos al compilar:
 - Móvil: el mapa de búsqueda ya no vuelve a su posición en cada render.
 - Verificado: 34 pruebas, typecheck web y móvil, `next build`, navegador sin cabeza en modo producción (0 errores de consola o CSP).
 
+### Avance del 7 de octubre de 2026
+
+- **Comensal sin cuenta en el móvil:** búsqueda y detalle accesibles desde el login («Buscar restaurantes sin cuenta»).
+- **Horarios por sede** (`20261007090000_branch_hours`): `opening_hours` jsonb validado por `shared/contracts/hours.ts`; `PUT /branches/:id/hours`; «Abierto ahora» calculado en hora de Guatemala (UTC-6 fija). Editor en web y móvil.
+- **Contacto y categoría** (`20261007100000_contact_and_category`): categoría de lista fija por negocio (restricción en la base), teléfono y WhatsApp por sede; la búsqueda también encuentra por categoría. Los campos son opcionales en la API para que un cliente viejo no los borre.
+- **Favoritos** (`20261007110000_favorites`, índice en `20261007120000`): tabla con RLS (solo propias, solo sedes publicadas, máx. 200); `GET /me/favorites`, `PUT|DELETE /me/favorites/:branchId`. Pestaña en la web y pantalla en el móvil.
+- Datos públicos adicionales en `get_public_branch_extras` (jsonb), ampliable con `CREATE OR REPLACE` sin `DROP`.
+- Verificado: 29 pruebas, typecheck web y móvil, `next build`, navegador sin cabeza (0 errores), rutas nuevas devuelven 401 sin sesión, RLS de favoritos simulada con dos usuarios reales dentro de una transacción revertida.
+
 ## 8. Decisiones pendientes del usuario
 
 1. Proveedor de mapas del móvil.

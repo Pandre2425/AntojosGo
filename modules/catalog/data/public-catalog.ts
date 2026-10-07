@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { dbError } from '../../../lib/app-error'
+import type { OpeningHours } from '../../../shared/contracts/hours'
 
 export type PublicCatalogItem = {
   id: string
@@ -60,6 +61,15 @@ export async function getPublicMenu(client: SupabaseClient, branchId: string): P
   const { data, error } = await client.rpc('get_public_dishes', { p_branch_id: branchId })
   if (error) throw dbError(error, 'No pudimos cargar el menú.')
   return ((data || []) as PublicDish[]).map(d => ({ ...d, price: Number(d.price) }))
+}
+
+/** Extra public data of a published branch (hours, …); empty object for drafts or unknown ids. */
+export type PublicBranchExtras = { opening_hours?: OpeningHours; phone?: string | null; whatsapp?: boolean; category?: string | null }
+export async function getPublicBranchExtras(client: SupabaseClient, id: string): Promise<PublicBranchExtras> {
+  if (!UUID.test(id)) return {}
+  const { data, error } = await client.rpc('get_public_branch_extras', { p_id: id })
+  if (error) throw dbError(error, 'No pudimos cargar la sede. Revisa la conexión e intenta de nuevo.')
+  return (data ?? {}) as PublicBranchExtras
 }
 
 export async function getPublishedBranch(

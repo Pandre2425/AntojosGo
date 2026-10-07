@@ -10,7 +10,7 @@ const notFound = 'No encontramos ese restaurante en tu cuenta.'
 
 export async function loadBusinessProfile(db: SupabaseClient, userId: string, restaurantId: string): Promise<BusinessProfile> {
   uuid.parse(restaurantId)
-  const { data, error } = await db.from('restaurants').select('id, name, auth_owner_id, description')
+  const { data, error } = await db.from('restaurants').select('id, name, auth_owner_id, description, category')
     .eq('auth_owner_id', userId).eq('id', restaurantId).single()
   if (error) throw dbError(error, 'No pudimos cargar el perfil. Intenta nuevamente.', notFound)
   return data as BusinessProfile
@@ -21,7 +21,7 @@ export async function saveBusinessProfile(db: SupabaseClient, userId: string, re
   const values = businessProfileSchema.parse(input)
   const { data, error } = await db.from('restaurants').update(values)
     .eq('auth_owner_id', userId).eq('id', restaurantId)
-    .select('id, name, auth_owner_id, description').single()
+    .select('id, name, auth_owner_id, description, category').single()
   if (error?.code === '23505') throw new AppError('Ya tienes otro restaurante con ese nombre.', 409, 'conflict')
   if (error) throw dbError(error, 'No pudimos confirmar el guardado. Puedes volver a intentar.', notFound)
   return data as BusinessProfile

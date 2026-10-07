@@ -1,10 +1,11 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { z } from 'zod'
 import { AppError, dbError } from '../../../lib/app-error'
+import { openingHoursSchema, type OpeningHours } from '../../../shared/contracts/hours'
 import { branchInputSchema, branchLocationSchema, branchPageSize, type BranchInput, type BranchLocation, type RestaurantBranch } from '../../../shared/contracts/branches'
 
 // RLS (branches_*_own policies) restricts every query to the owner's branches.
-const fields = 'id,restaurant_id,name,department,municipality,address,status,latitude,longitude'
+const fields = 'id,restaurant_id,name,department,municipality,address,status,latitude,longitude,opening_hours,phone,whatsapp'
 const uuid = z.string().uuid()
 const notFound = 'No encontramos esa sede en tu cuenta.'
 
@@ -51,6 +52,14 @@ export async function saveBranchLocation(db: SupabaseClient, branchId: string, l
   const values = branchLocationSchema.parse(location)
   const { data, error } = await db.from('restaurant_branches').update(values).eq('id', branchId).select(fields).single()
   if (error) throw dbError(error, 'No pudimos confirmar la ubicación. Conservamos el punto para reintentar.', notFound)
+  return data as RestaurantBranch
+}
+
+export async function saveBranchHours(db: SupabaseClient, branchId: string, hours: OpeningHours): Promise<RestaurantBranch> {
+  uuid.parse(branchId)
+  const opening_hours = openingHoursSchema.parse(hours)
+  const { data, error } = await db.from('restaurant_branches').update({ opening_hours }).eq('id', branchId).select(fields).single()
+  if (error) throw dbError(error, 'No pudimos guardar el horario.', notFound)
   return data as RestaurantBranch
 }
 
