@@ -45,8 +45,8 @@ export default function Hours() {
           </View>
         </View>
         {d.closed ? null : <View style={{ flexDirection: 'row', gap: 12 }}>
-          <View style={{ flex: 1 }}><Field label="Abre" value={d.open} onChangeText={open => set(i, { open })} keyboardType="numbers-and-punctuation" maxLength={5} editable={!busy} /></View>
-          <View style={{ flex: 1 }}><Field label="Cierra" value={d.close} onChangeText={close => set(i, { close })} keyboardType="numbers-and-punctuation" maxLength={5} editable={!busy} /></View>
+          <View style={{ flex: 1 }}><Field label="Abre" accessibilityLabel={`${DAY_NAMES[d.day]}, abre`} value={d.open} onChangeText={open => set(i, { open })} keyboardType="numbers-and-punctuation" maxLength={5} editable={!busy} /></View>
+          <View style={{ flex: 1 }}><Field label="Cierra" accessibilityLabel={`${DAY_NAMES[d.day]}, cierra`} value={d.close} onChangeText={close => set(i, { close })} keyboardType="numbers-and-punctuation" maxLength={5} editable={!busy} /></View>
         </View>}
       </Card>)}
       <Action title={busy ? 'Guardando…' : 'Guardar horario'} onPress={save} disabled={busy} />
