@@ -226,6 +226,14 @@ Problemas resueltos al compilar:
 - Datos públicos adicionales en `get_public_branch_extras` (jsonb), ampliable con `CREATE OR REPLACE` sin `DROP`.
 - Verificado: 29 pruebas, typecheck web y móvil, `next build`, navegador sin cabeza (0 errores), rutas nuevas devuelven 401 sin sesión, RLS de favoritos simulada con dos usuarios reales dentro de una transacción revertida.
 
+### Avance del 8 de octubre de 2026: asistente del comensal
+
+- **Asistente con reglas primero** (`shared/contracts/assistant.ts`): diccionario de antojos chapines, intenciones (cerca, abierto ahora, barato, otra opción, menú) y seguimiento de la conversación. Las reglas y la IA solo proponen filtros; la búsqueda (`assistant_search`, migración `20261008090000`) decide qué existe y explica qué platillo coincidió.
+- **IA de respaldo** con Gemini Flash-Lite (`lib/server/gemini.ts`), opcional mediante `GEMINI_API_KEY` en el servidor. Solo se usa cuando las reglas no entienden, o cuando las palabras desconocidas no dan resultados, y solo se le envía la frase.
+- **Interfaz:** `POST /api/v1/assistant`, pantalla de chat en el móvil y pestaña «Para ti» en la web. La caja «¿Qué se te antoja?» de la web también envía la frase al asistente.
+- **Etiquetas por platillo** (picante, vegetariano, frío, desayuno…) en los menús de web y móvil.
+- **Corrección de fondo:** `createBoundedFetch` decodificaba como Latin-1 en React Native todas las respuestas del servidor con acentos. Además, `build-apk.ps1` ahora siempre vuelve a empaquetar el JavaScript, porque Gradle no vigila `lib/` ni `shared/`.
+
 ## 8. Decisiones pendientes del usuario
 
 1. Proveedor de mapas del móvil.

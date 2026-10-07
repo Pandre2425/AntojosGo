@@ -11,6 +11,7 @@ type Params = Record<string, string>
 type Handler<C> = (request: NextRequest, ctx: C & { params: Params }) => Promise<unknown>
 
 const MAX_BODY_BYTES = 100_000
+const JSON_UTF8 = 'application/json; charset=utf-8'
 const fetchSupabase = createBoundedFetch(10_000)
 
 /**
@@ -30,6 +31,8 @@ export function route<C extends object = AuthContext>(handler: Handler<C>, optio
       const result = await handler(request, ctx as unknown as C & { params: Params })
       const response = result instanceof Response ? result : NextResponse.json(result ?? { ok: true })
       response.headers.set('x-request-id', requestId)
+      // Android's HTTP stack decodes JSON without an explicit charset as Latin-1 ("EncontrÃ©").
+      if (response.headers.get('content-type')?.startsWith('application/json')) response.headers.set('content-type', JSON_UTF8)
       if (options.auth !== false) response.headers.set('cache-control', 'no-store')
       return response
     } catch (error) {
@@ -75,5 +78,5 @@ export function errorResponse(error: unknown, requestId: string) {
   if (error instanceof AppError) ({ status, code, message } = error)
   else if (error instanceof ZodError) { status = 400; code = 'invalid'; message = error.issues[0]?.message ?? 'Revisa los datos enviados.' }
   if (status >= 500) console.error(`[api ${requestId}]`, error instanceof AppError ? error.message : error)
-  return NextResponse.json({ error: { code, message }, requestId }, { status, headers: { 'x-request-id': requestId, 'cache-control': 'no-store' } })
+  return NextResponse.json({ error: { code, message }, requestId }, { status, headers: { 'x-request-id': requestId, 'cache-control': 'no-store', 'content-type': JSON_UTF8 } })
 }

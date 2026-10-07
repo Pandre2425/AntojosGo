@@ -42,7 +42,8 @@ try {
   if ($LASTEXITCODE) { throw 'prebuild failed' }
   Set-Location android
   $abis = if ($Emulator) { 'arm64-v8a,x86_64' } else { 'arm64-v8a' }
-  .\gradlew.bat assembleRelease "-PreactNativeArchitectures=$abis" --console=plain
+  # --rerun on the JS bundle: Gradle does not watch ../lib or ../shared, so a change there alone would ship a stale bundle.
+  .\gradlew.bat :app:createBundleReleaseJsAndAssets --rerun assembleRelease "-PreactNativeArchitectures=$abis" --console=plain
   if ($LASTEXITCODE) { throw 'gradle build failed' }
   $apk = 'app\build\outputs\apk\release\app-release.apk'
   if (-not (Test-Path $apk)) { throw 'No se generó app-release.apk firmado (¿clave de firma inválida?).' }

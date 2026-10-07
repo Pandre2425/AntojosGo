@@ -9,7 +9,10 @@ export function createBoundedFetch(timeoutMs = 15000, transport: typeof fetch = 
     const timer = setTimeout(() => controller.abort(new DOMException('Request timed out', 'TimeoutError')), timeoutMs)
     try {
       const response = await transport(input, { ...init, signal: controller.signal })
-      const body = await response.arrayBuffer()
+      // Text is read as text: React Native's Response turns an ArrayBuffer body back into a string byte by
+      // byte (Latin-1), so "é" would become "Ã©". Binary bodies (e.g. image checks on the server) stay bytes.
+      const textual = /^(text\/|application\/([\w.+-]*\+)?json)/i.test(response.headers.get('content-type') ?? '')
+      const body = textual ? await response.text() : await response.arrayBuffer()
       return new Response([204, 205, 304].includes(response.status) ? null : body, {
         status: response.status, statusText: response.statusText, headers: response.headers,
       })
