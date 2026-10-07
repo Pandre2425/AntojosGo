@@ -115,7 +115,7 @@ function FavoriteButton({ branchId }: { branchId: string }) {
   return <div><Button variant="outline" aria-pressed={saved} disabled={busy} onClick={toggle}><Heart className={`mr-1 h-4 w-4 ${saved ? 'fill-primary text-primary' : ''}`} />{saved ? 'En favoritos' : 'Guardar en favoritos'}</Button>{error && <p role="alert" className="text-sm text-red-700">{error}</p>}</div>
 }
 
-function BranchDetail({ id, onBack }: { id: string; onBack: () => void }) {
+export function BranchDetail({ id, onBack }: { id: string; onBack: () => void }) {
   const [data, setData] = useState<{ branch: PublicCatalogItem & PublicBranchExtras; menu: PublicDish[] } | null>(null)
   const [error, setError] = useState('')
   const [retry, setRetry] = useState(0)

@@ -2,13 +2,13 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { webApi } from '@/lib/web-api'
 import { uploadDishImage } from '@/lib/web-image-upload'
-import { dishInputSchema, type Dish, type DishPatch } from '@/shared/contracts/menu'
+import { DISH_TAGS, DISH_TAG_LABELS, dishInputSchema, type Dish, type DishPatch, type DishTag } from '@/shared/contracts/menu'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
 import { Label } from './ui/label'
 import { Textarea } from './ui/textarea'
 
-const empty = { name: '', price: '', category: '', description: '' }
+const empty = { name: '', price: '', category: '', description: '', tags: [] as DishTag[] }
 const money = (v: number) => `Q${v.toFixed(2)}`
 
 export default function RestaurantMenu({ restaurantId, restaurantName, onClose }: { restaurantId: string; restaurantName: string; onClose: () => void }) {
@@ -59,12 +59,12 @@ export default function RestaurantMenu({ restaurantId, restaurantName, onClose }
           <tbody>{dishes.map((dish) => <tr key={dish.id} className="border-b align-top">
             <td className="py-3 pr-3"><div className="flex gap-3">
               {dish.image_url ? <img src={dish.image_url} alt={`Foto de ${dish.name}`} className="h-14 w-14 shrink-0 rounded-lg object-cover" /> : <div aria-hidden className="h-14 w-14 shrink-0 rounded-lg bg-muted" />}
-              <div><p className="font-medium">{dish.name}</p><p className="text-muted-foreground">{[dish.category, dish.description].filter(Boolean).join(' · ')}</p></div>
+              <div><p className="font-medium">{dish.name}</p><p className="text-muted-foreground">{[dish.category, dish.description].filter(Boolean).join(' · ')}</p>{dish.tags?.length ? <p className="text-xs text-muted-foreground">{dish.tags.map((t) => DISH_TAG_LABELS[t]).join(' · ')}</p> : null}</div>
             </div></td>
             <td className="py-3 pr-3 whitespace-nowrap">{money(dish.price)}</td>
             <td className="py-3 pr-3">{dish.status === 'published' ? 'Visible' : 'Oculto'}{dish.is_available ? '' : ' · Agotado'}</td>
             <td className="py-3"><div className="flex flex-wrap gap-2">
-              <Button size="sm" variant="outline" disabled={busy} onClick={() => { setEditing(dish.id); setError(''); setForm({ name: dish.name, price: dish.price.toFixed(2), category: dish.category ?? '', description: dish.description ?? '' }) }}>Editar</Button>
+              <Button size="sm" variant="outline" disabled={busy} onClick={() => { setEditing(dish.id); setError(''); setForm({ name: dish.name, price: dish.price.toFixed(2), category: dish.category ?? '', description: dish.description ?? '', tags: dish.tags ?? [] }) }}>Editar</Button>
               <Button size="sm" variant="outline" disabled={busy} onClick={() => patch(dish, { status: dish.status === 'published' ? 'draft' : 'published' }, dish.status === 'published' ? 'Platillo ocultado.' : 'Platillo visible en el menú.')}>{dish.status === 'published' ? 'Ocultar' : 'Mostrar'}</Button>
               <Button size="sm" variant="outline" disabled={busy} onClick={() => patch(dish, { is_available: !dish.is_available }, dish.is_available ? 'Marcado como agotado.' : 'Marcado como disponible.')}>{dish.is_available ? 'Marcar agotado' : 'Marcar disponible'}</Button>
               <label className={`inline-flex h-8 cursor-pointer items-center rounded-md border px-3 text-sm ${busy ? 'pointer-events-none opacity-50' : ''}`}>
@@ -84,6 +84,9 @@ export default function RestaurantMenu({ restaurantId, restaurantName, onClose }
         <div className="space-y-1"><Label htmlFor="dish-category">Categoría (opcional)</Label><Input id="dish-category" value={form.category} maxLength={60} disabled={busy} onChange={(e) => setForm((v) => ({ ...v, category: e.target.value }))} /></div>
       </div>
       <div className="space-y-1"><Label htmlFor="dish-description">Descripción (opcional)</Label><Textarea id="dish-description" value={form.description} maxLength={500} rows={3} disabled={busy} onChange={(e) => setForm((v) => ({ ...v, description: e.target.value }))} /></div>
+      <fieldset className="space-y-2"><legend className="text-sm font-medium">Etiquetas <span className="font-normal text-muted-foreground">(ayudan a que el asistente encuentre el platillo)</span></legend>
+        <div className="flex flex-wrap gap-3">{DISH_TAGS.map((tag) => <label key={tag} className="flex items-center gap-1.5 text-sm"><input type="checkbox" disabled={busy} checked={form.tags.includes(tag)} onChange={(e) => setForm((v) => ({ ...v, tags: e.target.checked ? [...v.tags, tag] : v.tags.filter((t) => t !== tag) }))} />{DISH_TAG_LABELS[tag]}</label>)}</div>
+      </fieldset>
       <div className="flex flex-wrap gap-2"><Button type="submit" disabled={busy}>{busy ? 'Guardando…' : editing ? 'Guardar cambios' : 'Agregar platillo'}</Button>{editing && <Button type="button" variant="outline" disabled={busy} onClick={() => { setEditing(null); setForm(empty); setError('') }}>Cancelar edición</Button>}</div>
     </form>
   </section>

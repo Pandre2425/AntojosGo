@@ -13,7 +13,8 @@ export default function Home() {
       <Card>
         <Title>Comensal</Title>
         <Message>Busca sedes publicadas cerca de ti. Sin datos inventados.</Message>
-        <Action title="Buscar antojos" onPress={() => router.push('/discover')} />
+        <Action title="Pregúntale a AntojosGo" onPress={() => router.push('/assistant')} />
+        <Action title="Buscar antojos" secondary onPress={() => router.push('/discover')} />
         <Action title="Mis favoritos" secondary onPress={() => router.push('/favorites')} />
       </Card>
       <Card>

@@ -1,13 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
-import { Alert, Image } from 'react-native'
+import { Alert, Image, Pressable, Text, View } from 'react-native'
 import { Redirect, useLocalSearchParams } from 'expo-router'
 import { useSession } from '../../src/session'
-import { Action, Card, Field, Loading, Message, Page, Title } from '../../src/ui'
+import { Action, Card, Field, Loading, Message, Page, Title, colors } from '../../src/ui'
 import { api } from '../../src/api'
 import { pickAndUploadDishPhoto } from '../../src/dish-photo'
-import { dishInputSchema, type Dish } from '../../../shared/contracts/menu'
+import { DISH_TAGS, DISH_TAG_LABELS, dishInputSchema, type Dish, type DishTag } from '../../../shared/contracts/menu'
 
-const empty = { name: '', price: '', category: '', description: '' }
+const empty = { name: '', price: '', category: '', description: '', tags: [] as DishTag[] }
 const money = (v: number) => `Q${v.toFixed(2)}`
 
 export default function Menu() {
@@ -46,7 +46,7 @@ export default function Menu() {
   }
   function edit(dish: Dish) {
     setEditing(dish.id); setFormError('')
-    setForm({ name: dish.name, price: dish.price.toFixed(2), category: dish.category ?? '', description: dish.description ?? '' })
+    setForm({ name: dish.name, price: dish.price.toFixed(2), category: dish.category ?? '', description: dish.description ?? '', tags: dish.tags ?? [] })
   }
 
   return <Page><Title>Menú</Title><Message>{error}</Message>
@@ -71,6 +71,11 @@ export default function Menu() {
       <Field label="Precio (Q)" value={form.price} onChangeText={price => setForm(v => ({ ...v, price }))} keyboardType="decimal-pad" maxLength={9} editable={!busy} />
       <Field label="Categoría (opcional)" value={form.category} onChangeText={category => setForm(v => ({ ...v, category }))} maxLength={60} editable={!busy} />
       <Field label="Descripción (opcional)" value={form.description} onChangeText={description => setForm(v => ({ ...v, description }))} maxLength={500} multiline editable={!busy} />
+      <Text style={{ color: colors.green, fontSize: 16 }}>Etiquetas (ayudan a que te encuentren)</Text>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>{DISH_TAGS.map(tag => { const on = form.tags.includes(tag); return <Pressable key={tag} accessibilityRole="checkbox" accessibilityState={{ checked: on, disabled: busy }} disabled={busy}
+        onPress={() => setForm(v => ({ ...v, tags: on ? v.tags.filter(t => t !== tag) : [...v.tags, tag] }))}
+        style={{ paddingVertical: 10, paddingHorizontal: 14, borderRadius: 20, borderWidth: 1, borderColor: colors.green, backgroundColor: on ? colors.green : 'white', minHeight: 44, justifyContent: 'center' }}>
+        <Text style={{ color: on ? 'white' : colors.green }}>{DISH_TAG_LABELS[tag]}</Text></Pressable> })}</View>
       <Message>{formError}</Message>
       <Action title={busy ? 'Guardando…' : editing ? 'Guardar cambios' : 'Agregar platillo'} onPress={save} disabled={busy} />
       {editing ? <Action title="Cancelar edición" secondary onPress={() => { setEditing(null); setForm(empty); setFormError('') }} disabled={busy} /> : null}

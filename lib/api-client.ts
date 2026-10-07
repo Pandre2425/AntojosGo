@@ -1,6 +1,8 @@
 import { createBoundedFetch } from './bounded-fetch'
 import type { PublicBranchExtras, PublicCatalogItem, PublicDish } from '../modules/catalog/data/public-catalog'
 import type { OpeningHours } from '../shared/contracts/hours'
+import type { AssistantContext } from '../shared/contracts/assistant'
+import type { AssistantResponse } from '../modules/catalog/data/assistant'
 import type { AccountProfile } from '../shared/contracts/accounts'
 import type { BranchInput, BranchLocation, RestaurantBranch } from '../shared/contracts/branches'
 import type { Dish, DishInput, DishPatch } from '../shared/contracts/menu'
@@ -82,6 +84,9 @@ export function createApiClient({ baseUrl, getToken, refreshToken }: Options) {
     listFavorites: () => call<{ items: PublicCatalogItem[] }>('GET', '/me/favorites').then(r => r.items),
     addFavorite: (branchId: string) => call<{ ok: true }>('PUT', `/me/favorites/${branchId}`),
     removeFavorite: (branchId: string) => call<{ ok: true }>('DELETE', `/me/favorites/${branchId}`),
+    /** Diner assistant turn; send back the returned context with the next message. */
+    assistant: (message: string, context?: AssistantContext, location?: { latitude: number; longitude: number }) =>
+      call<AssistantResponse>('POST', '/assistant', { message, context, location }, {}, false),
     searchCatalog: (params: { q?: string; lat?: number; lng?: number; radiusMeters?: number; limit?: number }) =>
       call<{ items: PublicCatalogItem[]; count: number }>('GET', `/catalog/search${qs(params)}`, undefined, {}, false),
     getPublicBranch: (id: string) => call<{ branch: PublicCatalogItem & PublicBranchExtras; menu: PublicDish[] }>('GET', `/branches/${id}/public`, undefined, {}, false),

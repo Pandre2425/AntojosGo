@@ -2,6 +2,14 @@ import { z } from 'zod'
 
 const optionalText = (max: number) => z.string().trim().max(max).transform(v => v || null).nullable().default(null)
 
+/** Same list as the foods_tags_allowed constraint (supabase/migrations/20261008090000_assistant_search.sql). */
+export const DISH_TAGS = ['picante', 'vegetariano', 'vegano', 'sin_gluten', 'desayuno', 'postre', 'frio', 'caliente', 'bebida'] as const
+export type DishTag = typeof DISH_TAGS[number]
+export const DISH_TAG_LABELS: Record<DishTag, string> = {
+  picante: 'Picante', vegetariano: 'Vegetariano', vegano: 'Vegano', sin_gluten: 'Sin gluten', desayuno: 'Desayuno',
+  postre: 'Postre', frio: 'Frío', caliente: 'Caliente', bebida: 'Bebida',
+}
+
 /** Mirrors the foods_* CHECK constraints in supabase/migrations/20261002100000_menu_foods.sql. */
 export const dishInputSchema = z.object({
   name: z.string().trim().min(1, 'Escribe el nombre del platillo.').max(120),
@@ -13,6 +21,8 @@ export const dishInputSchema = z.object({
   ),
   category: optionalText(60),
   description: optionalText(500),
+  // Optional so a client that does not send them never clears them.
+  tags: z.array(z.enum(DISH_TAGS)).max(DISH_TAGS.length).transform(t => [...new Set(t)]).optional(),
 })
 /** Raw input (price may be "35,50"); adapters parse it with dishInputSchema. */
 export type DishInput = z.input<typeof dishInputSchema>
@@ -35,4 +45,5 @@ export interface Dish {
   is_available: boolean
   /** Storage path from the DB; the API replaces it with a public URL. */
   image_url: string | null
+  tags: DishTag[]
 }

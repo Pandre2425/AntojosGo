@@ -4,7 +4,7 @@ import { AppError, dbError } from '../../../lib/app-error'
 import { dishInputSchema, dishPatchSchema, type Dish, type DishInput, type DishPatch } from '../../../shared/contracts/menu'
 
 // RLS (food_owner_* policies) restricts every query to dishes of the caller's restaurants.
-const fields = 'id,restaurant_id,name,price,category,description,status,is_available,image_url'
+const fields = 'id,restaurant_id,name,price,category,description,status,is_available,image_url,tags'
 const uuid = z.string().uuid()
 const notFound = 'No encontramos ese platillo en tu cuenta.'
 const toDish = (row: Dish): Dish => ({ ...row, price: Number(row.price) })
