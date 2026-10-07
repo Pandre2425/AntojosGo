@@ -10,6 +10,7 @@
     "userInterfaceStyle": "light",
     "android": {
       "package": "com.antojosgo.mobile",
+      "versionCode": 1,
       "softwareKeyboardLayoutMode": "resize",
       "permissions": [
         "ACCESS_COARSE_LOCATION",

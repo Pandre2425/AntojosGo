@@ -269,3 +269,12 @@ Planes verificados el 6 de octubre de 2026:
 El script comprueba primero que el backend responde. El APK resultante solo permite HTTPS y no muestra el selector de servidor.
 
 **Repartir el APK:** pasa el archivo `app-release.apk` (por Drive o WhatsApp) o usa Firebase App Distribution, que es gratis y no pide tarjeta. En el teléfono hay que permitir «instalar apps desconocidas». Mientras el APK esté firmado con la clave de depuración, para actualizarlo hay que desinstalar la versión anterior si se compiló en otra computadora.
+
+**Publicar una actualización del APK** (la app avisa al abrirse):
+
+1. Sube en 1 `android.versionCode` en `mobile/app.json` y ajusta `version` (por ejemplo, 2 y `0.2.0`).
+2. Compila: `.\scripts\build-apk.ps1 -ApiUrl https://<proyecto>.vercel.app`.
+3. En GitHub, ve a *Releases → Draft a new release*, crea la etiqueta `v0.2.0` y adjunta `app-release.apk`.
+4. Actualiza `public/app-version.json` con el mismo `versionCode`, `version` y unas notas, y haz push. Al desplegarse, las apps instaladas muestran «Nueva versión» con un botón que abre la página de Releases.
+
+La app solo abre enlaces que empiecen por `https://github.com/Pandre2425/AntojosGo/releases/`, aunque el servidor devuelva otro. Android solo instala la actualización encima de la anterior si está firmada con la misma clave.
