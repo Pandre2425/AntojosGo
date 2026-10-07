@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, type FormEvent } from 'react'
-import { loadBusinessProfile, saveBusinessProfile } from '@/modules/restaurants/data/owned-restaurants'
+import { webApi } from '@/lib/web-api'
 import { businessProfileSchema, type OwnedRestaurant } from '@/shared/contracts/restaurants'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
@@ -20,15 +20,13 @@ export default function BusinessProfileEditor({ userId, restaurant, onSaved, onC
   const [notice, setNotice] = useState('')
   const [retry, setRetry] = useState(0)
   useEffect(() => {
-    const controller = new AbortController()
-    const timeout = setTimeout(() => controller.abort(), 15000)
     let active = true
     setLoading(true); setError('')
-    loadBusinessProfile(userId, restaurant.id, controller.signal).then((profile) => {
+    webApi.getRestaurant(restaurant.id).then((profile) => {
       if (active) { setName(profile.name); setDescription(profile.description || ''); setReady(true) }
     }).catch((err) => { if (active) setError(err.message) })
-      .finally(() => { clearTimeout(timeout); if (active) setLoading(false) })
-    return () => { active = false; clearTimeout(timeout); controller.abort() }
+      .finally(() => { if (active) setLoading(false) })
+    return () => { active = false }
   }, [userId, restaurant.id, retry])
 
   async function save(event: FormEvent) {
@@ -38,20 +36,18 @@ export default function BusinessProfileEditor({ userId, restaurant, onSaved, onC
     const parsed = businessProfileSchema.safeParse({ name, description })
     if (!parsed.success) { setError(parsed.error.issues[0].message); return }
     setBusy(true)
-    const controller = new AbortController()
-    const timeout = setTimeout(() => controller.abort(), 15000)
     try {
-      const saved = await saveBusinessProfile(userId, restaurant.id, parsed.data, controller.signal)
+      const saved = await webApi.updateRestaurant(restaurant.id, parsed.data)
       setName(saved.name); setDescription(saved.description || '')
-      onSaved(saved); setNotice('Perfil guardado. Tu restaurante sigue privado mientras lo preparas.')
+      onSaved(saved); setNotice('Perfil guardado.')
     } catch (err) { setError(err instanceof Error ? err.message : 'No pudimos guardar el perfil.') }
-    finally { clearTimeout(timeout); setBusy(false) }
+    finally { setBusy(false) }
   }
 
   return <section className="rounded-2xl border bg-white p-5 space-y-4">
     <Button variant="ghost" onClick={onClose} disabled={busy}>← Mis restaurantes</Button>
     <h2 className="text-xl font-semibold">Perfil de {restaurant.name}</h2>
-    <p className="text-sm text-muted-foreground">Presenta tu negocio. Estos datos todavía no aparecen en el catálogo de clientes.</p>
+    <p className="text-sm text-muted-foreground">Presenta tu negocio. El nombre y la descripción se muestran a los clientes en las sedes publicadas.</p>
     {error && <p role="alert" className="text-red-700">{error}</p>}
     {notice && <p role="status" className="text-green-700">{notice}</p>}
     {loading ? <p role="status">Cargando perfil…</p> : !ready ? <Button onClick={() => setRetry((v) => v + 1)}>Reintentar carga</Button> :

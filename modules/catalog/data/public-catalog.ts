@@ -1,4 +1,5 @@
-﻿import type { SupabaseClient } from '@supabase/supabase-js'
+import type { SupabaseClient } from '@supabase/supabase-js'
+import { dbError } from '../../../lib/app-error'
 
 export type PublicCatalogItem = {
   id: string
@@ -15,58 +16,23 @@ export type PublicCatalogItem = {
   distanceKm?: number
 }
 
-type PublicBranchRow = {
-  id: string
-  name: string
-  department: string
-  municipality: string
-  address: string
-  latitude: number | null
-  longitude: number | null
-  status: string
-  restaurants:
-    | { id: string; name: string; description: string | null }
-    | { id: string; name: string; description: string | null }[]
-    | null
+/** Row returned by the search_public_catalog / get_public_branch SQL functions (supabase/migrations/20261002090000_public_catalog_v2.sql). */
+type PublicBranchRow = Omit<PublicCatalogItem, 'distanceKm' | 'restaurant_id'> & {
+  restaurant_id: string
+  distance_m?: number | null
 }
 
-const SELECT =
-  'id,name,department,municipality,address,latitude,longitude,status,restaurants!inner(id,name,description)'
-
-function unwrapBusiness(row: PublicBranchRow) {
-  const raw = row.restaurants
-  if (!raw) return null
-  return Array.isArray(raw) ? raw[0] ?? null : raw
-}
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 export function mapPublishedBranch(row: PublicBranchRow): PublicCatalogItem {
-  const business = unwrapBusiness(row)
-  return {
-    id: row.id,
-    restaurant_id: business?.id,
-    name: business?.name ?? row.name,
-    branch_name: row.name,
-    description: business?.description ?? null,
-    address: row.address,
-    municipality: row.municipality,
-    department: row.department,
-    latitude: row.latitude,
-    longitude: row.longitude,
-  }
+  const { distance_m, ...item } = row
+  return distance_m == null ? item : { ...item, distanceKm: distance_m / 1000 }
 }
 
-function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number) {
-  const toRad = (d: number) => (d * Math.PI) / 180
-  const R = 6371
-  const dLat = toRad(lat2 - lat1)
-  const dLng = toRad(lng2 - lng1)
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2
-  return 2 * R * Math.asin(Math.sqrt(a))
-}
-
-/** Diner catalog: only restaurant_branches with status=published. Never samples. */
+/**
+ * Diner catalog: only published branches, filtered/ordered in Postgres. Never samples.
+ * Reads go through SECURITY DEFINER functions so anon never gets table access.
+ */
 export async function listPublishedCatalog(
   client: SupabaseClient,
   opts: {
@@ -75,56 +41,34 @@ export async function listPublishedCatalog(
     location?: { latitude: number; longitude: number; radiusKm?: number }
   } = {},
 ): Promise<PublicCatalogItem[]> {
-  const limit = Math.max(1, Math.min(opts.limit ?? 40, 100))
-  const { data, error } = await client
-    .from('restaurant_branches')
-    .select(SELECT)
-    .eq('status', 'published')
-    .limit(200)
+  const { data, error } = await client.rpc('search_public_catalog', {
+    p_query: (opts.query ?? '').trim(),
+    p_lat: opts.location?.latitude ?? null,
+    p_lng: opts.location?.longitude ?? null,
+    p_radius_m: Math.round((opts.location?.radiusKm ?? 50) * 1000),
+    p_limit: Math.max(1, Math.min(opts.limit ?? 40, 100)),
+  })
+  if (error) throw Object.assign(dbError(error, 'No pudimos cargar el catálogo. Revisa la conexión e intenta de nuevo.'), { cause: error })
+  return ((data || []) as PublicBranchRow[]).map(mapPublishedBranch)
+}
 
-  if (error) throw new Error('No pudimos cargar el catálogo. Revisa la conexión e intenta de nuevo.')
+export type PublicDish = { id: string; name: string; price: number; category: string | null; description: string | null; is_available: boolean; image_path?: string | null; image_url?: string | null }
 
-  let items = ((data || []) as PublicBranchRow[]).map(mapPublishedBranch)
-
-  const term = (opts.query ?? '').trim().toLocaleLowerCase()
-  if (term) {
-    items = items.filter((item) =>
-      [item.name, item.branch_name, item.description, item.address, item.municipality, item.department]
-        .filter(Boolean)
-        .join(' ')
-        .toLocaleLowerCase()
-        .includes(term),
-    )
-  }
-
-  if (opts.location) {
-    const radius = opts.location.radiusKm ?? 50
-    const originLat = opts.location.latitude
-    const originLng = opts.location.longitude
-    const withDistance: PublicCatalogItem[] = []
-    for (const item of items) {
-      if (item.latitude == null || item.longitude == null) continue
-      const distanceKm = haversineKm(originLat, originLng, item.latitude, item.longitude)
-      if (distanceKm > radius) continue
-      withDistance.push({ ...item, distanceKm })
-    }
-    items = withDistance.sort((a, b) => (a.distanceKm ?? 0) - (b.distanceKm ?? 0))
-  }
-
-  return items.slice(0, limit)
+/** Published dishes of a published branch; empty for drafts or unknown ids. */
+export async function getPublicMenu(client: SupabaseClient, branchId: string): Promise<PublicDish[]> {
+  if (!UUID.test(branchId)) return []
+  const { data, error } = await client.rpc('get_public_dishes', { p_branch_id: branchId })
+  if (error) throw dbError(error, 'No pudimos cargar el menú.')
+  return ((data || []) as PublicDish[]).map(d => ({ ...d, price: Number(d.price) }))
 }
 
 export async function getPublishedBranch(
   client: SupabaseClient,
   id: string,
 ): Promise<PublicCatalogItem | null> {
-  const { data, error } = await client
-    .from('restaurant_branches')
-    .select(SELECT)
-    .eq('id', id)
-    .eq('status', 'published')
-    .maybeSingle()
-  if (error) throw new Error('No pudimos cargar la sede. Revisa la conexión e intenta de nuevo.')
-  if (!data) return null
-  return mapPublishedBranch(data as PublicBranchRow)
+  if (!UUID.test(id)) return null
+  const { data, error } = await client.rpc('get_public_branch', { p_id: id })
+  if (error) throw dbError(error, 'No pudimos cargar la sede. Revisa la conexión e intenta de nuevo.')
+  const row = ((data || []) as PublicBranchRow[])[0]
+  return row ? mapPublishedBranch(row) : null
 }

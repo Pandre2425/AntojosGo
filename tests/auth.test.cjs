@@ -8,6 +8,12 @@ require.extensions['.ts'] = (module, filename) => module._compile(ts.transpileMo
 const { loginSchema, registrationSchema, authErrorMessage } = require('../lib/auth-validation.ts')
 const { businessProfileSchema } = require('../lib/business-profile-validation.ts')
 const { branchInputSchema } = require('../shared/contracts/branches.ts')
+const { catalogQuerySchema } = require('../shared/contracts/catalog-query.ts')
+test('catalog filters distinguish absent coordinates from zero and reject invalid bounds', () => {
+  assert.equal(catalogQuerySchema.parse({}).lat, undefined)
+  assert.equal(catalogQuerySchema.parse({ lat: '0', lng: '0' }).lat, 0)
+  for (const input of [{ lat: '5' }, { lat: '91', lng: '0' }, { lat: '0', lng: '-181' }, { lat: 'NaN', lng: '0' }, { limit: '1.5' }, { limit: '101' }, { radiusMeters: '-1' }, { q: 'x'.repeat(201) }]) assert.equal(catalogQuerySchema.safeParse(input).success, false)
+})
 const { branchLocationSchema } = require('../shared/contracts/branches.ts')
 test('location requires a finite pair and accepts world coordinates including zero', () => {
   for (const point of [{ latitude: 0, longitude: 0 }, { latitude: -90, longitude: 180 }, { latitude: 14.84, longitude: -91.52 }]) assert.equal(branchLocationSchema.safeParse(point).success, true)

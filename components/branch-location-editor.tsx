@@ -2,7 +2,7 @@
 import dynamic from 'next/dynamic'
 import { useRef, useState, type FormEvent } from 'react'
 import { branchLocationSchema, type BranchLocation, type RestaurantBranch } from '@/shared/contracts/branches'
-import { saveBranchLocation } from '@/modules/restaurants/data/branches'
+import { webApi } from '@/lib/web-api'
 import ModuleBoundary from './module-boundary'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
@@ -26,7 +26,7 @@ export default function BranchLocationEditor({ branch, onSaved, onClose }: { bra
     const parsed = branchLocationSchema.safeParse({ latitude: latitude.trim() ? Number(latitude) : NaN, longitude: longitude.trim() ? Number(longitude) : NaN })
     if (!parsed.success) { setError('Selecciona un punto o escribe coordenadas válidas.'); return }
     saving.current = true; setBusy(true); setError('')
-    try { onSaved(await saveBranchLocation(branch.restaurant_id, branch.id, parsed.data)) }
+    try { onSaved(await webApi.saveLocation(branch.id, parsed.data)) }
     catch (err) { setError(err instanceof Error ? err.message : 'No pudimos guardar la ubicación.') }
     finally { saving.current = false; setBusy(false) }
   }

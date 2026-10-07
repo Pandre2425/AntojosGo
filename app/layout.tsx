@@ -5,15 +5,14 @@ import "./globals.css"
 
 export const metadata: Metadata = {
   title: "AntojosGo - Descubre tu próxima comida favorita",
-  description: "Aplicación de recomendaciones de comida basada en IA",
-  generator: "v0.app",
+  description: "Encuentra restaurantes registrados cerca de ti y consulta su menú.",
 }
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: "#dc2626",
+  themeColor: "#173F35",
 }
 
 export default function RootLayout({

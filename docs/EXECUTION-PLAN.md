@@ -1,5 +1,14 @@
 # Plan de ejecución de AntojosGo
 
+## Avance del 28 de septiembre de 2026
+
+- Android: Expo 57 y sus dependencias compatibles instalados; Expo Go actualizado en el emulador. Corregido arranque IPv4 de Metro. Logs Android confirman ejecución de `main`; recorrido visual completo aún pendiente.
+- Verificado: 24 pruebas unitarias, 6 smoke, compilación web, tipos y exportación Android; acceso real a Supabase y lectura de negocio/sedes.
+- Catálogo: validados parámetros geográficos, límites y errores de servicio; espera de red/GPS limitada y respuestas obsoletas descartadas. Pantallas iniciales disponibles, publicación y permisos públicos pendientes.
+- Próximo bloque: certificar recorrido restaurante en Android, completar perfil/horarios/menú y diseñar publicación con permisos limitados. No aplicar `scripts/public-catalog.sql` sin corregir y probar sus políticas. Después, búsqueda paginada e índices en base de datos antes de pruebas de carga.
+- Registro de desarrollo: confirmación de correo desactivada por decisión del usuario; el bloqueo SMTP descrito más abajo es histórico para ese entorno. Recuperación y verificación de correo de producción siguen pendientes.
+
+
 **Migración Android iniciada:** cliente Expo en `mobile/`, reutilizando contratos, adaptadores y datos existentes. Registro/acceso, negocio, sedes y selección de ubicación portados a componentes nativos. Ver [EXPO-ANDROID.md](EXPO-ANDROID.md) para comandos, verificaciones y límites. No confundir exportación Hermes con APK ni dar el MVP por terminado.
 
 **Nueva especificación de producto:** [PRODUCT-SPEC.md](PRODUCT-SPEC.md) prevalece sobre antecedentes: MVP en Xela, solo restaurantes registrados, sin reservas/pedidos/delivery; objetivo Expo/Express con Supabase Auth y PostgreSQL (decisión posterior del usuario). Estado y transición: [BRANCHES.md](BRANCHES.md). La implementación actual mantiene Next.js/Capacitor hasta una migración explícita de la interfaz; se conserva Supabase Auth; no se declara cumplida la nueva arquitectura.
@@ -54,6 +63,11 @@ Aceptación: navegación pública sin cuenta y persistencia privada por usuario,
 4. Añadir métricas por módulo y registros con identificador de petición, excluyendo contraseñas, tokens y datos personales.
 5. Aplicar límites compartidos en servidor/proveedor; un botón deshabilitado solo es protección de interfaz.
 6. Configurar alertas, respaldos y ensayo de restauración. Acordar tiempo de recuperación y pérdida tolerable de datos.
+
+Pendientes antes de pruebas reales (detectados por los asesores de Supabase el 2 de octubre de 2026; en etapa local no se aplican):
+- Activar protección contra contraseñas filtradas y verificación de correo de usuarios (Auth).
+- Mover PostGIS de `public` a `extensions` (cierra `spatial_ref_sys` sin RLS y vistas `geometry_columns`/`geography_columns` expuestas).
+- Sincronizar historial de migraciones local/remoto antes de usar `supabase db push` (remoto tiene 4 migraciones previas ausentes de `supabase/migrations/`; `public_catalog_v2` quedó registrada con otra versión).
 
 Aceptación: pruebas de autorización, alertas verificadas y restauración ensayada antes de admitir datos de producción.
 

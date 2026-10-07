@@ -1,13 +1,10 @@
 import { createClient } from "@supabase/supabase-js"
 import 'server-only'
 import { headers } from 'next/headers'
+import { isSupabaseConfigured, supabaseUrl, supabasePublicKey } from './config'
 
 // Check if Supabase environment variables are available
-export const isSupabaseConfigured =
-  typeof process.env.NEXT_PUBLIC_SUPABASE_URL === "string" &&
-  process.env.NEXT_PUBLIC_SUPABASE_URL.length > 0 &&
-  typeof process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY === "string" &&
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY.length > 0
+export { isSupabaseConfigured } from './config'
 
 export async function createServerClient() {
   if (!isSupabaseConfigured) {
@@ -15,7 +12,7 @@ export async function createServerClient() {
   }
 
   const authorization = (await headers()).get('authorization')
-  return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
+  return createClient(supabaseUrl, supabasePublicKey, {
     global: { headers: authorization ? { Authorization: authorization } : {} },
     auth: {
       persistSession: false,

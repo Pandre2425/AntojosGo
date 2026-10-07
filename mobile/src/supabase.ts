@@ -1,6 +1,6 @@
 import 'react-native-url-polyfill/auto'
 import * as SecureStore from 'expo-secure-store'
-import { createClient, processLock } from '@supabase/supabase-js'
+import { createClient } from '@supabase/supabase-js'
 import { createBoundedFetch } from '../../lib/bounded-fetch'
 
 const url = process.env.EXPO_PUBLIC_SUPABASE_URL
@@ -10,7 +10,7 @@ export const supabase = url && key ? createClient(url, key, {
   global: { fetch: createBoundedFetch() },
   auth: {
     storage: { getItem: SecureStore.getItemAsync, setItem: SecureStore.setItemAsync, removeItem: SecureStore.deleteItemAsync },
-    persistSession: true, autoRefreshToken: true, detectSessionInUrl: false, lock: processLock,
+    persistSession: true, autoRefreshToken: true, detectSessionInUrl: false,
   },
 }) : null
 export function getSupabase() { return supabase }

@@ -13,6 +13,5 @@ export default function MobileDiscover({ name, onSearch }: { name?: string; onSe
         <form onSubmit={submit} className="mt-6 space-y-4"><div className="rounded-2xl bg-white p-3 text-[#263D35]"><label htmlFor="craving" className="text-sm font-semibold">¿Qué se te antoja?</label><input id="craving" className="mt-2 w-full bg-transparent py-2 outline-none focus-visible:ring-2 focus-visible:ring-primary rounded" placeholder="Algo calientito, una pizza…" value={query} onChange={(event) => setQuery(event.target.value)} maxLength={200}/></div><button className="flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-primary px-4 py-3 font-semibold" type="submit"><Sparkles className="h-5 w-5"/>Encontrar mi antojo</button></form>
       </div><div className="relative h-56 bg-[#244E3E]"><FoodArt/><div className="absolute bottom-5 right-5 max-w-[75%] rounded-2xl bg-white/95 p-4 text-[#263D35]"><p className="text-sm font-semibold">Un antojo, mil posibilidades</p><p className="mt-1 text-xs text-muted-foreground">Descubre el sabor local</p></div></div>
     </section>
-    <p className="text-xs text-muted-foreground">Explora el catálogo de ejemplo mientras habilitamos la publicación de restaurantes.</p>
   </div>
 }

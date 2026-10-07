@@ -3,8 +3,7 @@ import { Redirect, router } from 'expo-router'
 import { useSession } from '../src/session'
 import { supabase } from '../src/supabase'
 import { Action, Card, Field, Loading, Message, Page, Title } from '../src/ui'
-import { createOwnedRestaurant, listOwnedRestaurants } from '../../modules/restaurants/data/owned-restaurants'
-import { ensureAccountProfile } from '../../modules/accounts/data/account-profile'
+import { api } from '../src/api'
 import { displayNameSchema } from '../../shared/contracts/names'
 import type { OwnedRestaurant } from '../../shared/contracts/restaurants'
 export default function Restaurants() {
@@ -19,9 +18,9 @@ export default function Restaurants() {
   useEffect(() => {
     if (!session) return
     let active = true; setLoading(true); setError('')
-    listOwnedRestaurants(session.user.id).then(data => { if (active) setRows(data) }).catch(e => { if (active) setError(e.message) }).finally(() => { if (active) setLoading(false) })
+    api.listRestaurants().then(data => { if (active) setRows(data) }).catch(e => { if (active) setError(e.message) }).finally(() => { if (active) setLoading(false) })
     const displayName = session.user.user_metadata?.display_name
-    if (displayNameSchema.safeParse(displayName).success) ensureAccountProfile(session.user.id, displayName).catch(() => { if (active) setError('Tu sesión está activa, pero no pudimos completar el perfil. Puedes reintentar.') })
+    if (displayNameSchema.safeParse(displayName).success) api.ensureProfile(displayName).catch(() => { if (active) setError('Tu sesión está activa, pero no pudimos completar el perfil. Puedes reintentar.') })
     return () => { active = false }
   }, [session?.user.id, retry])
   if (!ready) return <Page><Loading /></Page>
@@ -31,7 +30,7 @@ export default function Restaurants() {
     const parsed = displayNameSchema.safeParse(name)
     if (!parsed.success) { setError(parsed.error.issues[0].message); return }
     lock.current = true; setBusy(true); setError('')
-    try { await createOwnedRestaurant(session!.user.id, parsed.data); setName(''); setRetry(v => v + 1) }
+    try { await api.createRestaurant(parsed.data); setName(''); setRetry(v => v + 1) }
     catch (e) { setError(e instanceof Error ? e.message : 'No pudimos guardar.') }
     finally { lock.current = false; setBusy(false) }
   }
