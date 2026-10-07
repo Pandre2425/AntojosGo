@@ -1,0 +1,4 @@
+# The web/API deploy does not need the Expo app or legacy native projects.
+mobile/
+android/
+AllCode.txt

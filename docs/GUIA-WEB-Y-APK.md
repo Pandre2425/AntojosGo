@@ -245,3 +245,27 @@ npm.cmd run test:api          # 18 comprobaciones; crea y borra un platillo temp
 2. **Clave de Google Maps** para el mapa del APK.
 3. **Hosting con HTTPS** (por ejemplo Vercel) y un segundo proyecto Supabase para pruebas, para que el APK funcione sin tu PC.
 4. **Fotos** de platillos y sedes (Fase 5 del plan).
+
+## 13. Pruebas con servidor en internet (Vercel) y APK de prueba
+
+Planes verificados el 6 de octubre de 2026:
+
+- **Vercel Hobby:** gratis, solo para uso personal y no comercial. Incluye 1 M de invocaciones de funciones, 4 h de CPU activa y 100 GB de transferencia al mes. Al llegar al límite no se puede comprar más: hay que pasar a Pro.
+- **Supabase Free:** 2 proyectos, 500 MB de base de datos y 1 GB de archivos. El proyecto se pausa tras 1 semana sin actividad.
+
+**Desplegar (una vez):**
+
+1. Entra en vercel.com con GitHub → *Add New → Project* → importa `Pandre2425/AntojosGo` (rama `main`). El framework se detecta solo.
+2. En *Environment Variables* agrega `NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, con los mismos valores de `.env.local`. **Nunca** agregues la clave `sb_secret_…` ni `SUPABASE_DB_URL`: la app no las usa.
+3. *Deploy*. Después, cada push a `main` despliega solo.
+4. Comprueba que responde: `https://<proyecto>.vercel.app/api/v1/catalog/search?limit=1` devuelve JSON con `items`.
+
+**APK contra el servidor:**
+
+```powershell
+.\scripts\build-apk.ps1 -ApiUrl https://<proyecto>.vercel.app
+```
+
+El script comprueba primero que el backend responde. El APK resultante solo permite HTTPS y no muestra el selector de servidor.
+
+**Repartir el APK:** pasa el archivo `app-release.apk` (por Drive o WhatsApp) o usa Firebase App Distribution, que es gratis y no pide tarjeta. En el teléfono hay que permitir «instalar apps desconocidas». Mientras el APK esté firmado con la clave de depuración, para actualizarlo hay que desinstalar la versión anterior si se compiló en otra computadora.
