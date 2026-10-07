@@ -28,3 +28,7 @@ test('hours contract rejects bad times and the day form round-trips', () => {
   const hours = [{ day: 1, open: '08:00', close: '14:00' }]
   assert.deepEqual(fromDayForm(toDayForm(hours)).data, hours)
 })
+
+test('one range per day: the editors could not show a second one', () => {
+  assert.equal(openingHoursSchema.safeParse([{ day: 1, open: '08:00', close: '12:00' }, { day: 1, open: '17:00', close: '22:00' }]).success, false)
+})

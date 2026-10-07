@@ -6,7 +6,9 @@ const time = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Usa el formato HH:MM
 /** One opening range. close <= open means it ends after midnight (e.g. 18:00–02:00). */
 export const hoursRangeSchema = z.object({ day: z.number().int().min(0).max(6), open: time, close: time })
   .refine(r => r.open !== r.close, 'La hora de apertura y la de cierre no pueden ser iguales.')
-export const openingHoursSchema = z.array(hoursRangeSchema).max(21)
+// One range per day: the web and mobile editors show one per day, so saving can never drop a second one.
+export const openingHoursSchema = z.array(hoursRangeSchema).max(7)
+  .refine(rs => new Set(rs.map(r => r.day)).size === rs.length, 'Registra un solo horario por día.')
 export type HoursRange = z.infer<typeof hoursRangeSchema>
 export type OpeningHours = HoursRange[]
 

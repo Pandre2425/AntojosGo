@@ -102,7 +102,7 @@ function FavoriteButton({ branchId }: { branchId: string }) {
   useEffect(() => {
     if (!user) return
     let active = true
-    webApi.listFavorites().then((rows) => { if (active) setSaved(rows.some((r) => r.id === branchId)) }).catch(() => { if (active) setSaved(null) })
+    webApi.listFavorites().then((rows) => { if (active) setSaved(rows.some((r) => r.id === branchId)) }).catch(() => { if (active) setSaved(false) })
     return () => { active = false }
   }, [user?.id, branchId])
   if (!user || saved === null) return null

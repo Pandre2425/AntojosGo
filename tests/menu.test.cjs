@@ -24,3 +24,9 @@ test('dish contract rejects values the DB would refuse with a 500', () => {
 test('partial dish patches leave omitted fields untouched', () => {
   assert.deepEqual(dishInputSchema.partial().parse({ price: '20' }), { price: 20 })
 })
+
+test('price is rounded before the range check (never reaches the DB as 0 or 100000)', () => {
+  assert.equal(dishInputSchema.safeParse({ name: 'X', price: '0,001' }).success, false)
+  assert.equal(dishInputSchema.safeParse({ name: 'X', price: '99999,999' }).success, false)
+  assert.equal(dishInputSchema.parse({ name: 'X', price: '0,005' }).price, 0.01)
+})

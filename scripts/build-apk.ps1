@@ -6,7 +6,8 @@ Optional: GOOGLE_MAPS_ANDROID_KEY (env var or mobile/.env.local) enables maps (s
 Signing: the project's own key, read from ~/.gradle/gradle.properties (see mobile/plugins/with-release-signing.js).
 Output: mobile/android/app/build/outputs/apk/release/app-release.apk
 #>
-param([Parameter(Mandatory)][string]$ApiUrl, [switch]$AllowHttp)
+# -Emulator also includes x86_64 so the APK runs on the x86_64 emulator (bigger file; phones only need arm64).
+param([Parameter(Mandatory)][string]$ApiUrl, [switch]$AllowHttp, [switch]$Emulator)
 # No global 'Stop': in PowerShell 5.1 any stderr line from npx/gradle (even a warning) would abort. Exit codes are checked instead.
 if (-not $AllowHttp -and $ApiUrl -notmatch '^https://') { throw 'Use an https:// URL, or -AllowHttp for a LAN test build.' }
 # Refuse to build without the project's signing key: an APK signed with another key cannot update the installed app.
@@ -15,8 +16,19 @@ if (-not ((Test-Path $props) -and (Select-String -Path $props -Pattern '^ANTOJOS
   throw "Falta la clave de firma (ANTOJOSGO_RELEASE_* en $props). Restaura la copia de seguridad antes de compilar."
 }
 # Fail fast: the backend must answer like AntojosGo before we spend minutes compiling.
-try { $probe = Invoke-WebRequest -UseBasicParsing -TimeoutSec 60 -ErrorAction Stop "$($ApiUrl.TrimEnd('/'))/api/v1/catalog/search?limit=1" }
+try { $null = Invoke-WebRequest -UseBasicParsing -TimeoutSec 60 -ErrorAction Stop "$($ApiUrl.TrimEnd('/'))/api/v1/catalog/search?limit=1" }
 catch { throw "Backend did not answer at $ApiUrl : $($_.Exception.Message)" }
+
+# Maps key: env var, else GOOGLE_MAPS_ANDROID_KEY / GOOGLE_MAPS_ANDROID_API_KEY in mobile/.env.local or the root .env.local.
+# Never printed. Without it the build still works and maps are hidden.
+if (-not $env:GOOGLE_MAPS_ANDROID_KEY) {
+  foreach ($file in "$PSScriptRoot\..\mobile\.env.local", "$PSScriptRoot\..\.env.local") {
+    if (-not (Test-Path $file)) { continue }
+    $line = Select-String -Path $file -Pattern '^\s*GOOGLE_MAPS_ANDROID(_API)?_KEY\s*=\s*"?([^"\s]+)"?\s*$' | Select-Object -First 1
+    if ($line) { $env:GOOGLE_MAPS_ANDROID_KEY = $line.Matches[0].Groups[2].Value; break }
+  }
+}
+"Mapa: " + $(if ($env:GOOGLE_MAPS_ANDROID_KEY) { 'clave encontrada, el APK mostrará mapas' } else { 'sin clave, el APK ocultará los mapas' })
 
 $env:ANDROID_HOME = "$env:LOCALAPPDATA\Android\Sdk"
 $env:NINJA_PATH = "$env:LOCALAPPDATA\Programs\ninja-1.12.1\ninja.exe"
@@ -29,7 +41,8 @@ try {
   npx expo prebuild --platform android --no-install
   if ($LASTEXITCODE) { throw 'prebuild failed' }
   Set-Location android
-  .\gradlew.bat assembleRelease -PreactNativeArchitectures=arm64-v8a --console=plain
+  $abis = if ($Emulator) { 'arm64-v8a,x86_64' } else { 'arm64-v8a' }
+  .\gradlew.bat assembleRelease "-PreactNativeArchitectures=$abis" --console=plain
   if ($LASTEXITCODE) { throw 'gradle build failed' }
   $apk = 'app\build\outputs\apk\release\app-release.apk'
   if (-not (Test-Path $apk)) { throw 'No se generó app-release.apk firmado (¿clave de firma inválida?).' }

@@ -35,7 +35,10 @@ export async function createBranch(db: SupabaseClient, restaurantId: string, id:
   if (error) throw dbError(error, 'No pudimos confirmar el guardado. Conservamos los datos para reintentar.')
   const { data, error: readError } = await db.from('restaurant_branches').select(fields).eq('id', id).eq('restaurant_id', restaurantId).single()
   if (readError) throw dbError(readError, 'No pudimos consultar la sede guardada.', 'No pudimos crear la sede en ese negocio.')
-  return data as RestaurantBranch
+  // A retry may carry corrected data while the first attempt already created the row (response lost).
+  const stored = data as RestaurantBranch
+  const changed = (Object.keys(values) as (keyof typeof values)[]).some(k => stored[k] !== values[k])
+  return changed ? updateBranch(db, id, input) : stored
 }
 
 export async function updateBranch(db: SupabaseClient, branchId: string, input: BranchInput): Promise<RestaurantBranch> {

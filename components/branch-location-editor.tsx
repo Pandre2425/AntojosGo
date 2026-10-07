@@ -20,6 +20,17 @@ export default function BranchLocationEditor({ branch, onSaved, onClose }: { bra
   function select(value: BranchLocation) {
     setPoint(value); setLatitude(String(value.latitude)); setLongitude(String(value.longitude)); setError('')
   }
+  const [locating, setLocating] = useState(false)
+  // Most precise when the owner is at the entrance (tablet/phone). Needs HTTPS or localhost.
+  function pickCurrentLocation() {
+    if (!navigator.geolocation) { setError('Este navegador no permite obtener la ubicación. Mueve el mapa o escribe las coordenadas.'); return }
+    setLocating(true); setError('')
+    navigator.geolocation.getCurrentPosition(
+      (p) => { setLocating(false); select({ latitude: p.coords.latitude, longitude: p.coords.longitude }) },
+      () => { setLocating(false); setError('No pudimos obtener tu ubicación. Revisa el permiso del navegador o mueve el mapa.') },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 },
+    )
+  }
   async function submit(event: FormEvent) {
     event.preventDefault()
     if (saving.current) return
@@ -34,6 +45,7 @@ export default function BranchLocationEditor({ branch, onSaved, onClose }: { bra
     <h4 className="font-semibold">Ubicación de {branch.name}</h4>
     <fieldset disabled={busy} className="space-y-4">
       <div inert={busy}><ModuleBoundary name="el mapa"><BranchMap value={point} onChange={select} /></ModuleBoundary></div>
+      <Button type="button" variant="outline" disabled={locating} onClick={pickCurrentLocation}>{locating ? 'Buscando ubicación…' : 'Usar mi ubicación actual'}</Button>
       <p role="status" className="text-sm">{point ? 'Punto seleccionado. Ajusta el mapa y confirma la ubicación.' : 'Mueve el mapa para seleccionar la ubicación de tu restaurante.'}</p>
       <details><summary className="cursor-pointer text-sm underline">Introducir coordenadas manualmente (opcional)</summary>
       <div className="grid grid-cols-2 gap-3">

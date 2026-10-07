@@ -6,10 +6,11 @@ const optionalText = (max: number) => z.string().trim().max(max).transform(v => 
 export const dishInputSchema = z.object({
   name: z.string().trim().min(1, 'Escribe el nombre del platillo.').max(120),
   // Accepts "35", "35.5" or "35,50" from a phone keyboard; stored with 2 decimals.
+  // Rounded before the range check, so 0,001 or 99999,999 are rejected here instead of by the DB.
   price: z.preprocess(
-    v => typeof v === 'string' ? Number(v.trim().replace(',', '.')) : v,
-    z.number({ invalid_type_error: 'Escribe un precio válido.' }).finite().gt(0, 'El precio debe ser mayor que 0.').lt(100000),
-  ).transform(v => Math.round(v * 100) / 100),
+    v => { const n = typeof v === 'string' ? Number(v.trim().replace(',', '.')) : v; return typeof n === 'number' && Number.isFinite(n) ? Math.round(n * 100) / 100 : n },
+    z.number({ invalid_type_error: 'Escribe un precio válido.' }).finite().gt(0, 'El precio debe ser mayor que 0.').lt(100000, 'El precio debe ser menor que Q100,000.'),
+  ),
   category: optionalText(60),
   description: optionalText(500),
 })

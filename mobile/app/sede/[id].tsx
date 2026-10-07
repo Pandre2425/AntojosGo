@@ -82,7 +82,7 @@ function FavoriteToggle({ branchId }: { branchId: string }) {
   useEffect(() => {
     if (!session) return
     let active = true
-    api.listFavorites().then(rows => { if (active) setSaved(rows.some(r => r.id === branchId)) }).catch(() => { if (active) setSaved(null) })
+    api.listFavorites().then(rows => { if (active) setSaved(rows.some(r => r.id === branchId)) }).catch(() => { if (active) setSaved(false) })
     return () => { active = false }
   }, [session?.user.id, branchId])
   if (!session || saved === null) return null
