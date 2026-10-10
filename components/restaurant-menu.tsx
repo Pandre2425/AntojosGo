@@ -45,6 +45,7 @@ export default function RestaurantMenu({ restaurantId, restaurantName, onClose }
   const [status, setStatus] = useState<Status>('all')
   const [tagFilter, setTagFilter] = useState<DishTag[]>([])
   const [withoutFilter, setWithoutFilter] = useState<Allergen[]>([])
+  const [moreFilters, setMoreFilters] = useState(false)
   const saving = useRef(false)
   const photoInput = useRef<HTMLInputElement>(null)
   const photoFor = useRef<string | null>(null)
@@ -125,16 +126,23 @@ export default function RestaurantMenu({ restaurantId, restaurantName, onClose }
             <Search aria-hidden className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-500" />
             <Input aria-label="Buscar en el menú" placeholder="Buscar por nombre, categoría o ingrediente" value={query} onChange={(e) => setQuery(e.target.value)} className="bg-white pl-9" />
           </div>
+          <div className="flex flex-wrap items-center gap-2">
           <div role="radiogroup" aria-label="Estado" className="inline-flex flex-wrap rounded-xl border bg-white p-1">
             {(Object.keys(STATUS_LABELS) as Status[]).map((s) => <button key={s} type="button" role="radio" aria-checked={status === s} onClick={() => setStatus(s)}
               className={`rounded-lg px-3 py-1.5 text-sm focus-visible:outline-2 focus-visible:outline-[#173F35] ${status === s ? 'bg-[#173F35] text-white' : 'text-stone-700 hover:bg-stone-100'}`}>
               {STATUS_LABELS[s]} <span className={status === s ? 'text-white/70' : 'text-stone-400'}>{counts[s]}</span>
             </button>)}
           </div>
+          <button type="button" aria-expanded={moreFilters} aria-controls="menu-more-filters" onClick={() => setMoreFilters((v) => !v)}
+            className="rounded-lg px-3 py-1.5 text-sm text-[#173F35] underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-[#173F35]">
+            {moreFilters ? 'Menos filtros' : `Más filtros${tagFilter.length + withoutFilter.length ? ` (${tagFilter.length + withoutFilter.length})` : ''}`}</button>
+          </div>
+          {moreFilters && <div id="menu-more-filters" className="space-y-3">
           <div className="flex flex-wrap items-center gap-2"><span className="text-sm text-stone-600">Etiquetas</span>
             {DISH_TAGS.map((t) => <Chip key={t} on={tagFilter.includes(t)} onClick={() => setTagFilter((v) => toggle(v, t))}>{DISH_TAG_LABELS[t]}</Chip>)}</div>
           <div className="flex flex-wrap items-center gap-2"><span className="text-sm text-stone-600">Sin</span>
             {ALLERGENS.map((a) => <Chip key={a} tone="red" on={withoutFilter.includes(a)} onClick={() => setWithoutFilter((v) => toggle(v, a))}>{ALLERGEN_LABELS[a]}</Chip>)}</div>
+          </div>}
           {filtering && <div className="flex items-center justify-between text-sm text-stone-600"><span>{visibleRows.length} de {dishes.length} platillos</span>
             <button type="button" className="underline" onClick={() => { setQuery(''); setStatus('all'); setTagFilter([]); setWithoutFilter([]) }}>Quitar filtros</button></div>}
         </div>

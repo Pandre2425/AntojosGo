@@ -60,7 +60,7 @@ export default function RestaurantAccountHome({ user }: { user: User }) {
   }
 
   return <main className="min-h-dvh bg-background p-4 sm:p-8">
-    <div className="mx-auto max-w-2xl space-y-6">
+    <div className="mx-auto max-w-4xl space-y-6">
       <header className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-primary font-semibold">AntojosGo · Restaurantes</p><h1 className="text-2xl font-bold">Hola, {displayName || 'bienvenido'}</h1><p className="text-sm text-muted-foreground">{user.email}</p></div><Button variant="outline" disabled={busy} onClick={logout}>Cerrar sesión</Button></header>
       <a href="/" className="inline-block text-sm underline">Ir al modo cliente</a>
       {error && <div role="alert" className="rounded-xl bg-red-50 p-4"><p>{error}</p><Button variant="ghost" onClick={() => setRetry((value) => value + 1)}>Reintentar carga</Button></div>}
