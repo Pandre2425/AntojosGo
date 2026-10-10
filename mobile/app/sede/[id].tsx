@@ -37,7 +37,11 @@ export default function SedeDetail() {
       {error && !loading ? <Action title="Reintentar" onPress={() => setRetry(v => v + 1)} /> : null}
       {item ? (
         <Card>
-          <Title>{item.name}</Title>
+          {item.cover_url ? <Image source={{ uri: item.cover_url }} accessibilityLabel={`Foto de ${item.name}`} style={{ width: '100%', aspectRatio: 16 / 9, borderRadius: 14 }} /> : null}
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+            {item.logo_url ? <Image source={{ uri: item.logo_url }} accessibilityLabel={`Logo de ${item.name}`} style={{ width: 64, height: 64, borderRadius: 32 }} /> : null}
+            <View style={{ flex: 1 }}><Title>{item.name}</Title></View>
+          </View>
           <Message>Sede: {item.branch_name}{item.category ? ` · ${item.category}` : ''}</Message>
           <Message>{item.address}, {item.municipality}, {item.department}</Message>
           {item.description ? <Message>{item.description}</Message> : <Message>Sin información de descripción.</Message>}

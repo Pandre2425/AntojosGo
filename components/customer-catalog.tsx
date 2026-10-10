@@ -8,7 +8,6 @@ import type { PublicBranchExtras, PublicCatalogItem, PublicDish } from '@/module
 import { describeHours, isOpenNow } from '@/shared/contracts/hours'
 import { phoneUrl, whatsappUrl } from '@/shared/contracts/branches'
 import { ALLERGEN_LABELS, ALLERGENS, DISH_TAGS, DISH_TAG_LABELS, allergenStatus, type Allergen, type DishTag } from '@/shared/contracts/menu'
-import { RESTAURANT_CATEGORIES } from '@/shared/contracts/restaurants'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
 
@@ -26,6 +25,8 @@ export default function CustomerCatalog({ initialQuery = '' }: { initialQuery?: 
   const [selected, setSelected] = useState<string | null>(null)
   const [filters, setFilters] = useState<Filters>(noFilters)
   const [showFilters, setShowFilters] = useState(false)
+  const [types, setTypes] = useState<string[]>([])
+  useEffect(() => { webApi.listBusinessTypes().then(setTypes).catch(() => {}) }, [])
   const request = useRef(0)
   const activeCount = (filters.category ? 1 : 0) + (filters.openNow ? 1 : 0) + filters.tags.length + filters.without.length
 
@@ -69,9 +70,9 @@ export default function CustomerCatalog({ initialQuery = '' }: { initialQuery?: 
     {showFilters && <div id="diner-filters" className="space-y-3 rounded-2xl border bg-white p-4">
       <div className="flex flex-wrap items-center gap-2">
         <FilterChip on={filters.openNow} onClick={() => applyFilters({ ...filters, openNow: !filters.openNow })}>Abierto ahora</FilterChip>
-        <label className="flex items-center gap-2 text-sm">Tipo de comida
+        <label className="flex items-center gap-2 text-sm">Tipo de negocio
           <select className="h-9 rounded-md border bg-white px-2 text-sm" value={filters.category} onChange={(e) => applyFilters({ ...filters, category: e.target.value })}>
-            <option value="">Todos</option>{RESTAURANT_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}</select></label>
+            <option value="">Todos</option>{types.map((c) => <option key={c} value={c}>{c}</option>)}</select></label>
       </div>
       <fieldset className="flex flex-wrap items-center gap-2"><legend className="sr-only">Etiquetas</legend><span className="text-sm text-stone-600">Quiero</span>
         {DISH_TAGS.map((t) => <FilterChip key={t} on={filters.tags.includes(t)} onClick={() => applyFilters({ ...filters, tags: toggle(filters.tags, t) })}>{DISH_TAG_LABELS[t]}</FilterChip>)}</fieldset>
@@ -96,10 +97,17 @@ function FilterChip({ on, onClick, children, tone = 'green' }: { on: boolean; on
     className={`rounded-full border px-3 py-1 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#173F35] ${on ? active : 'border-stone-300 bg-white text-stone-700 hover:border-stone-500'}`}>{children}</button>
 }
 
+function Logo({ url, name, size = 'h-14 w-14' }: { url?: string | null; name: string; size?: string }) {
+  return url ? <img src={url} alt="" className={`${size} shrink-0 rounded-full border object-cover`} />
+    : <span aria-hidden className={`${size} flex shrink-0 items-center justify-center rounded-full bg-[#173F35] text-lg font-semibold text-white`}>{name.trim().charAt(0).toUpperCase()}</span>
+}
+
 function BranchList({ items, onSelect, restricted = false }: { items: PublicCatalogItem[]; onSelect: (id: string) => void; restricted?: boolean }) {
   return <ul className="space-y-3">{items.map((item) => <li key={item.id}>
-    <button type="button" onClick={() => onSelect(item.id)} className="w-full rounded-2xl border bg-white p-4 text-left hover:border-primary focus-visible:outline-2 focus-visible:outline-primary">
-      <p className="font-semibold">{item.name}</p>
+    <button type="button" onClick={() => onSelect(item.id)} className="flex w-full gap-3 rounded-2xl border bg-white p-4 text-left hover:border-primary focus-visible:outline-2 focus-visible:outline-primary">
+      <Logo url={item.logo_url} name={item.name} />
+      <div className="min-w-0 flex-1">
+      <p className="font-semibold">{item.name}{item.category && <span className="font-normal text-muted-foreground"> · {item.category}</span>}</p>
       <p className="text-sm">{item.branch_name} · {item.address}, {item.municipality}</p>
       {item.description && <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{item.description}</p>}
       {item.dish && <p className="mt-1 text-sm"><span className="font-medium">{item.dish.name}</span> <span className="tabular-nums">Q{item.dish.price.toFixed(2)}</span>
@@ -107,6 +115,7 @@ function BranchList({ items, onSelect, restricted = false }: { items: PublicCata
       <p className="mt-1 flex flex-wrap gap-x-3 text-xs text-muted-foreground">
         {item.openNow === true && <span className="font-semibold text-green-700">Abierto ahora</span>}{item.openNow === false && <span>Cerrado ahora</span>}
         {distance(item.distanceKm) && <span>{distance(item.distanceKm)}</span>}</p>
+      </div>
     </button>
   </li>)}</ul>
 }
@@ -169,8 +178,10 @@ export function BranchDetail({ id, onBack }: { id: string; onBack: () => void })
   return <div className="space-y-4">
     <Button variant="ghost" onClick={onBack}><ArrowLeft className="mr-1 h-4 w-4" />Volver a resultados</Button>
     {error ? <div role="alert"><p>{error}</p><Button variant="outline" onClick={() => setRetry((v) => v + 1)}>Reintentar</Button></div> : !b ? <p role="status">Cargando sede…</p> : <>
-      <section className="rounded-2xl border bg-white p-5 space-y-2">
-        <h2 className="text-2xl font-bold">{b.name}</h2>
+      <section className="overflow-hidden rounded-2xl border bg-white">
+        {b.cover_url && <img src={b.cover_url} alt={`Foto de ${b.name}`} className="h-48 w-full object-cover sm:h-64" />}
+        <div className="space-y-2 p-5">
+        <div className="flex items-center gap-3"><Logo url={b.logo_url} name={b.name} size="h-16 w-16" /><h2 className="text-2xl font-bold">{b.name}</h2></div>
         <FavoriteButton branchId={b.id} />
         <p className="font-medium">{b.branch_name}{b.category ? ` · ${b.category}` : ''}</p>
         <p className="text-sm">{b.address}, {b.municipality}, {b.department}</p>
@@ -178,6 +189,7 @@ export function BranchDetail({ id, onBack }: { id: string; onBack: () => void })
         <Hours hours={b.opening_hours ?? []} />
         {b.phone && <div className="flex flex-wrap gap-2"><a className="rounded-md border px-3 py-1.5 text-sm" href={phoneUrl(b.phone)}>Llamar · {b.phone}</a>{b.whatsapp && <a className="rounded-md border px-3 py-1.5 text-sm" target="_blank" rel="noreferrer" href={whatsappUrl(b.phone)}>WhatsApp</a>}</div>}
         {b.latitude != null && b.longitude != null && <a className="inline-block text-sm underline" target="_blank" rel="noreferrer" href={`https://www.openstreetmap.org/?mlat=${b.latitude}&mlon=${b.longitude}#map=18/${b.latitude}/${b.longitude}`}>Ver en el mapa</a>}
+        </div>
       </section>
       <section className="rounded-2xl border bg-white p-5 space-y-3">
         <h3 className="text-lg font-semibold">Menú</h3>

@@ -1,6 +1,5 @@
 import { z } from 'zod'
 import { ALLERGENS, DISH_TAGS } from './menu'
-import { RESTAURANT_CATEGORIES } from './restaurants'
 
 const optionalCoordinate = (min: number, max: number) => z.preprocess(
   value => value == null || (typeof value === 'string' && !value.trim()) ? undefined : value,
@@ -20,7 +19,7 @@ export const catalogQuerySchema = z.object({
   radiusMeters: z.coerce.number().int().positive().max(200000).default(5000),
   limit: z.coerce.number().int().positive().max(100).default(20),
   // Filters (all must hold): restaurant category, dish tags, allergens to exclude, ingredients to avoid.
-  category: z.preprocess(v => v === '' ? undefined : v, z.enum(RESTAURANT_CATEGORIES, { errorMap: () => ({ message: 'Ese tipo de comida no existe.' }) }).optional()),
+  category: z.preprocess(v => typeof v === 'string' && !v.trim() ? undefined : v, z.string().trim().max(60).optional()),
   tags: csv([...DISH_TAGS], DISH_TAGS.length),
   without: csv([...ALLERGENS], ALLERGENS.length),
   avoid: z.preprocess(

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { router } from 'expo-router'
 import MapView, { Marker } from 'react-native-maps'
-import { View } from 'react-native'
+import { Image, View } from 'react-native'
 import { useSession } from '../src/session'
 import { requestUserLocation, type UserCoords } from '../src/location'
 import { api } from '../src/api'
@@ -11,7 +11,6 @@ import type { PublicCatalogItem } from '../../modules/catalog/data/public-catalo
 import { Action, Card, Chip, Field, Loading, Message, Page, ScreenBoundary, Title, colors } from '../src/ui'
 import { Text } from 'react-native'
 import { ALLERGEN_LABELS, ALLERGENS, DISH_TAGS, DISH_TAG_LABELS, type Allergen, type DishTag } from '../../shared/contracts/menu'
-import { RESTAURANT_CATEGORIES } from '../../shared/contracts/restaurants'
 
 type Filters = { category: string; openNow: boolean; tags: DishTag[]; without: Allergen[] }
 const noFilters: Filters = { category: '', openNow: false, tags: [], without: [] }
@@ -42,6 +41,8 @@ export default function Discover() {
   const [filters, setFilters] = useState<Filters>(noFilters)
   const [showFilters, setShowFilters] = useState(false)
   const filtersRef = useRef<Filters>(noFilters)
+  const [types, setTypes] = useState<string[]>([])
+  useEffect(() => { api.listBusinessTypes().then(setTypes).catch(() => {}) }, [])
   const activeCount = (filters.category ? 1 : 0) + (filters.openNow ? 1 : 0) + filters.tags.length + filters.without.length
 
   const load = useCallback(async (text: string, location: UserCoords | null) => {
@@ -117,8 +118,8 @@ export default function Discover() {
         <Text style={{ color: colors.green, fontSize: 16, fontWeight: '600' }}>Sin</Text>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>{ALLERGENS.map(a => <Chip key={a} tone="red" label={ALLERGEN_LABELS[a]} on={filters.without.includes(a)} disabled={busy} onPress={() => apply({ ...filters, without: toggle(filters.without, a) })} />)}</View>
         {filters.without.length ? <Message>Ocultamos los platillos marcados con esos alérgenos. Si tu alergia es grave, confírmala con el restaurante.</Message> : null}
-        <Text style={{ color: colors.green, fontSize: 16, fontWeight: '600' }}>Tipo de comida</Text>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>{RESTAURANT_CATEGORIES.map(c => <Chip key={c} label={c} on={filters.category === c} disabled={busy} onPress={() => apply({ ...filters, category: filters.category === c ? '' : c })} />)}</View>
+        <Text style={{ color: colors.green, fontSize: 16, fontWeight: '600' }}>Tipo de negocio</Text>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>{types.map(c => <Chip key={c} label={c} on={filters.category === c} disabled={busy} onPress={() => apply({ ...filters, category: filters.category === c ? '' : c })} />)}</View>
         {activeCount ? <Action title="Quitar filtros" secondary onPress={() => apply(noFilters)} disabled={busy} /> : null}
       </Card> : null}
       {mapsEnabled ? <ScreenBoundary><View style={{ height: 220, borderRadius: 16, overflow: 'hidden', borderWidth: 1, borderColor: '#B9C5BC' }}>
@@ -141,7 +142,10 @@ export default function Discover() {
       ) : null}
       {items.map((item) => (
         <Card key={item.id}>
-          <Title>{item.name}</Title>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+            {item.logo_url ? <Image source={{ uri: item.logo_url }} accessibilityIgnoresInvertColors style={{ width: 56, height: 56, borderRadius: 28 }} /> : null}
+            <View style={{ flex: 1 }}><Title>{item.name}</Title>{item.category ? <Text style={{ color: '#5F6B64', fontSize: 15 }}>{item.category}</Text> : null}</View>
+          </View>
           <Message>{item.branch_name} · {item.address}, {item.municipality}</Message>
           {item.description ? <Message>{item.description}</Message> : <Message>Sin información de descripción.</Message>}
           {item.dish ? <Message>{`${item.dish.name}: Q${item.dish.price.toFixed(2)}`}{filters.without.length && !item.dish.allergensDeclared ? '\n⚠️ Alérgenos sin declarar: confírmalo con el restaurante' : ''}</Message> : null}

@@ -17,7 +17,10 @@ test('catalog rows map meters to km and omit distance without origin', () => {
 
 test('catalog search delegates filters to the database function', async () => {
   let call
-  const client = { rpc: async (name, args) => { call = { name, args }; return { data: [row], error: null } } }
+  let logos
+  const client = { rpc: async (name, args) => {
+    if (name === 'get_public_restaurant_images') { logos = args; return { data: [{ id: row.restaurant_id, logo_path: 'r/brand/a.jpg' }], error: null } }
+    call = { name, args }; return { data: [row], error: null } } }
   const items = await listPublishedCatalog(client, { query: '  pepian ', limit: 500, location: { latitude: 14.8, longitude: -91.5, radiusKm: 2.5 }, tags: ['picante'], without: ['mani'], avoid: ['Cebolla', 'x.*'] })
   assert.equal(call.name, 'search_catalog_v2')
   assert.deepEqual(call.args.p_groups, [{ re: '\\m(pepian)', tags: [] }, { re: '', tags: ['picante'] }])
@@ -26,6 +29,7 @@ test('catalog search delegates filters to the database function', async () => {
   assert.equal(call.args.p_radius_m, 2500); assert.equal(call.args.p_limit, 50)
   assert.equal(items.length, 1)
   assert.equal(items[0].dish, null)
+  if (row.restaurant_id) { assert.deepEqual(logos.p_ids, [row.restaurant_id]); assert.equal(items[0].logo_url, 'r/brand/a.jpg') }
 })
 
 test('catalog errors are not reported as empty results', async () => {

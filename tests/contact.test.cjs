@@ -19,8 +19,10 @@ test('branch phone is normalized, optional, and clearable', () => {
   assert.equal(whatsappUrl('+50277654321'), 'https://wa.me/50277654321')
 })
 
-test('category must come from the fixed list and is optional', () => {
-  assert.equal(businessProfileSchema.safeParse({ name: 'Doña Mary', description: '', category: 'Mariscos' }).success, true)
-  assert.equal(businessProfileSchema.safeParse({ name: 'Doña Mary', description: '', category: 'Sushi bar' }).success, false)
+test('business type is free text (2-60 chars), trimmed, and optional', () => {
+  assert.equal(businessProfileSchema.parse({ name: 'Doña Mary', description: '', category: '  Sushi   bar ' }).category, 'Sushi bar')
+  assert.equal(businessProfileSchema.parse({ name: 'Doña Mary', description: '', category: '   ' }).category, null)
+  assert.equal(businessProfileSchema.safeParse({ name: 'Doña Mary', description: '', category: 'P' }).success, false)
+  assert.equal(businessProfileSchema.safeParse({ name: 'Doña Mary', description: '', category: 'x'.repeat(61) }).success, false)
   assert.equal('category' in businessProfileSchema.parse({ name: 'Doña Mary', description: '' }), false)
 })

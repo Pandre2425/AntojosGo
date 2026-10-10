@@ -83,6 +83,12 @@ export function createApiClient({ baseUrl, getToken, refreshToken }: Options) {
       call<{ path: string; token: string; signedUrl: string; maxBytes: number; contentType: string }>('POST', `/dishes/${id}/image/upload-url`, { contentType }),
     confirmDishImage: (id: string, path: string) => call<{ image_url: string }>('PUT', `/dishes/${id}/image`, { path }),
     removeDishImage: (id: string) => call<{ image_url: null }>('DELETE', `/dishes/${id}/image`),
+    /** Logo or cover: same two-step upload as dish photos. */
+    prepareRestaurantImage: (id: string, kind: 'logo' | 'cover', contentType: string) =>
+      call<{ path: string; token: string; signedUrl: string; maxBytes: number; contentType: string }>('POST', `/restaurants/${id}/images/${kind}/upload-url`, { contentType }),
+    confirmRestaurantImage: (id: string, kind: 'logo' | 'cover', path: string) => call<{ url: string }>('PUT', `/restaurants/${id}/images/${kind}`, { path }),
+    removeRestaurantImage: (id: string, kind: 'logo' | 'cover') => call<{ url: null }>('DELETE', `/restaurants/${id}/images/${kind}`),
+    listBusinessTypes: () => call<{ items: string[] }>('GET', '/catalog/business-types', undefined, {}, false).then(r => r.items),
     listFavorites: () => call<{ items: PublicCatalogItem[] }>('GET', '/me/favorites').then(r => r.items),
     addFavorite: (branchId: string) => call<{ ok: true }>('PUT', `/me/favorites/${branchId}`),
     removeFavorite: (branchId: string) => call<{ ok: true }>('DELETE', `/me/favorites/${branchId}`),

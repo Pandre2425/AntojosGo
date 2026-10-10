@@ -22,6 +22,8 @@ export type PublicCatalogItem = {
   openNow?: boolean | null
   /** Best dish matching the search/filters, with its allergen declaration (never assumed safe). */
   dish?: { name: string; price: number; allergensDeclared: boolean; contains: Allergen[] } | null
+  /** Storage path from the DB; the API replaces it with a public URL. */
+  logo_url?: string | null
 }
 
 /** Row returned by the search_public_catalog / get_public_branch SQL functions (supabase/migrations/20261002090000_public_catalog_v2.sql). */
@@ -78,7 +80,16 @@ export async function listPublishedCatalog(client: SupabaseClient, opts: Catalog
   let items = ((data || []) as SearchRow[]).map(toCatalogItem)
   if (opts.openNow) items = items.filter(i => i.openNow !== false).sort((a, b) => Number(b.openNow === true) - Number(a.openNow === true))
   if (opts.sort === 'price') items = [...items].sort((a, b) => (a.dish ? a.dish.price : Infinity) - (b.dish ? b.dish.price : Infinity))
-  return items
+  return withLogos(client, items)
+}
+
+/** One extra query for the logos of the restaurants in the results. */
+async function withLogos(client: SupabaseClient, items: PublicCatalogItem[]): Promise<PublicCatalogItem[]> {
+  const ids = [...new Set(items.map(i => i.restaurant_id).filter((v): v is string => Boolean(v)))]
+  if (!ids.length) return items
+  const { data } = await client.rpc('get_public_restaurant_images', { p_ids: ids })
+  const logos = new Map(((data ?? []) as { id: string; logo_path: string | null }[]).map(r => [r.id, r.logo_path]))
+  return items.map(i => ({ ...i, logo_url: (i.restaurant_id && logos.get(i.restaurant_id)) || null }))
 }
 
 export function toCatalogItem(row: SearchRow): PublicCatalogItem {
@@ -106,12 +117,17 @@ export async function getPublicMenu(client: SupabaseClient, branchId: string): P
 }
 
 /** Extra public data of a published branch (hours, …); empty object for drafts or unknown ids. */
-export type PublicBranchExtras = { opening_hours?: OpeningHours; phone?: string | null; whatsapp?: boolean; category?: string | null }
+export type PublicBranchExtras = {
+  opening_hours?: OpeningHours; phone?: string | null; whatsapp?: boolean; category?: string | null
+  /** Storage paths in the DB function; the API replaces them with public URLs. */
+  logo_url?: string | null; cover_url?: string | null
+}
 export async function getPublicBranchExtras(client: SupabaseClient, id: string): Promise<PublicBranchExtras> {
   if (!UUID.test(id)) return {}
   const { data, error } = await client.rpc('get_public_branch_extras', { p_id: id })
   if (error) throw dbError(error, 'No pudimos cargar la sede. Revisa la conexión e intenta de nuevo.')
-  return (data ?? {}) as PublicBranchExtras
+  const { logo_path, cover_path, ...rest } = (data ?? {}) as PublicBranchExtras & { logo_path?: string | null; cover_path?: string | null }
+  return { ...rest, logo_url: logo_path ?? null, cover_url: cover_path ?? null }
 }
 
 export async function getPublishedBranch(
