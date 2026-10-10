@@ -8,7 +8,14 @@ import { api } from '../src/api'
 import { getServerUrl } from '../src/server'
 import { mapsEnabled } from '../src/maps'
 import type { PublicCatalogItem } from '../../modules/catalog/data/public-catalog'
-import { Action, Card, Field, Loading, Message, Page, ScreenBoundary, Title, colors } from '../src/ui'
+import { Action, Card, Chip, Field, Loading, Message, Page, ScreenBoundary, Title, colors } from '../src/ui'
+import { Text } from 'react-native'
+import { ALLERGEN_LABELS, ALLERGENS, DISH_TAGS, DISH_TAG_LABELS, type Allergen, type DishTag } from '../../shared/contracts/menu'
+import { RESTAURANT_CATEGORIES } from '../../shared/contracts/restaurants'
+
+type Filters = { category: string; openNow: boolean; tags: DishTag[]; without: Allergen[] }
+const noFilters: Filters = { category: '', openNow: false, tags: [], without: [] }
+const toggle = <T,>(list: T[], v: T) => list.includes(v) ? list.filter(x => x !== v) : [...list, v]
 
 // Uncontrolled map: the camera moves only when results or the user location change, never on unrelated re-renders.
 function regionFor(items: PublicCatalogItem[], coords: UserCoords | null) {
@@ -32,6 +39,10 @@ export default function Discover() {
   const request = useRef(0)
   const active = useRef(true)
   const map = useRef<MapView>(null)
+  const [filters, setFilters] = useState<Filters>(noFilters)
+  const [showFilters, setShowFilters] = useState(false)
+  const filtersRef = useRef<Filters>(noFilters)
+  const activeCount = (filters.category ? 1 : 0) + (filters.openNow ? 1 : 0) + filters.tags.length + filters.without.length
 
   const load = useCallback(async (text: string, location: UserCoords | null) => {
     const current = ++request.current
@@ -44,9 +55,9 @@ export default function Discover() {
     setBusy(true)
     setError('')
     try {
-      const result = await api.searchCatalog(location
-        ? { q: text, lat: location.latitude, lng: location.longitude, radiusMeters: 50000, limit: 40 }
-        : { q: text, limit: 40 })
+      const f = filtersRef.current
+      const base = { q: text, limit: 40, category: f.category || undefined, tags: f.tags, without: f.without, openNow: f.openNow }
+      const result = await api.searchCatalog(location ? { ...base, lat: location.latitude, lng: location.longitude, radiusMeters: 50000 } : base)
       if (active.current && current === request.current) setItems(result.items)
     } catch (e) {
       if (active.current && current === request.current) { setError(e instanceof Error ? e.message : 'No pudimos cargar los restaurantes.'); setItems([]) }
@@ -67,6 +78,7 @@ export default function Discover() {
   if (!ready) return <Page><Loading /></Page>
 
   const mapRegion = regionFor(items, coords)
+  const apply = (next: Filters) => { filtersRef.current = next; setFilters(next); void load(query, coords) }
 
   return (
     <Page>
@@ -97,6 +109,18 @@ export default function Discover() {
           setBusy(false)
         }
       }} disabled={busy} />
+      <Action title={`Filtros${activeCount ? ` (${activeCount})` : ''}`} secondary={!activeCount} onPress={() => setShowFilters(v => !v)} disabled={busy} />
+      {showFilters ? <Card>
+        <Chip label="Abierto ahora" on={filters.openNow} onPress={() => apply({ ...filters, openNow: !filters.openNow })} disabled={busy} />
+        <Text style={{ color: colors.green, fontSize: 16, fontWeight: '600' }}>Quiero</Text>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>{DISH_TAGS.map(t => <Chip key={t} label={DISH_TAG_LABELS[t]} on={filters.tags.includes(t)} disabled={busy} onPress={() => apply({ ...filters, tags: toggle(filters.tags, t) })} />)}</View>
+        <Text style={{ color: colors.green, fontSize: 16, fontWeight: '600' }}>Sin</Text>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>{ALLERGENS.map(a => <Chip key={a} tone="red" label={ALLERGEN_LABELS[a]} on={filters.without.includes(a)} disabled={busy} onPress={() => apply({ ...filters, without: toggle(filters.without, a) })} />)}</View>
+        {filters.without.length ? <Message>Ocultamos los platillos marcados con esos alérgenos. Si tu alergia es grave, confírmala con el restaurante.</Message> : null}
+        <Text style={{ color: colors.green, fontSize: 16, fontWeight: '600' }}>Tipo de comida</Text>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>{RESTAURANT_CATEGORIES.map(c => <Chip key={c} label={c} on={filters.category === c} disabled={busy} onPress={() => apply({ ...filters, category: filters.category === c ? '' : c })} />)}</View>
+        {activeCount ? <Action title="Quitar filtros" secondary onPress={() => apply(noFilters)} disabled={busy} /> : null}
+      </Card> : null}
       {mapsEnabled ? <ScreenBoundary><View style={{ height: 220, borderRadius: 16, overflow: 'hidden', borderWidth: 1, borderColor: '#B9C5BC' }}>
         <MapView ref={map} style={{ flex: 1 }} initialRegion={mapRegion} showsPointsOfInterests={false}>
           {coords ? <Marker coordinate={coords} title="Tú" pinColor={colors.orange} /> : null}
@@ -120,7 +144,9 @@ export default function Discover() {
           <Title>{item.name}</Title>
           <Message>{item.branch_name} · {item.address}, {item.municipality}</Message>
           {item.description ? <Message>{item.description}</Message> : <Message>Sin información de descripción.</Message>}
-          {item.distanceKm != null ? <Message>{item.distanceKm < 1 ? `${Math.round(item.distanceKm * 1000)} m` : `${item.distanceKm.toFixed(1)} km`}</Message> : null}
+          {item.dish ? <Message>{`${item.dish.name}: Q${item.dish.price.toFixed(2)}`}{filters.without.length && !item.dish.allergensDeclared ? '\n⚠️ Alérgenos sin declarar: confírmalo con el restaurante' : ''}</Message> : null}
+          {item.openNow === true ? <Text style={{ color: colors.green, fontWeight: '700' }}>Abierto ahora</Text> : item.openNow === false ? <Text style={{ color: '#6B6760' }}>Cerrado ahora</Text> : null}
+          {item.distanceKm != null ? <Message>{item.distanceKm < 1 ? `${Math.round(item.distanceKm * 1000)} m en línea recta` : `${item.distanceKm.toFixed(1)} km en línea recta`}</Message> : null}
           <Action title="Ver sede" onPress={() => router.push({ pathname: '/sede/[id]', params: { id: item.id } })} disabled={busy} />
         </Card>
       ))}

@@ -52,8 +52,10 @@ export function createApiClient({ baseUrl, getToken, refreshToken }: Options) {
     return json as T
   }
 
-  const qs = (params: Record<string, string | number | undefined>) => {
-    const entries = Object.entries(params).filter(([, v]) => v !== undefined && v !== '').map(([k, v]) => [k, String(v)])
+  const qs = (params: Record<string, string | number | boolean | readonly string[] | undefined>) => {
+    const entries = Object.entries(params)
+      .map(([k, v]) => [k, Array.isArray(v) ? v.join(',') : typeof v === 'boolean' ? (v ? '1' : '') : v === undefined ? '' : String(v)] as [string, string])
+      .filter(([, v]) => v !== '')
     return entries.length ? `?${new URLSearchParams(entries)}` : ''
   }
 
@@ -87,7 +89,10 @@ export function createApiClient({ baseUrl, getToken, refreshToken }: Options) {
     /** Diner assistant turn; send back the returned context with the next message. */
     assistant: (message: string, context?: AssistantContext, location?: { latitude: number; longitude: number }) =>
       call<AssistantResponse>('POST', '/assistant', { message, context, location }, {}, false),
-    searchCatalog: (params: { q?: string; lat?: number; lng?: number; radiusMeters?: number; limit?: number }) =>
+    searchCatalog: (params: {
+      q?: string; lat?: number; lng?: number; radiusMeters?: number; limit?: number
+      category?: string; tags?: readonly string[]; without?: readonly string[]; avoid?: readonly string[]; openNow?: boolean; sort?: 'relevance' | 'price'
+    }) =>
       call<{ items: PublicCatalogItem[]; count: number }>('GET', `/catalog/search${qs(params)}`, undefined, {}, false),
     getPublicBranch: (id: string) => call<{ branch: PublicCatalogItem & PublicBranchExtras; menu: PublicDish[] }>('GET', `/branches/${id}/public`, undefined, {}, false),
   }

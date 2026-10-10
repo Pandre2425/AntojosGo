@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import type { DishTag } from './menu'
+import { ALLERGEN_LABELS, ALLERGENS, type Allergen, type DishTag } from './menu'
 
 /**
  * Diner assistant, rules first: a dictionary of cravings plus intents (near, open now, cheap,
@@ -53,6 +53,32 @@ const INTENTS = {
   thanks: /\b(gracias|muchas gracias|perfecto|excelente|listo)\b/,
 }
 
+// Words that name an allergen (accent-free stems) -> allergen key.
+const ALLERGEN_WORDS: Record<Allergen, string[]> = {
+  mani: ['mani', 'cacahuate', 'cacahuete'], nueces: ['nuez', 'nueces', 'almendra', 'maranon', 'pistach', 'avellana'],
+  lacteos: ['lacteo', 'leche', 'queso', 'crema', 'lactosa', 'mantequilla'], huevo: ['huevo'], gluten: ['gluten', 'trigo', 'harina'],
+  mariscos: ['marisco', 'camaron', 'langost', 'cangrejo', 'concha', 'pulpo', 'calamar'], pescado: ['pescado'],
+  soya: ['soya', 'soja'], ajonjoli: ['ajonjoli', 'sesamo'],
+}
+// "sin X", "no como X", "alergico al X", "que no tenga X" (X = up to 3 words; "ni"/"y" chain more items).
+const NEGATION = /\b(?:sin|no (?:puedo comer|como|quiero|me gusta|me gustan)|alergic[oa] (?:a|al|a la|a los|a las)|intolerante (?:a|al|a la)|evit(?:o|ar)|que no (?:tenga|lleve))\s+((?:[a-z0-9]+)(?:\s+(?:y|ni|o|,)?\s*[a-z0-9]+){0,4})/g
+const FILLER = new Set(['el', 'la', 'los', 'las', 'de', 'y', 'ni', 'o', 'nada', 'algo', 'comida', 'cosas', 'con', 'que', 'tenga', 'lleve'])
+
+/** Pulls exclusions out of a normalized message; returns the message without them. */
+export function extractExclusions(text: string): { without: Allergen[]; avoid: string[]; rest: string } {
+  const without = new Set<Allergen>(); const avoid = new Set<string>()
+  const rest = text.replace(NEGATION, (_m, items: string) => {
+    for (const w of items.split(/\s+/)) {
+      if (w.length < 3 || FILLER.has(w)) continue
+      const allergen = ALLERGENS.find(a => ALLERGEN_WORDS[a].some(stem => w.startsWith(stem)))
+      if (allergen) without.add(allergen)
+      else if (/^[a-z0-9]{3,30}$/.test(w) && !STOPWORDS.has(w)) avoid.add(w)
+    }
+    return ' '
+  }).replace(/\s+/g, ' ').trim()
+  return { without: [...without], avoid: [...avoid].slice(0, 4), rest }
+}
+
 export const assistantContextSchema = z.object({
   concepts: z.array(z.enum(CONCEPT_KEYS)).max(6).default([]),
   words: z.array(z.string().regex(/^[a-z0-9]{3,30}$/)).max(4).default([]),
@@ -61,6 +87,9 @@ export const assistantContextSchema = z.object({
   cheap: z.boolean().default(false),
   shown: z.array(z.string().uuid()).max(30).default([]),
   lastBranchId: z.string().uuid().nullable().default(null),
+  // The diner's restrictions persist across topics in the conversation.
+  without: z.array(z.enum(ALLERGENS)).max(ALLERGENS.length).default([]),
+  avoid: z.array(z.string().regex(/^[a-z0-9]{3,30}$/)).max(4).default([]),
 })
 export type AssistantContext = z.infer<typeof assistantContextSchema>
 export const emptyContext = (): AssistantContext => assistantContextSchema.parse({})
@@ -81,7 +110,13 @@ const hasStem = (text: string, stem: string) => new RegExp(`\\b${stem.trim()}`).
 
 /** One user turn -> next context + what to do. Never throws on any input. */
 export function interpret(message: string, previous: AssistantContext = emptyContext()): { context: AssistantContext; action: AssistantAction } {
-  const text = normalize(message)
+  const exclusions = extractExclusions(normalize(message))
+  const text = exclusions.rest
+  const restrictions = {
+    without: [...new Set([...previous.without, ...exclusions.without])],
+    avoid: [...new Set([...previous.avoid, ...exclusions.avoid])].slice(0, 4),
+  }
+  const restricted = exclusions.without.length > 0 || exclusions.avoid.length > 0
   // "para el frio" / "hace frio" means warm food, not a cold dessert.
   const concepts = (CONCEPT_KEYS.filter(k => CONCEPTS[k].triggers.some(t => hasStem(text, t))))
     .filter(k => !(k === 'frio' && /\b(para el|hace|con este|tengo) frio/.test(text)))
@@ -100,9 +135,11 @@ export function interpret(message: string, previous: AssistantContext = emptyCon
 
   if (concepts.length || words.length) {
     // New topic: keep the location preference, reset the rest.
-    const context = withModifiers({ ...emptyContext(), near: previous.near, concepts: concepts.slice(0, 6), words })
+    const context = withModifiers({ ...emptyContext(), near: previous.near, concepts: concepts.slice(0, 6), words, ...restrictions })
     return { context, action: 'search' }
   }
+  // "sin maní" alone refines the current search (or searches everything with that restriction).
+  if (restricted) return { context: { ...withModifiers(previous), ...restrictions, shown: [] }, action: 'search' }
   if (intent.menu && previous.lastBranchId) return { context: previous, action: 'menu' }
   // "algo más barato" / "otro más cerca" refine the search; a bare "otra opción" pages through it.
   if (modifiers) return { context: { ...withModifiers(previous), shown: [] }, action: 'search' }
@@ -120,8 +157,21 @@ export function searchGroups(ctx: AssistantContext): { re: string; tags: string[
   return groups.slice(0, 6)
 }
 
-/** Human label of what is being searched: "algo picante y postres". */
+/** Regex (word starts) excluding dishes that mention any of these ingredients. Words are pre-validated [a-z0-9]. */
+export const avoidRegex = (words: string[]) => words.length ? `\\m(${words.map(normalize).filter(Boolean).join('|')})` : ''
+
+/** Explorar text box -> one search group per meaningful word (all must match). */
+export function queryGroups(q: string): { re: string; tags: string[] }[] {
+  const words = normalize(q).split(' ').filter(w => w.length >= 2 && w.length <= 30 && !STOPWORDS.has(w))
+  return words.slice(0, 4).map(w => ({ re: `\\m(${w})`, tags: [] }))
+}
+
+const joinEs = (items: string[]) => items.length <= 1 ? items.join('') : `${items.slice(0, -1).join(', ')} ni ${items[items.length - 1]}`
+
+/** Human label of what is being searched: "algo picante y postres sin maní ni cebolla". */
 export function contextLabel(ctx: AssistantContext): string {
   const parts = [...ctx.concepts.map(k => CONCEPTS[k].label), ...(ctx.words.length ? [`«${ctx.words.join(' ')}»`] : [])]
-  return parts.length ? parts.join(' y ') : 'lugares'
+  const base = parts.length ? parts.join(' y ') : 'lugares'
+  const excluded = [...ctx.without.map(a => ALLERGEN_LABELS[a].replace(/ \(.*\)$/, '').toLowerCase()), ...ctx.avoid]
+  return excluded.length ? `${base} sin ${joinEs(excluded)}` : base
 }

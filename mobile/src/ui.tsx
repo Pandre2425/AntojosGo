@@ -20,3 +20,11 @@ const styles = StyleSheet.create({
   input: { backgroundColor: 'white', color: colors.green, borderWidth: 1, borderColor: '#B9C5BC', borderRadius: 12, padding: 12, minHeight: 48, fontSize: 16 },
   button: { padding: 14, borderRadius: 14, minHeight: 48, justifyContent: 'center' },
 })
+/** Toggle chip for filters and tags. tone 'red' marks exclusions (allergens). */
+export function Chip({ label, on, onPress, tone = 'green', disabled = false }: { label: string; on: boolean; onPress: () => void; tone?: 'green' | 'red'; disabled?: boolean }) {
+  const color = tone === 'red' ? colors.orange : colors.green
+  return <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: on, disabled }} accessibilityLabel={label} disabled={disabled} onPress={onPress}
+    style={{ paddingVertical: 8, paddingHorizontal: 14, borderRadius: 20, borderWidth: 1, borderColor: on ? color : '#B9C5BC', backgroundColor: on ? color : 'white', minHeight: 44, justifyContent: 'center', opacity: disabled ? 0.5 : 1 }}>
+    <Text style={{ color: on ? 'white' : colors.green, fontSize: 15 }}>{label}</Text>
+  </Pressable>
+}

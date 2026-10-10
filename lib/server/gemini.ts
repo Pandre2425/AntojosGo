@@ -2,6 +2,7 @@ import 'server-only'
 import { z } from 'zod'
 import { createBoundedFetch } from '../bounded-fetch'
 import { CONCEPT_KEYS, normalize } from '../../shared/contracts/assistant'
+import { ALLERGENS } from '../../shared/contracts/menu'
 
 // Fallback interpreter, used only when the rules don't understand a message.
 // Only the user's sentence is sent (never names, emails or coordinates): on Gemini's free tier
@@ -15,6 +16,8 @@ const aiResultSchema = z.object({
   near: z.boolean().catch(false),
   openNow: z.boolean().catch(false),
   cheap: z.boolean().catch(false),
+  without: z.array(z.enum(ALLERGENS)).max(ALLERGENS.length).catch([]),
+  avoid: z.array(z.string()).max(6).catch([]),
 })
 export type AiInterpretation = z.infer<typeof aiResultSchema>
 
@@ -23,6 +26,8 @@ Convierte el mensaje del usuario en filtros de búsqueda. No inventes restaurant
 - concepts: categorías de antojo, solo de esta lista: ${CONCEPT_KEYS.join(', ')}.
 - words: hasta 4 palabras clave de comida o platillos concretos que no encajen en concepts (en español, minúsculas, sin acentos).
 - near: true si quiere algo cerca. openNow: true si quiere ir ya o pregunta qué está abierto. cheap: true si busca algo barato.
+- without: alérgenos que el usuario NO puede comer (por ejemplo «sin maní», «soy alérgico a los mariscos»), solo de esta lista: ${ALLERGENS.join(', ')}.
+- avoid: hasta 4 ingredientes que no quiere y que no están en la lista de alérgenos (por ejemplo «sin cebolla» -> cebolla). Lo que el usuario NO quiere nunca va en concepts ni en words.
 - understood: false si el mensaje no trata de comida, bebida o restaurantes.`
 
 const responseJsonSchema = {
@@ -32,8 +37,10 @@ const responseJsonSchema = {
     concepts: { type: 'array', items: { type: 'string', enum: CONCEPT_KEYS } },
     words: { type: 'array', items: { type: 'string' } },
     near: { type: 'boolean' }, openNow: { type: 'boolean' }, cheap: { type: 'boolean' },
+    without: { type: 'array', items: { type: 'string', enum: ALLERGENS } },
+    avoid: { type: 'array', items: { type: 'string' } },
   },
-  required: ['understood', 'concepts', 'words', 'near', 'openNow', 'cheap'],
+  required: ['understood', 'concepts', 'words', 'near', 'openNow', 'cheap', 'without', 'avoid'],
 }
 
 export const aiEnabled = () => Boolean(process.env.GEMINI_API_KEY?.trim())
@@ -58,7 +65,8 @@ export async function interpretWithAi(message: string): Promise<AiInterpretation
     const parsed = aiResultSchema.safeParse(JSON.parse(body?.candidates?.[0]?.content?.parts?.[0]?.text ?? 'null'))
     if (!parsed.success) return null
     // The AI only proposes filters; words are re-sanitized like any user input.
-    return { ...parsed.data, words: parsed.data.words.map(normalize).filter(w => /^[a-z0-9]{3,30}$/.test(w)).slice(0, 4) }
+    const clean = (list: string[]) => list.map(normalize).filter(w => /^[a-z0-9]{3,30}$/.test(w)).slice(0, 4)
+    return { ...parsed.data, words: clean(parsed.data.words), avoid: clean(parsed.data.avoid) }
   } catch (error) {
     console.error('[assistant] AI unavailable:', error instanceof Error ? error.name : 'error')
     return null

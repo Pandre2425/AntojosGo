@@ -10,6 +10,33 @@ export const DISH_TAG_LABELS: Record<DishTag, string> = {
   postre: 'Postre', frio: 'Frío', caliente: 'Caliente', bebida: 'Bebida',
 }
 
+/** Same list as foods_allergens_allowed (supabase/migrations/20261009090000_ingredients_filters.sql).
+ * 'ninguno' = the restaurant declared the dish free of these; an EMPTY list means "not declared". */
+export const ALLERGENS = ['mani', 'nueces', 'lacteos', 'huevo', 'gluten', 'mariscos', 'pescado', 'soya', 'ajonjoli'] as const
+export type Allergen = typeof ALLERGENS[number]
+export const ALLERGEN_LABELS: Record<Allergen, string> = {
+  mani: 'Maní', nueces: 'Nueces', lacteos: 'Lácteos', huevo: 'Huevo', gluten: 'Gluten (trigo)',
+  mariscos: 'Mariscos', pescado: 'Pescado', soya: 'Soya', ajonjoli: 'Ajonjolí',
+}
+export const NO_ALLERGENS = 'ninguno' as const
+export type AllergenDeclaration = Allergen | typeof NO_ALLERGENS
+
+/** "pollo, chile pasa,  Tomate" -> ['pollo', 'chile pasa', 'Tomate'] (deduplicated, trimmed). */
+export function parseIngredients(text: string): string[] {
+  const seen = new Set<string>()
+  return text.split(/[,;\n]/).map(s => s.trim().replace(/\s+/g, ' ')).filter(s => {
+    const key = s.toLowerCase()
+    if (!s || seen.has(key)) return false
+    seen.add(key); return true
+  })
+}
+
+/** Allergen state for display and filters: declared-free, contains X, or not declared (never "safe"). */
+export function allergenStatus(allergens: readonly string[] | null | undefined): { declared: boolean; contains: Allergen[] } {
+  const list = allergens ?? []
+  return { declared: list.length > 0, contains: list.filter((a): a is Allergen => (ALLERGENS as readonly string[]).includes(a)) }
+}
+
 /** Mirrors the foods_* CHECK constraints in supabase/migrations/20261002100000_menu_foods.sql. */
 export const dishInputSchema = z.object({
   name: z.string().trim().min(1, 'Escribe el nombre del platillo.').max(120),
@@ -23,6 +50,11 @@ export const dishInputSchema = z.object({
   description: optionalText(500),
   // Optional so a client that does not send them never clears them.
   tags: z.array(z.enum(DISH_TAGS)).max(DISH_TAGS.length).transform(t => [...new Set(t)]).optional(),
+  ingredients: z.array(z.string().trim().min(1).max(40, 'Cada ingrediente admite hasta 40 caracteres.')).max(30, 'Registra hasta 30 ingredientes.')
+    .refine(list => list.join(',').length <= 600, 'La lista de ingredientes es demasiado larga.').optional(),
+  // [] = not declared; ['ninguno'] = declared free of common allergens; 'ninguno' cannot be combined.
+  allergens: z.array(z.enum([...ALLERGENS, NO_ALLERGENS])).max(ALLERGENS.length).transform(a => [...new Set(a)])
+    .refine(a => !(a.includes(NO_ALLERGENS) && a.length > 1), 'Marca «No contiene alérgenos comunes» o los alérgenos que contiene, no ambos.').optional(),
 })
 /** Raw input (price may be "35,50"); adapters parse it with dishInputSchema. */
 export type DishInput = z.input<typeof dishInputSchema>
@@ -46,4 +78,7 @@ export interface Dish {
   /** Storage path from the DB; the API replaces it with a public URL. */
   image_url: string | null
   tags: DishTag[]
+  ingredients: string[]
+  /** [] = not declared; ['ninguno'] = declared free of common allergens. */
+  allergens: AllergenDeclaration[]
 }

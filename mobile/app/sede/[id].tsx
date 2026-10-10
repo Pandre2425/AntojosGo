@@ -7,6 +7,7 @@ import { ApiError } from '../../../lib/api-client'
 import type { PublicBranchExtras, PublicCatalogItem, PublicDish } from '../../../modules/catalog/data/public-catalog'
 import { describeHours, isOpenNow } from '../../../shared/contracts/hours'
 import { phoneUrl, whatsappUrl } from '../../../shared/contracts/branches'
+import { ALLERGEN_LABELS, allergenStatus } from '../../../shared/contracts/menu'
 import { Action, Card, Loading, Message, Page, Title } from '../../src/ui'
 
 export default function SedeDetail() {
@@ -57,7 +58,7 @@ export default function SedeDetail() {
           {data.menu.length === 0 ? <Message>Este restaurante aún no ha publicado su menú.</Message> : data.menu.map((dish) => (
             <View key={dish.id} style={{ flexDirection: 'row', gap: 12, alignItems: 'flex-start' }}>
               {dish.image_url ? <Image source={{ uri: dish.image_url }} accessibilityLabel={`Foto de ${dish.name}`} style={{ width: 72, height: 72, borderRadius: 12 }} /> : null}
-              <View style={{ flex: 1 }}><Message>{dish.name} · Q{dish.price.toFixed(2)}{dish.category ? ` · ${dish.category}` : ''}{dish.is_available ? '' : ' · Agotado'}{dish.description ? `\n${dish.description}` : ''}</Message></View>
+              <View style={{ flex: 1 }}><Message>{dish.name} · Q{dish.price.toFixed(2)}{dish.category ? ` · ${dish.category}` : ''}{dish.is_available ? '' : ' · Agotado'}{dish.description ? `\n${dish.description}` : ''}{dish.ingredients?.length ? `\nIngredientes: ${dish.ingredients.join(', ')}` : ''}{`\n${allergenLine(dish.allergens)}`}</Message></View>
             </View>
           ))}
         </Card>
@@ -93,4 +94,10 @@ function FavoriteToggle({ branchId }: { branchId: string }) {
     finally { setBusy(false) }
   }
   return <><Action title={busy ? 'Guardando…' : saved ? 'Quitar de favoritos' : 'Guardar en favoritos'} secondary={saved} onPress={toggle} disabled={busy} /><Message>{error}</Message></>
+}
+
+function allergenLine(allergens?: readonly string[]) {
+  const { declared, contains } = allergenStatus(allergens)
+  if (!declared) return '⚠️ Alérgenos no declarados por el restaurante'
+  return contains.length ? `Contiene: ${contains.map(a => ALLERGEN_LABELS[a].toLowerCase()).join(', ')}` : 'Sin alérgenos comunes, según el restaurante'
 }

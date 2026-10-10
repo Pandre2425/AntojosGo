@@ -9,6 +9,7 @@ export const GET = route(async (req, { db }) => {
   const items = await listPublishedCatalog(db, {
     query: params.q, limit: params.limit,
     location: params.lat !== undefined && params.lng !== undefined ? { latitude: params.lat, longitude: params.lng, radiusKm: params.radiusMeters / 1000 } : undefined,
+    category: params.category, tags: params.tags, without: params.without, avoid: params.avoid, openNow: params.openNow, sort: params.sort,
   })
   return NextResponse.json({ items, count: items.length }, { headers: { 'cache-control': 'public, s-maxage=30, stale-while-revalidate=120' } })
 }, { auth: false })

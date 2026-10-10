@@ -52,3 +52,29 @@ test('search groups are server-built and only contain safe characters', () => {
   assert.equal(contextLabel(assistantContextSchema.parse({ words: ['asdf', 'qwer'] })), '«asdf qwer»')
   assert.equal(contextLabel(emptyContext()), 'lugares')
 })
+
+test('exclusions: allergens and ingredients are understood and persist across topics', () => {
+  const { extractExclusions, interpret, contextLabel, queryGroups, avoidRegex } = require('../shared/contracts/assistant.ts')
+  assert.deepEqual(extractExclusions('algo picante sin mani').without, ['mani'])
+  assert.deepEqual(extractExclusions('soy alergico a los mariscos').without, ['mariscos'])
+  assert.deepEqual(extractExclusions('no como cebolla ni tomate').avoid, ['cebolla', 'tomate'])
+  // "sin mariscos" must not search FOR seafood
+  const r = interpret('quiero algo sin mariscos')
+  assert.deepEqual(r.context.concepts, []); assert.deepEqual(r.context.without, ['mariscos']); assert.equal(r.action, 'search')
+  const a = interpret('soy alérgico al maní').context
+  const b = interpret('quiero un postre', a).context
+  assert.deepEqual(b.concepts, ['postre']); assert.deepEqual(b.without, ['mani']) // restriction kept
+  assert.equal(contextLabel({ ...b, avoid: ['cebolla'] }), 'postres sin maní ni cebolla')
+  assert.equal(avoidRegex(['cebolla']), '\\m(cebolla)')
+  assert.deepEqual(queryGroups('pizza en Quetzaltenango').map(g => g.re), ['\\m(pizza)', '\\m(quetzaltenango)'])
+})
+
+test('menu contract: ingredients parse and allergen declaration rules', () => {
+  const { parseIngredients, dishInputSchema, allergenStatus } = require('../shared/contracts/menu.ts')
+  assert.deepEqual(parseIngredients('pollo, Chile pasa ,pollo;  tomate '), ['pollo', 'Chile pasa', 'tomate'])
+  assert.equal(dishInputSchema.safeParse({ name: 'X', price: 10, allergens: ['ninguno', 'mani'] }).success, false)
+  assert.equal(dishInputSchema.safeParse({ name: 'X', price: 10, allergens: ['mani', 'huevo'] }).success, true)
+  assert.deepEqual(allergenStatus([]), { declared: false, contains: [] })        // not declared != safe
+  assert.deepEqual(allergenStatus(['ninguno']), { declared: true, contains: [] })
+  assert.deepEqual(allergenStatus(['mani']), { declared: true, contains: ['mani'] })
+})
