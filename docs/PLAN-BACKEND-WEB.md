@@ -234,9 +234,33 @@ Problemas resueltos al compilar:
 - **Etiquetas por platillo** (picante, vegetariano, frío, desayuno…) en los menús de web y móvil.
 - **Corrección de fondo:** `createBoundedFetch` decodificaba como Latin-1 en React Native todas las respuestas del servidor con acentos. Además, `build-apk.ps1` ahora siempre vuelve a empaquetar el JavaScript, porque Gradle no vigila `lib/` ni `shared/`.
 
-## 8. Decisiones pendientes del usuario
+## 8. Pendientes (actualizado el 10 de octubre de 2026)
 
-1. Proveedor de mapas del móvil.
-2. Hosting del backend y de la web, y creación de un segundo proyecto Supabase para pruebas.
-3. Permitir o no varios administradores por restaurante en el piloto.
-4. Confirmar el borrado de `AllCode.txt` y de la carpeta `android/` heredada.
+Ya decidido: mapas (Google en el móvil, OpenStreetMap en la web) y hosting (Vercel + Supabase).
+
+### Seguridad: acciones tuyas (detalle en `docs/SEGURIDAD.md`)
+
+1. **Crítico:** Supabase → Project Settings → API Keys → *Legacy API Keys* → **Disable**. Hay secretos antiguos en el historial público de git.
+2. Supabase → Database → **Reset database password**.
+3. Proyecto antiguo de Firebase: borrar la cuenta de servicio y las API keys (o el proyecto). Cloudinary: regenerar el secreto o cerrar la cuenta.
+4. Ejecutar en el SQL Editor `supabase/manual/20261010_move_postgis_to_extensions.sql` (única prueba de seguridad que falla).
+5. Supabase → Authentication → contraseña mínima de **10** caracteres (igual que la app).
+6. Opcional: reescribir el historial de git o hacer privado el repositorio (no sustituye a los pasos 1–3).
+
+### Decisiones
+
+7. Confirmación de correo al registrarse (requiere SMTP, `docs/EMAIL-SETUP.md`).
+8. Límite de peticiones en la API (Upstash gratuito o firewall de Vercel); necesario antes de Gemini con pago.
+9. Clave de Gemini: `GEMINI_API_KEY` en `.env.local` y en Vercel (el asistente funciona sin ella, solo con reglas).
+10. Documentos de la tesis en el repositorio público (opciones A, B o C; recomendado A+C).
+11. Despublicar los datos de prueba ("QA Claude Cocina", "QA Antojos Cocina", "PepianQA") antes del piloto con usuarios reales.
+12. Mejoras de uso propuestas: A) lista "Para que te encuentren" y platillos visibles por defecto; B) comensal entra sin cuenta en el móvil; C) pestañas inferiores en el móvil; E) copiar el horario del lunes a todos los días.
+13. Varios administradores por restaurante en el piloto.
+14. Segundo proyecto Supabase para pruebas (hoy pruebas y producción comparten base).
+
+### Tareas
+
+15. Publicar `AntojosGo-0.3.1.apk` en GitHub Releases (etiqueta `v0.3.1`); después actualizar `public/app-version.json` para el aviso de actualización.
+16. Borrar el código heredado sin uso (lista en la fila 0 de la sección de avance), `AllCode.txt`, la carpeta `android/` heredada, Capacitor y la carpeta suelta `C:\c\`.
+17. Ícono de la pestaña (`favicon.ico` da 404).
+18. Respaldos y ensayo de restauración (`docs/EXECUTION-PLAN.md` §4.6).
