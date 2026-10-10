@@ -40,7 +40,7 @@ const STOPWORDS = new Set(('quiero quisiera queria me te le gustaria gusta gusta
   'comer come comida cenar cena almorzar almuerzo merendar tomar tengo hay hambre antojo antoja se ser este esta esto estoy esa ese hoy ahora ahorita mismo rico rica buen bueno buena ' +
   'lugar lugares restaurante restaurantes opcion opciones busco buscar recomiendas recomienda recomendar dame dime puedes podrias favor porfa por favor y o pero si no mi mis tu tus ya bien ' +
   'tienen tiene tienes venden vende ofrecen ofrece hacen menu carta platillos platillo mucho mucha muchos muchas gracias otro otra otros otras ' +
-  'cosa cosas tipo ver vamos voy ir salir').split(' '))
+  'cosa cosas tipo ver vamos voy ir salir soy alergico alergica alergia intolerante intolerancia puedo nada').split(' '))
 
 const INTENTS = {
   near: /\b(cerca|cercan|cerquit|por aqui|aqui cerca|a pie|caminando|cerca de mi)/,

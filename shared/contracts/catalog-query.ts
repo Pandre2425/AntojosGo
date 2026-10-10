@@ -9,7 +9,7 @@ const optionalCoordinate = (min: number, max: number) => z.preprocess(
 // Query strings carry lists as "a,b,c".
 const csv = <T extends [string, ...string[]]>(values: T, max: number) => z.preprocess(
   value => typeof value === 'string' ? value.split(',').map(s => s.trim()).filter(Boolean) : value,
-  z.array(z.enum(values)).max(max).default([]),
+  z.array(z.enum(values, { errorMap: () => ({ message: 'Uno de los filtros no es válido.' }) })).max(max).default([]),
 )
 const flag = z.preprocess(value => value === true || value === '1' || value === 'true', z.boolean()).default(false)
 
@@ -20,7 +20,7 @@ export const catalogQuerySchema = z.object({
   radiusMeters: z.coerce.number().int().positive().max(200000).default(5000),
   limit: z.coerce.number().int().positive().max(100).default(20),
   // Filters (all must hold): restaurant category, dish tags, allergens to exclude, ingredients to avoid.
-  category: z.preprocess(v => v === '' ? undefined : v, z.enum(RESTAURANT_CATEGORIES).optional()),
+  category: z.preprocess(v => v === '' ? undefined : v, z.enum(RESTAURANT_CATEGORIES, { errorMap: () => ({ message: 'Ese tipo de comida no existe.' }) }).optional()),
   tags: csv([...DISH_TAGS], DISH_TAGS.length),
   without: csv([...ALLERGENS], ALLERGENS.length),
   avoid: z.preprocess(

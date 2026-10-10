@@ -44,6 +44,10 @@ export async function runAssistant(db: SupabaseClient, input: z.input<typeof ass
   if (action === 'thanks') return { reply: '¡Buen provecho! Si se te antoja otra cosa, aquí estoy.', items: [], context, source }
   if (action === 'menu') return menuReply(db, context, source)
 
+  const hasTopic = context.concepts.length > 0 || context.words.length > 0 || context.near || context.openNow || context.cheap
+  if (action === 'search' && !hasTopic && (context.without.length || context.avoid.length)) {
+    return { reply: `Anotado: buscaré opciones ${contextLabel(context).replace(/^lugares /, '')}. ¿Qué se te antoja?`, items: [], context, source }
+  }
   if (context.near && !location) {
     return { reply: 'Para buscar cerca de ti necesito tu ubicación.', items: [], context, source, needsLocation: true }
   }

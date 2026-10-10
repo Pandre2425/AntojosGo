@@ -37,6 +37,12 @@ test('"cerca" without a location asks for it instead of searching', async () => 
   assert.equal(r.needsLocation, true); assert.equal(r.items.length, 0)
 })
 
+test('announcing an allergy alone is confirmed, not searched', async () => {
+  const r = await runAssistant(db, { message: 'soy alérgico al maní' }, ai)
+  assert.equal(r.items.length, 0); assert.deepEqual(r.context.without, ['mani'])
+  assert.match(r.reply, /^Anotado: buscaré opciones sin maní/)
+})
+
 test('AI disabled (returns null) never breaks the assistant', async () => {
   const r = await runAssistant(db, { message: '???' }, async () => null)
   assert.equal(r.source, 'none')
