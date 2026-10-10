@@ -3,18 +3,28 @@
     "name": "AntojosGo",
     "slug": "antojosgo-mobile",
     "scheme": "antojosgo",
-    "version": "0.3.0",
+    "version": "0.3.1",
     "platforms": [
       "android"
     ],
     "userInterfaceStyle": "light",
     "android": {
       "package": "com.antojosgo.mobile",
-      "versionCode": 3,
+      "versionCode": 4,
       "softwareKeyboardLayoutMode": "resize",
       "permissions": [
         "ACCESS_COARSE_LOCATION",
         "ACCESS_FINE_LOCATION"
+      ],
+      "blockedPermissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.SYSTEM_ALERT_WINDOW",
+        "android.permission.USE_BIOMETRIC",
+        "android.permission.USE_FINGERPRINT",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.RECEIVE_BOOT_COMPLETED",
+        "android.permission.FOREGROUND_SERVICE"
       ]
     },
     "plugins": [
