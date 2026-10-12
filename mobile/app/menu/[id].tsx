@@ -55,7 +55,7 @@ export default function Menu() {
   const undeclared = (rows ?? []).filter(d => !allergenStatus(d.allergens).declared).length
 
   if (!ready) return <Page><Loading /></Page>
-  if (!session) return <Redirect href="/" />
+  if (!session) return <Redirect href="/account" />
 
   async function run(action: () => Promise<unknown>, onError: (m: string) => void) {
     if (lock.current) return

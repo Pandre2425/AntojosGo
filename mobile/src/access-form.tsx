@@ -1,19 +1,18 @@
 import { useRef, useState } from 'react'
-import { Redirect, router } from 'expo-router'
-import { supabase } from '../src/supabase'
-import { useSession } from '../src/session'
-import { Action, Card, Field, Loading, Message, Page, Title } from '../src/ui'
-import { ServerSettings } from '../src/server-settings'
+import { supabase } from './supabase'
+import { useSession } from './session'
+import { Action, Card, Field, Loading, Message, Page, Title } from './ui'
+import { ServerSettings } from './server-settings'
 import { authErrorMessage, loginSchema, registrationSchema } from '../../lib/auth-validation'
-export default function Access() {
-  const { session, ready } = useSession()
+/** Sign in / sign up. The account tab shows it when there is no session. */
+export function AccessForm() {
+  const { ready } = useSession()
   const [register, setRegister] = useState(false)
   const [form, setForm] = useState({ name: '', email: '', password: '', confirmPassword: '' })
   const [message, setMessage] = useState('')
   const [busy, setBusy] = useState(false)
   const lock = useRef(false)
   if (!ready) return <Page><Loading /></Page>
-  if (session) return <Redirect href="/home" />
   async function submit() {
     if (lock.current || !supabase) return
     const parsed = (register ? registrationSchema : loginSchema).safeParse(form)
@@ -27,7 +26,7 @@ export default function Access() {
     finally { lock.current = false; setBusy(false) }
   }
   const field = (key: keyof typeof form) => (value: string) => setForm(v => ({ ...v, [key]: value }))
-  return <Page><Title>AntojosGo</Title><Message>Recomendaciones gastronómicas reales según tu ubicación y preferencias.</Message><Card>
+  return <Page tab><Title>Mi cuenta</Title><Message>Para buscar no necesitas cuenta. Inicia sesión para guardar favoritos o administrar tu restaurante.</Message><Card>
     <Title>{register ? 'Crea tu cuenta' : 'Bienvenido'}</Title>
     {register && <Field label="Tu nombre" value={form.name} onChangeText={field('name')} maxLength={100} editable={!busy} />}
     <Field label="Correo electrónico" value={form.email} onChangeText={field('email')} keyboardType="email-address" autoCapitalize="none" autoCorrect={false} maxLength={254} editable={!busy} />
@@ -36,5 +35,5 @@ export default function Access() {
     <Message>{supabase ? message : 'Falta la configuración pública de Supabase. Revisa mobile/.env.local.'}</Message>
     <Action title={busy ? 'Procesando…' : register ? 'Crear cuenta' : 'Iniciar sesión'} onPress={submit} disabled={busy || !supabase} />
     <Action title={register ? 'Ya tengo cuenta' : 'Crear una cuenta'} secondary onPress={() => { setRegister(!register); setMessage('') }} disabled={busy} />
-  </Card><Action title="Pregúntale a AntojosGo" onPress={() => router.push('/assistant')} disabled={busy} /><Action title="Buscar restaurantes sin cuenta" secondary onPress={() => router.push('/discover')} disabled={busy} /><ServerSettings /></Page>
+  </Card><ServerSettings /></Page>
 }

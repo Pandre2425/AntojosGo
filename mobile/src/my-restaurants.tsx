@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
-import { Redirect, router } from 'expo-router'
-import { useSession } from '../src/session'
-import { supabase } from '../src/supabase'
-import { Action, Card, Field, Loading, Message, Page, Title } from '../src/ui'
-import { api } from '../src/api'
+import { router } from 'expo-router'
+import { useSession } from './session'
+import { supabase } from './supabase'
+import { Action, Card, Field, Loading, Message, Page, Title, Txt } from './ui'
+import { api } from './api'
 import { displayNameSchema } from '../../shared/contracts/names'
 import type { OwnedRestaurant } from '../../shared/contracts/restaurants'
-export default function Restaurants() {
+/** Signed-in account tab: the user's restaurants and sign-out. */
+export function MyRestaurants() {
   const { session, ready } = useSession()
   const [rows, setRows] = useState<OwnedRestaurant[]>([])
   const [name, setName] = useState('')
@@ -24,7 +25,7 @@ export default function Restaurants() {
     return () => { active = false }
   }, [session?.user.id, retry])
   if (!ready) return <Page><Loading /></Page>
-  if (!session) return <Redirect href="/" />
+  if (!session) return null
   async function create() {
     if (lock.current) return
     const parsed = displayNameSchema.safeParse(name)
@@ -34,11 +35,10 @@ export default function Restaurants() {
     catch (e) { setError(e instanceof Error ? e.message : 'No pudimos guardar.') }
     finally { lock.current = false; setBusy(false) }
   }
-  return <Page><Title>Mis restaurantes</Title><Message>{session.user.email}</Message>
+  return <Page tab><Title>Mi cuenta</Title><Message>{session.user.email}</Message><Txt variant="headline">Mis restaurantes</Txt>
     <Message>{error}</Message>{error && <Action title="Reintentar" onPress={() => setRetry(v => v + 1)} disabled={busy} />}
     {loading ? <Loading /> : rows.length ? rows.map(row => <Card key={row.id}><Title>{row.name}</Title><Action title="Administrar negocio y sedes" onPress={() => router.push({ pathname: '/business/[id]', params: { id: row.id } })} disabled={busy} /></Card>) : <Message>Aún no tienes restaurantes registrados.</Message>}
     <Card><Field label="Nombre del nuevo restaurante" value={name} onChangeText={setName} maxLength={100} editable={!busy} /><Action title={busy ? 'Guardando…' : 'Registrar restaurante'} onPress={create} disabled={busy} /></Card>
-    <Action title="Volver al inicio" secondary disabled={busy} onPress={() => router.replace('/home')} />
     <Action title="Cerrar sesión" secondary disabled={busy} onPress={async () => { if (lock.current) return; lock.current = true; setBusy(true); try { const result = await supabase!.auth.signOut(); if (result.error) setError('No pudimos cerrar sesión. Reintenta.') } catch { setError('No pudimos cerrar sesión.') } finally { lock.current = false; setBusy(false) } }} />
   </Page>
 }

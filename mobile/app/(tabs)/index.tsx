@@ -2,15 +2,15 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { router } from 'expo-router'
 import MapView, { Marker } from 'react-native-maps'
 import { Image, View } from 'react-native'
-import { useSession } from '../src/session'
-import { requestUserLocation, type UserCoords } from '../src/location'
-import { api } from '../src/api'
-import { getServerUrl } from '../src/server'
-import { mapsEnabled } from '../src/maps'
-import type { PublicCatalogItem } from '../../modules/catalog/data/public-catalog'
-import { Action, Card, Chip, Field, Loading, Message, Page, ScreenBoundary, Title, Txt, colors } from '../src/ui'
+import { useSession } from '../../src/session'
+import { requestUserLocation, type UserCoords } from '../../src/location'
+import { api } from '../../src/api'
+import { getServerUrl } from '../../src/server'
+import { mapsEnabled } from '../../src/maps'
+import type { PublicCatalogItem } from '../../../modules/catalog/data/public-catalog'
+import { Action, Card, Chip, Field, Loading, Message, Page, ScreenBoundary, Title, Txt, colors } from '../../src/ui'
 import { Text } from 'react-native'
-import { ALLERGEN_LABELS, ALLERGENS, DISH_TAGS, DISH_TAG_LABELS, type Allergen, type DishTag } from '../../shared/contracts/menu'
+import { ALLERGEN_LABELS, ALLERGENS, DISH_TAGS, DISH_TAG_LABELS, type Allergen, type DishTag } from '../../../shared/contracts/menu'
 
 type Filters = { category: string; openNow: boolean; tags: DishTag[]; without: Allergen[] }
 const noFilters: Filters = { category: '', openNow: false, tags: [], without: [] }
@@ -27,7 +27,7 @@ function regionFor(items: PublicCatalogItem[], coords: UserCoords | null) {
 }
 
 export default function Discover() {
-  const { session, ready } = useSession()
+  const { ready } = useSession()
   const [query, setQuery] = useState('')
   const [items, setItems] = useState<PublicCatalogItem[]>([])
   const [coords, setCoords] = useState<UserCoords | null>(null)
@@ -76,13 +76,13 @@ export default function Discover() {
 
   useEffect(() => { map.current?.animateToRegion(regionFor(items, coords)) }, [items, coords])
 
-  if (!ready) return <Page><Loading /></Page>
+  if (!ready) return <Page tab><Loading /></Page>
 
   const mapRegion = regionFor(items, coords)
   const apply = (next: Filters) => { filtersRef.current = next; setFilters(next); void load(query, coords) }
 
   return (
-    <Page>
+    <Page tab>
       <Title>Buscar antojos</Title>
       <Message>{gpsNote}</Message>
       <Message>{error}</Message>
@@ -154,7 +154,6 @@ export default function Discover() {
           <Action title="Ver sede" onPress={() => router.push({ pathname: '/sede/[id]', params: { id: item.id } })} disabled={busy} />
         </Card>
       ))}
-      <Action title="Volver al inicio" secondary onPress={() => router.replace(session ? '/home' : '/')} disabled={busy} />
     </Page>
   )
 }

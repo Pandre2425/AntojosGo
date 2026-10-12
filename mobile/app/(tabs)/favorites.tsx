@@ -1,9 +1,9 @@
 import { useCallback, useState } from 'react'
-import { Redirect, router, useFocusEffect } from 'expo-router'
-import { useSession } from '../src/session'
-import { api } from '../src/api'
-import type { PublicCatalogItem } from '../../modules/catalog/data/public-catalog'
-import { Action, Card, Loading, Message, Page, Title } from '../src/ui'
+import { router, useFocusEffect } from 'expo-router'
+import { useSession } from '../../src/session'
+import { api } from '../../src/api'
+import type { PublicCatalogItem } from '../../../modules/catalog/data/public-catalog'
+import { Action, Card, Loading, Message, Page, Title } from '../../src/ui'
 
 export default function Favorites() {
   const { session, ready } = useSession()
@@ -18,9 +18,10 @@ export default function Favorites() {
     api.listFavorites().then(rows => { if (active) setItems(rows) }).catch(e => { if (active) setError(e.message) })
     return () => { active = false }
   }, [session?.user.id, retry]))
-  if (!ready) return <Page><Loading /></Page>
-  if (!session) return <Redirect href="/" />
-  return <Page><Title>Mis favoritos</Title><Message>{error}</Message>
+  if (!ready) return <Page tab><Loading /></Page>
+  if (!session) return <Page tab><Title>Mis favoritos</Title><Message>Guarda tus lugares preferidos para encontrarlos rápido. Necesitas una cuenta gratuita.</Message>
+    <Action title="Iniciar sesión o crear cuenta" onPress={() => router.navigate('/account')} /></Page>
+  return <Page tab><Title>Mis favoritos</Title><Message>{error}</Message>
     {error ? <Action title="Reintentar" onPress={() => setRetry(v => v + 1)} /> : !items ? <Loading /> : items.length ? items.map(item => <Card key={item.id}>
       <Title>{item.name}</Title>
       <Message>{item.branch_name} · {item.address}, {item.municipality}</Message>

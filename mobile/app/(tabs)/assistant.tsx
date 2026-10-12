@@ -2,11 +2,11 @@ import { useRef, useState } from 'react'
 import { KeyboardAvoidingView, Pressable, ScrollView, Text, TextInput, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { router } from 'expo-router'
-import { api } from '../src/api'
-import { requestUserLocation, type UserCoords } from '../src/location'
-import { emptyContext, type AssistantContext } from '../../shared/contracts/assistant'
-import type { AssistantItem } from '../../modules/catalog/data/assistant'
-import { Input, colors, radius, spacing, type } from '../src/ui'
+import { api } from '../../src/api'
+import { requestUserLocation, type UserCoords } from '../../src/location'
+import { emptyContext, type AssistantContext } from '../../../shared/contracts/assistant'
+import type { AssistantItem } from '../../../modules/catalog/data/assistant'
+import { Input, colors, radius, spacing, type } from '../../src/ui'
 
 type Turn = { id: number; from: 'user' | 'bot'; text: string; items?: AssistantItem[] }
 const SUGGESTIONS = ['Algo picante', 'Quiero desayunar cerca', 'Un postre frío', 'Comida típica barata']
@@ -43,7 +43,7 @@ export default function Assistant() {
     } finally { setBusy(false) }
   }
 
-  return <SafeAreaView style={{ flex: 1, backgroundColor: colors.cream }} edges={['bottom', 'left', 'right']}>
+  return <SafeAreaView style={{ flex: 1, backgroundColor: colors.cream }} edges={['top', 'left', 'right']}>
     <KeyboardAvoidingView style={{ flex: 1 }} behavior="height">
       <ScrollView ref={scroll} contentContainerStyle={{ padding: 16, gap: 12 }} onContentSizeChange={() => scroll.current?.scrollToEnd({ animated: true })} keyboardShouldPersistTaps="handled">
         {turns.map(turn => <View key={turn.id} style={{ alignSelf: turn.from === 'user' ? 'flex-end' : 'flex-start', maxWidth: '88%', gap: 8 }}>

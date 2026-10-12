@@ -27,7 +27,7 @@ export default function Location() {
     return () => { active = false }
   }, [id, session?.user.id, retry])
   if (!ready) return <Page><Loading /></Page>
-  if (!session) return <Redirect href="/" />
+  if (!session) return <Redirect href="/account" />
   async function save() {
     if (lock.current || !branch) return
     const parsed = branchLocationSchema.safeParse(point)

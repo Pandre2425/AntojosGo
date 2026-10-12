@@ -28,7 +28,7 @@ export default function Business() {
     return () => { active = false }
   }, [id, session?.user.id, retry])
   if (!ready) return <Page><Loading /></Page>
-  if (!session) return <Redirect href="/" />
+  if (!session) return <Redirect href="/account" />
   async function save() {
     if (lock.current) return
     const parsed = businessProfileSchema.safeParse({ ...form, category: form.category || null })

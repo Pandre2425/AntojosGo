@@ -22,7 +22,7 @@ export default function Hours() {
     return () => { active = false }
   }, [id, session?.user.id, retry])
   if (!ready) return <Page><Loading /></Page>
-  if (!session) return <Redirect href="/" />
+  if (!session) return <Redirect href="/account" />
   const set = (i: number, values: Partial<DayForm[number]>) => setForm(rows => rows && rows.map((r, j) => j === i ? { ...r, ...values } : r))
   async function save() {
     if (lock.current || !form) return

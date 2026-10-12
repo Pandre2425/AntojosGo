@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 // Design tokens: the only place for colors, sizes and spacing. Screens use these or the components below.
 export const colors = {
   cream: '#F8F7F2', green: '#173F35', orange: '#BD481F', white: '#FFFFFF',
+  orangeSoft: '#F6E2D9', // selected tab indicator
   muted: '#5F6B64',   // secondary text (5.2:1 on cream)
   border: '#B9C5BC',  // input/chip outlines, dividers
   inactive: '#B9B4AA', // hidden dish edge
@@ -21,7 +22,8 @@ export const type = {
   label: { color: colors.green, fontSize: 16, fontWeight: '600' },
 } as const
 
-export function Page({ children }: { children: ReactNode }) { return <SafeAreaView style={{ flex: 1, backgroundColor: colors.cream }} edges={['bottom', 'left', 'right']}><KeyboardAvoidingView style={{ flex: 1 }} behavior="height"><ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.page}>{children}</ScrollView></KeyboardAvoidingView></SafeAreaView> }
+/** Screen container. `tab` = shown under the tab bar (no stack header, so it takes the top inset; the tab bar owns the bottom). */
+export function Page({ children, tab = false }: { children: ReactNode; tab?: boolean }) { return <SafeAreaView style={{ flex: 1, backgroundColor: colors.cream }} edges={tab ? ['top', 'left', 'right'] : ['bottom', 'left', 'right']}><KeyboardAvoidingView style={{ flex: 1 }} behavior="height"><ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.page}>{children}</ScrollView></KeyboardAvoidingView></SafeAreaView> }
 export function Title({ children }: { children: ReactNode }) { return <Text accessibilityRole="header" style={type.title}>{children}</Text> }
 /** Text in one of the type ramp steps; screens never set fontSize themselves. */
 export function Txt({ variant = 'body', style, ...props }: TextProps & { variant?: keyof typeof type }) { return <Text style={[type[variant], style]} {...props} /> }
