@@ -78,7 +78,7 @@ export default function Menu() {
     setFormError('')
     const ok = await run(async () => {
       const saved = editing ? await api.updateDish(editing, parsed.data) : await api.createDish(id, parsed.data)
-      if (photo) await uploadDishPhoto(saved.id, photo).catch(() => { throw new Error('El platillo se guardó, pero la foto no se pudo subir. Súbela desde «Más opciones».') })
+      if (photo) await uploadDishPhoto(saved.id, photo).catch((e: unknown) => { throw new Error(`El platillo se guardó, pero la foto no se pudo subir (${e instanceof Error ? e.message : 'error desconocido'}). Súbela desde «Más opciones».`) })
     }, setFormError)
     if (ok) resetForm()
   }
@@ -107,6 +107,7 @@ export default function Menu() {
     setFormError(''); setForm(v => ({ ...v, ingredients: [...v.ingredients, newIngredient.trim().replace(/\s+/g, ' ')] })); setNewIngredient('')
   }
   const customCategories = form.categories.filter(c => !known.has(c.toLowerCase()))
+  const setAllergensOn = (on: boolean) => setForm(v => ({ ...v, hasAllergens: on, allergens: on ? v.allergens.filter(a => a !== NO_ALLERGENS) : [] }))
 
   return <Page><Title>Menú</Title><Message>{error}</Message>
     {!rows ? error ? <Action title="Reintentar" onPress={() => setRetry(v => v + 1)} /> : <Loading /> : rows.length === 0 ? <Message>Tu menú está vacío. Agrega tu primer platillo abajo.</Message> : <>
@@ -174,7 +175,7 @@ export default function Menu() {
       <Txt variant="label">Foto (opcional)</Txt>
       {photo || currentPhoto ? <Image source={{ uri: photo?.uri ?? currentPhoto! }} accessibilityLabel="Foto del platillo" style={{ width: '100%', aspectRatio: 4 / 3, borderRadius: radius.md }} /> : null}
       <Action title={photo || currentPhoto ? 'Cambiar foto' : 'Elegir foto'} secondary disabled={busy}
-        onPress={() => void pickPhoto([4, 3]).then(a => { if (a) setPhoto(a) }).catch(() => setFormError('No pudimos abrir la galería.'))} />
+        onPress={() => void pickPhoto().then(a => { if (a) setPhoto(a) }).catch(() => setFormError('No pudimos abrir la galería.'))} />
       {photo ? <Txt variant="subhead">La foto se subirá al guardar.</Txt> : null}
 
       <Txt variant="label">Categorías</Txt>
@@ -201,11 +202,13 @@ export default function Menu() {
       </View>
 
       <Txt variant="label">Alérgenos</Txt>
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.md }}>
+      {/* The whole row toggles: people tap the words, not only the switch. */}
+      <Pressable accessibilityRole="switch" accessibilityState={{ checked: form.hasAllergens, disabled: busy }} disabled={busy}
+        onPress={() => setAllergensOn(!form.hasAllergens)} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.md, minHeight: 48 }}>
         <Txt style={{ flex: 1 }}>Contiene alérgenos</Txt>
-        <Switch value={form.hasAllergens} disabled={busy} accessibilityLabel="Contiene alérgenos" trackColor={{ true: colors.orange, false: colors.border }} thumbColor={colors.white}
-          onValueChange={on => setForm(v => ({ ...v, hasAllergens: on, allergens: on ? v.allergens.filter(a => a !== NO_ALLERGENS) : [] }))} />
-      </View>
+        <Switch value={form.hasAllergens} disabled={busy} importantForAccessibility="no" trackColor={{ true: colors.orange, false: colors.border }} thumbColor={colors.white}
+          onValueChange={setAllergensOn} />
+      </Pressable>
       {form.hasAllergens
         ? <><Txt variant="subhead">Marca todos los que puede contener:</Txt>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>{ALLERGENS.map(a => <Chip key={a} tone="red" label={ALLERGEN_LABELS[a]} on={form.allergens.includes(a)} disabled={busy}

@@ -102,7 +102,7 @@ export default function RestaurantMenu({ restaurantId, restaurantName, onClose }
     if (form.hasAllergens && !parsed.data.allergens?.length) { setError('Marca qué alérgenos contiene, o apaga «Contiene alérgenos».'); return }
     const ok = await run(async () => {
       const saved = editing ? await webApi.updateDish(editing, parsed.data) : await webApi.createDish(restaurantId, parsed.data)
-      if (photo) await uploadDishImage(saved.id, photo).catch(() => { throw new Error('El platillo se guardó, pero la foto no se pudo subir. Intenta subirla de nuevo desde «Editar».') })
+      if (photo) await uploadDishImage(saved.id, photo).catch((e: unknown) => { throw new Error(`El platillo se guardó, pero la foto no se pudo subir (${e instanceof Error ? e.message : 'error desconocido'}). Intenta de nuevo desde «Editar».`) })
     }, editing ? 'Platillo actualizado.' : 'Platillo agregado como oculto. Pulsa «Mostrar» cuando esté listo.')
     if (ok) resetForm()
   }
