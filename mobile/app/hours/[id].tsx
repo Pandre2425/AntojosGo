@@ -4,7 +4,7 @@ import { Redirect, router, useLocalSearchParams } from 'expo-router'
 import { useSession } from '../../src/session'
 import { api } from '../../src/api'
 import { DAY_NAMES, fromDayForm, toDayForm, type DayForm } from '../../../shared/contracts/hours'
-import { Action, Card, Field, Loading, Message, Page, Title, colors } from '../../src/ui'
+import { Action, Card, Field, Loading, Message, Page, Title, Txt, colors } from '../../src/ui'
 
 export default function Hours() {
   const { id } = useLocalSearchParams<{ id: string }>()
@@ -38,7 +38,7 @@ export default function Hours() {
       <Message>Escribe las horas como HH:MM (24 h). Si cierras después de medianoche, pon la hora de cierre menor que la de apertura.</Message>
       {form.map((d, i) => <Card key={d.day}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Text style={{ color: colors.green, fontSize: 18, fontWeight: '600' }}>{DAY_NAMES[d.day]}</Text>
+          <Txt variant="headline">{DAY_NAMES[d.day]}</Txt>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <Text style={{ color: colors.green }}>{d.closed ? 'Cerrado' : 'Abre'}</Text>
             <Switch accessibilityLabel={`${DAY_NAMES[d.day]} abre`} value={!d.closed} onValueChange={open => set(i, { closed: !open })} disabled={busy} />

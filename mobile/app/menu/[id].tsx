@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Alert, Image, Pressable, Text, TextInput, View } from 'react-native'
 import { Redirect, useLocalSearchParams } from 'expo-router'
 import { useSession } from '../../src/session'
-import { Action, Card, Chip, Field, Loading, Message, Page, Title, colors } from '../../src/ui'
+import { Action, Card, Chip, Field, Input, Loading, Message, Page, Title, Txt, colors, radius, spacing, type } from '../../src/ui'
 import { api } from '../../src/api'
 import { pickAndUploadDishPhoto } from '../../src/dish-photo'
 import { normalize } from '../../../shared/contracts/assistant'
@@ -17,7 +17,7 @@ type Status = 'all' | 'visible' | 'hidden' | 'soldout'
 const STATUS_LABELS: Record<Status, string> = { all: 'Todos', visible: 'Visibles', hidden: 'Ocultos', soldout: 'Agotados' }
 const statusOf = (d: Dish): Exclude<Status, 'all'> => d.status !== 'published' ? 'hidden' : d.is_available ? 'visible' : 'soldout'
 // The left edge of each card tells the owner what diners see.
-const EDGE: Record<Exclude<Status, 'all'>, string> = { visible: colors.green, hidden: '#B9B4AA', soldout: colors.orange }
+const EDGE: Record<Exclude<Status, 'all'>, string> = { visible: colors.green, hidden: colors.inactive, soldout: colors.orange }
 const STATUS_TEXT: Record<Exclude<Status, 'all'>, string> = { visible: 'Visible para clientes', hidden: 'Oculto', soldout: 'Agotado' }
 
 export default function Menu() {
@@ -82,11 +82,10 @@ export default function Menu() {
 
   return <Page><Title>Menú</Title><Message>{error}</Message>
     {!rows ? error ? <Action title="Reintentar" onPress={() => setRetry(v => v + 1)} /> : <Loading /> : rows.length === 0 ? <Message>Tu menú está vacío. Agrega tu primer platillo abajo.</Message> : <>
-      {undeclared > 0 ? <View style={{ borderWidth: 1, borderStyle: 'dashed', borderColor: '#B7791F', backgroundColor: '#FFFBEB', borderRadius: 12, padding: 12 }}>
-        <Text style={{ color: '#7C4A03' }}>{undeclared === 1 ? '1 platillo no tiene' : `${undeclared} platillos no tienen`} alérgenos declarados. Edítalos para que los clientes con alergias sepan qué pueden comer.</Text>
+      {undeclared > 0 ? <View style={{ borderWidth: 1, borderStyle: 'dashed', borderColor: colors.warning.border, backgroundColor: colors.warning.bg, borderRadius: radius.sm, padding: spacing.md }}>
+        <Text style={{ color: colors.warning.text }}>{undeclared === 1 ? '1 platillo no tiene' : `${undeclared} platillos no tienen`} alérgenos declarados. Edítalos para que los clientes con alergias sepan qué pueden comer.</Text>
       </View> : null}
-      <TextInput accessibilityLabel="Buscar en el menú" placeholder="Buscar por nombre o ingrediente" placeholderTextColor="#69746E" value={query} onChangeText={setQuery}
-        style={{ backgroundColor: 'white', color: colors.green, borderWidth: 1, borderColor: '#B9C5BC', borderRadius: 12, padding: 12, minHeight: 48, fontSize: 16 }} />
+      <Input accessibilityLabel="Buscar en el menú" placeholder="Buscar por nombre o ingrediente" value={query} onChangeText={setQuery} />
       <View accessibilityRole="radiogroup" style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
         {(Object.keys(STATUS_LABELS) as Status[]).map(s => <Chip key={s} label={`${STATUS_LABELS[s]} ${counts[s]}`} on={status === s} onPress={() => setStatus(s)} />)}
       </View>
@@ -94,17 +93,17 @@ export default function Menu() {
         const st = statusOf(dish)
         const al = allergenStatus(dish.allergens)
         const open = expanded === dish.id
-        return <View key={dish.id} style={{ backgroundColor: 'white', borderRadius: 16, borderLeftWidth: 6, borderLeftColor: EDGE[st], padding: 14, gap: 8 }}>
+        return <View key={dish.id} style={{ backgroundColor: colors.white, borderRadius: radius.lg, borderLeftWidth: 6, borderLeftColor: EDGE[st], padding: 14, gap: 8 }}>
           <View style={{ flexDirection: 'row', gap: 12 }}>
             {dish.image_url ? <Image source={{ uri: dish.image_url }} accessibilityLabel={`Foto de ${dish.name}`} style={{ width: 72, height: 72, borderRadius: 12 }} /> : null}
             <View style={{ flex: 1, gap: 2 }}>
-              <Text style={{ color: colors.green, fontSize: 18, fontWeight: '700' }}>{dish.name}</Text>
-              <Text style={{ color: colors.green, fontSize: 16 }}>{money(dish.price)}{dish.category ? `  ${dish.category}` : ''}</Text>
-              <Text style={{ color: EDGE[st] === '#B9B4AA' ? '#6B6760' : EDGE[st], fontWeight: '600' }}>{STATUS_TEXT[st]}</Text>
+              <Txt variant="headline">{dish.name}</Txt>
+              <Txt>{money(dish.price)}{dish.category ? `  ${dish.category}` : ''}</Txt>
+              <Text style={{ color: st === 'hidden' ? colors.muted : EDGE[st], fontWeight: '600' }}>{STATUS_TEXT[st]}</Text>
             </View>
           </View>
-          {dish.ingredients?.length ? <Text style={{ color: '#4B5A52' }}>Ingredientes: {dish.ingredients.join(', ')}</Text> : null}
-          <Text style={{ color: al.declared ? (al.contains.length ? '#9A3A18' : colors.green) : '#7C4A03' }}>
+          {dish.ingredients?.length ? <Text style={{ color: colors.muted }}>Ingredientes: {dish.ingredients.join(', ')}</Text> : null}
+          <Text style={{ color: al.declared ? (al.contains.length ? colors.danger : colors.green) : colors.warning.text }}>
             {!al.declared ? 'Alérgenos sin declarar' : al.contains.length ? `Contiene: ${al.contains.map(a => ALLERGEN_LABELS[a].toLowerCase()).join(', ')}` : 'Sin alérgenos comunes'}
           </Text>
           <View style={{ flexDirection: 'row', gap: 8 }}>
@@ -113,7 +112,7 @@ export default function Menu() {
             <View style={{ flex: 1 }}><Action title="Editar" secondary disabled={busy} onPress={() => edit(dish)} /></View>
           </View>
           <Pressable accessibilityRole="button" accessibilityState={{ expanded: open }} onPress={() => setExpanded(open ? null : dish.id)} style={{ minHeight: 44, justifyContent: 'center' }}>
-            <Text style={{ color: colors.green, textDecorationLine: 'underline', fontSize: 15 }}>{open ? 'Menos opciones' : 'Más opciones'}</Text>
+            <Text style={[type.body, { textDecorationLine: 'underline' }]}>{open ? 'Menos opciones' : 'Más opciones'}</Text>
           </Pressable>
           {open ? <View style={{ gap: 8 }}>
             <Action title={dish.is_available ? 'Marcar agotado' : 'Marcar disponible'} secondary disabled={busy}
@@ -132,13 +131,13 @@ export default function Menu() {
       <Field label="Categoría (opcional)" value={form.category} onChangeText={category => setForm(v => ({ ...v, category }))} maxLength={60} editable={!busy} />
       <Field label="Descripción (opcional)" value={form.description} onChangeText={description => setForm(v => ({ ...v, description }))} maxLength={500} multiline editable={!busy} />
       <Field label="Ingredientes principales (separados por comas)" value={form.ingredients} onChangeText={ingredients => setForm(v => ({ ...v, ingredients }))} placeholder="pollo, pepita, chile pasa" multiline editable={!busy} />
-      <Text style={{ color: colors.green, fontSize: 16, fontWeight: '600' }}>Alérgenos</Text>
-      <Text style={{ color: '#4B5A52' }}>Marca lo que contiene, o «No contiene ninguno». Sin marcar, los clientes verán «alérgenos sin declarar».</Text>
+      <Txt variant="label">Alérgenos</Txt>
+      <Text style={{ color: colors.muted }}>Marca lo que contiene, o «No contiene ninguno». Sin marcar, los clientes verán «alérgenos sin declarar».</Text>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
         {ALLERGENS.map(a => <Chip key={a} tone="red" label={ALLERGEN_LABELS[a]} on={form.allergens.includes(a)} disabled={busy} onPress={() => setAllergen(a, !form.allergens.includes(a))} />)}
         <Chip label="No contiene ninguno" on={form.allergens.includes(NO_ALLERGENS)} disabled={busy} onPress={() => setAllergen(NO_ALLERGENS, !form.allergens.includes(NO_ALLERGENS))} />
       </View>
-      <Text style={{ color: colors.green, fontSize: 16, fontWeight: '600' }}>Etiquetas (ayudan a que te encuentren)</Text>
+      <Txt variant="label">Etiquetas (ayudan a que te encuentren)</Txt>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>{DISH_TAGS.map(tag => <Chip key={tag} label={DISH_TAG_LABELS[tag]} on={form.tags.includes(tag)} disabled={busy}
         onPress={() => setForm(v => ({ ...v, tags: v.tags.includes(tag) ? v.tags.filter(t => t !== tag) : [...v.tags, tag] }))} />)}</View>
       <Message>{formError}</Message>

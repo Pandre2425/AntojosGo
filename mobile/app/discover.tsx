@@ -8,7 +8,7 @@ import { api } from '../src/api'
 import { getServerUrl } from '../src/server'
 import { mapsEnabled } from '../src/maps'
 import type { PublicCatalogItem } from '../../modules/catalog/data/public-catalog'
-import { Action, Card, Chip, Field, Loading, Message, Page, ScreenBoundary, Title, colors } from '../src/ui'
+import { Action, Card, Chip, Field, Loading, Message, Page, ScreenBoundary, Title, Txt, colors } from '../src/ui'
 import { Text } from 'react-native'
 import { ALLERGEN_LABELS, ALLERGENS, DISH_TAGS, DISH_TAG_LABELS, type Allergen, type DishTag } from '../../shared/contracts/menu'
 
@@ -113,16 +113,16 @@ export default function Discover() {
       <Action title={`Filtros${activeCount ? ` (${activeCount})` : ''}`} secondary={!activeCount} onPress={() => setShowFilters(v => !v)} disabled={busy} />
       {showFilters ? <Card>
         <Chip label="Abierto ahora" on={filters.openNow} onPress={() => apply({ ...filters, openNow: !filters.openNow })} disabled={busy} />
-        <Text style={{ color: colors.green, fontSize: 16, fontWeight: '600' }}>Quiero</Text>
+        <Txt variant="label">Quiero</Txt>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>{DISH_TAGS.map(t => <Chip key={t} label={DISH_TAG_LABELS[t]} on={filters.tags.includes(t)} disabled={busy} onPress={() => apply({ ...filters, tags: toggle(filters.tags, t) })} />)}</View>
-        <Text style={{ color: colors.green, fontSize: 16, fontWeight: '600' }}>Sin</Text>
+        <Txt variant="label">Sin</Txt>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>{ALLERGENS.map(a => <Chip key={a} tone="red" label={ALLERGEN_LABELS[a]} on={filters.without.includes(a)} disabled={busy} onPress={() => apply({ ...filters, without: toggle(filters.without, a) })} />)}</View>
         {filters.without.length ? <Message>Ocultamos los platillos marcados con esos alérgenos. Si tu alergia es grave, confírmala con el restaurante.</Message> : null}
-        <Text style={{ color: colors.green, fontSize: 16, fontWeight: '600' }}>Tipo de negocio</Text>
+        <Txt variant="label">Tipo de negocio</Txt>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>{types.map(c => <Chip key={c} label={c} on={filters.category === c} disabled={busy} onPress={() => apply({ ...filters, category: filters.category === c ? '' : c })} />)}</View>
         {activeCount ? <Action title="Quitar filtros" secondary onPress={() => apply(noFilters)} disabled={busy} /> : null}
       </Card> : null}
-      {mapsEnabled ? <ScreenBoundary><View style={{ height: 220, borderRadius: 16, overflow: 'hidden', borderWidth: 1, borderColor: '#B9C5BC' }}>
+      {mapsEnabled ? <ScreenBoundary><View style={{ height: 220, borderRadius: 16, overflow: 'hidden', borderWidth: 1, borderColor: colors.border }}>
         <MapView ref={map} style={{ flex: 1 }} initialRegion={mapRegion} showsPointsOfInterests={false}>
           {coords ? <Marker coordinate={coords} title="Tú" pinColor={colors.orange} /> : null}
           {items.filter((i) => i.latitude != null && i.longitude != null).map((item) => (
@@ -144,12 +144,12 @@ export default function Discover() {
         <Card key={item.id}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
             {item.logo_url ? <Image source={{ uri: item.logo_url }} accessibilityIgnoresInvertColors style={{ width: 56, height: 56, borderRadius: 28 }} /> : null}
-            <View style={{ flex: 1 }}><Title>{item.name}</Title>{item.category ? <Text style={{ color: '#5F6B64', fontSize: 15 }}>{item.category}</Text> : null}</View>
+            <View style={{ flex: 1 }}><Title>{item.name}</Title>{item.category ? <Txt variant="subhead">{item.category}</Txt> : null}</View>
           </View>
           <Message>{item.branch_name} · {item.address}, {item.municipality}</Message>
           {item.description ? <Message>{item.description}</Message> : <Message>Sin información de descripción.</Message>}
           {item.dish ? <Message>{`${item.dish.name}: Q${item.dish.price.toFixed(2)}`}{filters.without.length && !item.dish.allergensDeclared ? '\n⚠️ Alérgenos sin declarar: confírmalo con el restaurante' : ''}</Message> : null}
-          {item.openNow === true ? <Text style={{ color: colors.green, fontWeight: '700' }}>Abierto ahora</Text> : item.openNow === false ? <Text style={{ color: '#6B6760' }}>Cerrado ahora</Text> : null}
+          {item.openNow === true ? <Text style={{ color: colors.green, fontWeight: '700' }}>Abierto ahora</Text> : item.openNow === false ? <Txt variant="subhead">Cerrado ahora</Txt> : null}
           {item.distanceKm != null ? <Message>{item.distanceKm < 1 ? `${Math.round(item.distanceKm * 1000)} m en línea recta` : `${item.distanceKm.toFixed(1)} km en línea recta`}</Message> : null}
           <Action title="Ver sede" onPress={() => router.push({ pathname: '/sede/[id]', params: { id: item.id } })} disabled={busy} />
         </Card>

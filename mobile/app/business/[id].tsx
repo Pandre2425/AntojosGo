@@ -7,7 +7,7 @@ import { api } from '../../src/api'
 import { Image, Text, View } from 'react-native'
 import { businessProfileSchema, type BrandImageKind } from '../../../shared/contracts/restaurants'
 import { normalize } from '../../../shared/contracts/assistant'
-import { Chip } from '../../src/ui'
+import { Chip, Txt } from '../../src/ui'
 import { pickAndUploadRestaurantImage } from '../../src/dish-photo'
 export default function Business() {
   const { id } = useLocalSearchParams<{ id: string }>()
@@ -53,9 +53,9 @@ export default function Business() {
   return <Page><Title>Mi negocio</Title><Message>{error}</Message>{!loaded ? error ? <Action title="Reintentar" onPress={() => setRetry(v => v + 1)} /> : <Loading /> : <>
     <Card>
       {(['logo', 'cover'] as const).map(kind => <View key={kind} style={{ gap: 8 }}>
-        <Text style={{ color: colors.green, fontSize: 16, fontWeight: '700' }}>{kind === 'logo' ? 'Logo' : 'Foto del restaurante'}</Text>
+        <Txt variant="label">{kind === 'logo' ? 'Logo' : 'Foto del restaurante'}</Txt>
         {images[kind] ? <Image source={{ uri: images[kind]! }} accessibilityLabel={kind === 'logo' ? 'Logo actual' : 'Foto actual'} style={kind === 'logo' ? { width: 96, height: 96, borderRadius: 48 } : { width: '100%', aspectRatio: 16 / 9, borderRadius: 14 }} />
-          : <Text style={{ color: '#5F6B64' }}>{kind === 'logo' ? 'Sin logo todavía.' : 'Sin foto. Sube la fachada, el salón o tu mejor platillo.'}</Text>}
+          : <Txt variant="subhead">{kind === 'logo' ? 'Sin logo todavía.' : 'Sin foto. Sube la fachada, el salón o tu mejor platillo.'}</Txt>}
         <View style={{ flexDirection: 'row', gap: 8 }}>
           <View style={{ flex: 1 }}><Action title={images[kind] ? 'Cambiar' : 'Subir'} secondary disabled={busy} onPress={() => void changeImage(kind)} /></View>
           {images[kind] ? <View style={{ flex: 1 }}><Action title="Quitar" secondary disabled={busy} onPress={() => void changeImage(kind, true)} /></View> : null}
@@ -66,7 +66,7 @@ export default function Business() {
       <Field label="Tipo de negocio" placeholder="Ej. Pizzería, Pupusería, Cafetería" value={form.category} onChangeText={category => setForm(v => ({ ...v, category }))} maxLength={60} editable={!busy} autoCorrect={false} />
       {suggestions.length ? <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>{suggestions.map(t => <Chip key={t} label={t} on={false} disabled={busy} onPress={() => setForm(v => ({ ...v, category: t }))} />)}</View> : null}
       <Field label="Descripción" placeholder="Ej. Pizzas artesanales al horno de leña. Ambiente familiar y servicio a domicilio." value={form.description} onChangeText={description => setForm(v => ({ ...v, description }))} maxLength={2000} multiline editable={!busy} />
-      <Text style={{ color: '#5F6B64' }}>{form.description.length}/2000</Text>
+      <Txt variant="subhead">{form.description.length}/2000</Txt>
       <Action title={busy ? 'Guardando…' : 'Guardar perfil'} onPress={save} disabled={busy} /></Card>
     <Action title="Administrar menú" secondary onPress={() => router.push({ pathname: '/menu/[id]', params: { id } })} disabled={busy} />
     <ScreenBoundary><Branches restaurantId={id} /></ScreenBoundary>

@@ -7,7 +7,7 @@ import { branchLocationSchema, type BranchLocation, type RestaurantBranch } from
 import { useSession } from '../../src/session'
 import { requestUserLocation } from '../../src/location'
 import { mapsEnabled } from '../../src/maps'
-import { Action, Loading, Message, Page, ScreenBoundary, Title } from '../../src/ui'
+import { Action, Loading, Message, Page, ScreenBoundary, Title, colors } from '../../src/ui'
 export default function Location() {
   const { id } = useLocalSearchParams<{ id: string }>()
   const { session, ready } = useSession()
@@ -50,8 +50,8 @@ export default function Location() {
     <ScreenBoundary><View style={{ height: 400, borderRadius: 20, overflow: 'hidden' }} pointerEvents={busy ? 'none' : 'auto'}>
       <MapView ref={map} style={StyleSheet.absoluteFill} initialRegion={{ latitude: branch.latitude ?? 15.5, longitude: branch.longitude ?? -90.25, latitudeDelta: branch.latitude === null ? 5 : 0.005, longitudeDelta: branch.longitude === null ? 5 : 0.005 }} showsPointsOfInterests={false} showsUserLocation={false} onRegionChange={() => setMoving(true)} onRegionChangeComplete={(region, details) => { setMoving(false); if (details.isGesture) { setPoint({ latitude: region.latitude, longitude: region.longitude }); setError('') } }} />
       <View pointerEvents="none" style={{ position: 'absolute', left: '50%', top: '50%', width: 32, height: 44, transform: [{ translateX: -16 }, { translateY: -44 }] }}>
-        <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#BD481F', borderWidth: 3, borderColor: 'white', alignItems: 'center', justifyContent: 'center' }}><View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: 'white' }} /></View>
-        <View style={{ position: 'absolute', bottom: 0, left: 6, width: 0, height: 0, borderLeftWidth: 10, borderRightWidth: 10, borderTopWidth: 18, borderLeftColor: 'transparent', borderRightColor: 'transparent', borderTopColor: '#BD481F' }} />
+        <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: colors.orange, borderWidth: 3, borderColor: colors.white, alignItems: 'center', justifyContent: 'center' }}><View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: 'white' }} /></View>
+        <View style={{ position: 'absolute', bottom: 0, left: 6, width: 0, height: 0, borderLeftWidth: 10, borderRightWidth: 10, borderTopWidth: 18, borderLeftColor: 'transparent', borderRightColor: 'transparent', borderTopColor: colors.orange }} />
       </View>
     </View></ScreenBoundary></> : <Message>Párate en la entrada de tu restaurante y usa tu ubicación actual. También puedes fijarla desde la web de restaurantes.</Message>}
     <Message>{point ? `Punto seleccionado: ${point.latitude.toFixed(5)}, ${point.longitude.toFixed(5)}. Confirma antes de guardar.` : mapsEnabled ? 'Mueve el mapa para elegir el punto.' : 'Aún no hay un punto seleccionado.'}</Message>
