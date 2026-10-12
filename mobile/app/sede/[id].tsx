@@ -200,5 +200,5 @@ function FavoriteToggle({ branchId }: { branchId: string }) {
     try { await (saved ? api.removeFavorite(branchId) : api.addFavorite(branchId)); setSaved(!saved) } catch { /* button keeps its state */ }
     finally { setBusy(false) }
   }
-  return <Action title={busy ? '…' : saved ? '♥ Guardado' : '♡ Guardar'} secondary onPress={toggle} disabled={busy} />
+  return <Action title={busy ? '…' : saved ? 'Guardado ✓' : 'Guardar'} secondary onPress={toggle} disabled={busy} />
 }

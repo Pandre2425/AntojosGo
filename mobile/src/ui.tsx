@@ -12,6 +12,9 @@ export const colors = {
   danger: '#9A3A18',  // "contains allergen"
   warning: { text: '#7C4A03', bg: '#FFFBEB', border: '#B7791F' },
 } as const
+// The Android tab bar is drawn over the screen; tab pages reserve its height so the last items stay reachable.
+// ponytail: fixed height (Material 3 bar ~80dp); read it from the navigator if a taller bar ever appears.
+const TAB_BAR_SPACE = 104
 export const spacing = { xs: 4, sm: 8, md: 12, lg: 16, xl: 20, xxl: 24 } as const
 export const radius = { sm: 12, md: 14, lg: 20, full: 999 } as const
 export const type = {
@@ -23,7 +26,7 @@ export const type = {
 } as const
 
 /** Screen container. `tab` = shown under the tab bar (no stack header, so it takes the top inset; the tab bar owns the bottom). */
-export function Page({ children, tab = false }: { children: ReactNode; tab?: boolean }) { return <SafeAreaView style={{ flex: 1, backgroundColor: colors.cream }} edges={tab ? ['top', 'left', 'right'] : ['bottom', 'left', 'right']}><KeyboardAvoidingView style={{ flex: 1 }} behavior="height"><ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.page}>{children}</ScrollView></KeyboardAvoidingView></SafeAreaView> }
+export function Page({ children, tab = false }: { children: ReactNode; tab?: boolean }) { return <SafeAreaView style={{ flex: 1, backgroundColor: colors.cream }} edges={tab ? ['top', 'left', 'right'] : ['bottom', 'left', 'right']}><KeyboardAvoidingView style={{ flex: 1 }} behavior="height"><ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={[styles.page, tab && { paddingBottom: TAB_BAR_SPACE }]}>{children}</ScrollView></KeyboardAvoidingView></SafeAreaView> }
 export function Title({ children }: { children: ReactNode }) { return <Text accessibilityRole="header" style={type.title}>{children}</Text> }
 /** Text in one of the type ramp steps; screens never set fontSize themselves. */
 export function Txt({ variant = 'body', style, ...props }: TextProps & { variant?: keyof typeof type }) { return <Text style={[type[variant], style]} {...props} /> }

@@ -9,7 +9,7 @@ import { api } from '../../src/api'
 import { getServerUrl } from '../../src/server'
 import { mapsEnabled } from '../../src/maps'
 import type { PublicCatalogItem } from '../../../modules/catalog/data/public-catalog'
-import { Action, Card, Chip, Field, Loading, Message, Page, ScreenBoundary, Title, Txt, colors } from '../../src/ui'
+import { Action, Card, Chip, Input, Loading, Message, Page, ScreenBoundary, Title, Txt, colors, spacing } from '../../src/ui'
 import { Text } from 'react-native'
 import { ALLERGEN_LABELS, ALLERGENS, DISH_TAGS, DISH_TAG_LABELS, type Allergen, type DishTag } from '../../../shared/contracts/menu'
 
@@ -88,17 +88,13 @@ export default function Discover() {
       <Message>{gpsNote}</Message>
       <Message>{error}</Message>
       {error ? <Action title="Reintentar" onPress={() => load(query, coords)} disabled={busy} /> : null}
-      <Field
-        label="Qué se te antoja"
-        value={query}
-        onChangeText={setQuery}
-        placeholder="Ej. pepián, zona 3, café…"
-        editable={!busy}
-        returnKeyType="search"
-        onSubmitEditing={() => load(query, coords)}
-      />
-      <Action title={busy ? 'Buscando…' : 'Buscar'} onPress={() => load(query, coords)} disabled={busy} />
-      <Action title="Usar mi ubicación" secondary onPress={async () => {
+      <View style={{ flexDirection: 'row', gap: spacing.sm }}>
+        <Input accessibilityLabel="Qué se te antoja" value={query} onChangeText={setQuery} placeholder="Ej. pepián, zona 3, café…"
+          editable={!busy} returnKeyType="search" onSubmitEditing={() => load(query, coords)} style={{ flex: 1 }} />
+        <Action title={busy ? '…' : 'Buscar'} onPress={() => load(query, coords)} disabled={busy} style={{ paddingHorizontal: spacing.lg }} />
+      </View>
+      <View style={{ flexDirection: 'row', gap: spacing.sm }}>
+        <View style={{ flex: 1 }}><Action title={coords ? 'Cerca de mí ✓' : 'Cerca de mí'} secondary onPress={async () => {
         setBusy(true)
         const location = await requestUserLocation().catch(() => null)
         if (!active.current) return
@@ -110,8 +106,9 @@ export default function Discover() {
           setGpsNote('No pudimos obtener tu ubicación. Puedes buscar por nombre o municipio.')
           setBusy(false)
         }
-      }} disabled={busy} />
-      <Action title={`Filtros${activeCount ? ` (${activeCount})` : ''}`} secondary={!activeCount} onPress={() => setShowFilters(v => !v)} disabled={busy} />
+      }} disabled={busy} /></View>
+        <View style={{ flex: 1 }}><Action title={`Filtros${activeCount ? ` (${activeCount})` : ''}`} secondary={!activeCount} onPress={() => setShowFilters(v => !v)} disabled={busy} /></View>
+      </View>
       {showFilters ? <Card>
         <Chip label="Abierto ahora" on={filters.openNow} onPress={() => apply({ ...filters, openNow: !filters.openNow })} disabled={busy} />
         <Txt variant="label">Quiero</Txt>
@@ -124,7 +121,7 @@ export default function Discover() {
         {activeCount ? <Action title="Quitar filtros" secondary onPress={() => apply(noFilters)} disabled={busy} /> : null}
       </Card> : null}
       {mapsEnabled ? <ScreenBoundary><View style={{ height: 220, borderRadius: 16, overflow: 'hidden', borderWidth: 1, borderColor: colors.border }}>
-        <MapView ref={map} style={{ flex: 1 }} initialRegion={mapRegion} showsPointsOfInterests={false}>
+        <MapView ref={map} style={{ flex: 1 }} initialRegion={mapRegion} showsPointsOfInterests={false} scrollEnabled={false} rotateEnabled={false} pitchEnabled={false}>
           {coords ? <Marker coordinate={coords} title="Tú" pinColor={colors.orange} /> : null}
           {items.filter((i) => i.latitude != null && i.longitude != null).map((item) => (
             <Marker
