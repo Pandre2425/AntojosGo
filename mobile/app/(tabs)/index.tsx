@@ -46,7 +46,7 @@ export default function Home() {
         style={({ pressed }) => ({ width: '23%', flexGrow: 1, alignItems: 'center', gap: spacing.xs, paddingVertical: spacing.md, borderRadius: radius.md,
           borderWidth: 1, borderColor: pressed ? colors.green : colors.border, backgroundColor: pressed ? colors.cream : colors.white })}>
         <Text style={{ fontSize: 30 }} importantForAccessibility="no">{o.symbol}</Text>
-        <Text style={{ color: colors.green, fontSize: 13, textAlign: 'center' }} numberOfLines={2}>{o.title}</Text>
+        <Text style={{ color: colors.green, fontSize: 13, textAlign: 'center', paddingHorizontal: spacing.xs }} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{o.title}</Text>
       </Pressable>)}
     </View>
 
@@ -55,7 +55,9 @@ export default function Home() {
       {branches ? <Txt variant="subhead">{branches.length === 1 ? '1 sede' : `${branches.length} sedes`}</Txt> : null}
     </View>
     {mapsEnabled && branches?.length ? <ScreenBoundary><View style={{ height: 300, borderRadius: radius.lg, overflow: 'hidden', borderWidth: 1, borderColor: colors.border }}>
-      <MapView style={{ flex: 1 }} initialRegion={regionFor(points as { latitude: number; longitude: number }[])} showsPointsOfInterests={false}>
+      {/* Panning disabled so a finger on the map scrolls the page; pinch zoom and pins still work. */}
+      <MapView style={{ flex: 1 }} initialRegion={regionFor(points as { latitude: number; longitude: number }[])} showsPointsOfInterests={false}
+        scrollEnabled={false} rotateEnabled={false} pitchEnabled={false}>
         {points.map(b => <Marker key={b.id} coordinate={{ latitude: b.latitude!, longitude: b.longitude! }} title={b.name} description={`${b.branch_name} · toca para ver`}
           pinColor={colors.orange} onCalloutPress={() => router.push({ pathname: '/sede/[id]', params: { id: b.id } })} />)}
       </MapView>

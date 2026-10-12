@@ -17,7 +17,8 @@ export default function BranchesOverviewMap({ branches, onOpen }: { branches: Ma
   open.current = onOpen
   useEffect(() => {
     if (!container.current) return
-    const map = L.map(container.current, { scrollWheelZoom: false }).setView([14.84, -91.52], 12)
+    // On touch screens one finger scrolls the page, not the map (pinch still zooms).
+    const map = L.map(container.current, { scrollWheelZoom: false, dragging: !L.Browser.mobile }).setView([14.84, -91.52], 12)
     L.tileLayer(process.env.NEXT_PUBLIC_MAP_TILE_URL || 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
     }).addTo(map)
