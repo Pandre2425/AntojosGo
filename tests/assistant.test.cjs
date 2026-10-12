@@ -87,3 +87,18 @@ test('home shortcuts: most searched first, default order otherwise; concepts det
   assert.deepEqual(detectConcepts(normalize('Quiero tacos y una pizza')), ['pizza', 'mexicana'])
   assert.deepEqual(detectConcepts(extractExclusions(normalize('algo sin mariscos')).rest), [])
 })
+
+test('dish form rules: categories drive tags and summary; one ingredient at a time; price formatting', () => {
+  const m = require('../shared/contracts/menu.ts')
+  assert.deepEqual(m.tagsForCategories(['Hamburguesa', 'picante', 'Sopa o caldo', 'Shucos']), ['picante', 'caliente'])
+  assert.equal(m.categorySummary(['Hamburguesa', 'Comida rápida']), 'Hamburguesa, Comida rápida')
+  assert.ok(m.categorySummary(Array(10).fill('Especialidad de la casa')).length <= 60)
+  assert.equal(m.ingredientProblem('pan, queso', []), 'Agrega un ingrediente a la vez (sin comas ni «y»).')
+  assert.equal(m.ingredientProblem('Pollo', ['pollo']), 'Ese ingrediente ya está en la lista.')
+  assert.equal(m.ingredientProblem('chile pasa', []), '')
+  assert.equal(m.formatPriceInput('45'), '45.00'); assert.equal(m.formatPriceInput('45,5'), '45.50'); assert.equal(m.formatPriceInput('abc'), 'abc')
+  const parsed = m.dishInputSchema.parse({ name: 'X', price: '35', categories: ['Pizza', 'pizza', 'Italiana'] })
+  assert.deepEqual(parsed.categories, ['Pizza', 'Italiana'])
+  assert.equal(m.dishInputSchema.safeParse({ name: 'X', price: '35', categories: ['a,b'] }).success, false)
+  assert.deepEqual(m.dishCategories({ categories: [], category: 'Platos fuertes', tags: ['picante'] }), ['Platos fuertes', 'Picante'])
+})

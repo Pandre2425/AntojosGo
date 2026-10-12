@@ -15,15 +15,27 @@ type Mime = 'image/jpeg' | 'image/png'
 export const pickAndUploadDishPhoto = (dishId: string) =>
   pickAndUpload(type => api.prepareDishImage(dishId, type), path => api.confirmDishImage(dishId, path))
 
+/** Opens the gallery; null when cancelled. Upload it later with uploadDishPhoto. */
+export async function pickPhoto(aspect?: [number, number]): Promise<ImagePicker.ImagePickerAsset | null> {
+  const picked = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 1, ...(aspect ? { allowsEditing: true, aspect } : {}) })
+  return picked.canceled ? null : picked.assets[0] ?? null
+}
+export const uploadDishPhoto = (dishId: string, asset: ImagePicker.ImagePickerAsset) =>
+  upload(asset, type => api.prepareDishImage(dishId, type), path => api.confirmDishImage(dishId, path))
+
 /** Logo (square crop, PNG keeps transparency) or cover photo of a restaurant. */
 export const pickAndUploadRestaurantImage = (restaurantId: string, kind: 'logo' | 'cover') =>
   pickAndUpload(type => api.prepareRestaurantImage(restaurantId, kind, type), path => api.confirmRestaurantImage(restaurantId, kind, path),
     kind === 'logo' ? [1, 1] : [16, 9], kind === 'logo' ? 'image/png' : 'image/jpeg')
 
 async function pickAndUpload(prepare: (type: Mime) => Promise<Target>, confirm: (path: string) => Promise<unknown>, aspect?: [number, number], type: Mime = 'image/jpeg'): Promise<boolean> {
-  const picked = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 1, ...(aspect ? { allowsEditing: true, aspect } : {}) })
-  if (picked.canceled || !picked.assets[0]) return false
-  const asset = picked.assets[0]
+  const asset = await pickPhoto(aspect)
+  if (!asset) return false
+  await upload(asset, prepare, confirm, type)
+  return true
+}
+
+async function upload(asset: ImagePicker.ImagePickerAsset, prepare: (type: Mime) => Promise<Target>, confirm: (path: string) => Promise<unknown>, type: Mime = 'image/jpeg'): Promise<void> {
   const context = ImageManipulator.manipulate(asset.uri)
   if (Math.max(asset.width, asset.height) > MAX_SIDE) context.resize(asset.width >= asset.height ? { width: MAX_SIDE } : { height: MAX_SIDE })
   const image = await (await context.renderAsync()).saveAsync({ format: type === 'image/png' ? SaveFormat.PNG : SaveFormat.JPEG, compress: 0.85, base64: true })
@@ -35,5 +47,4 @@ async function pickAndUpload(prepare: (type: Mime) => Promise<Target>, confirm: 
   const { error } = await supabase.storage.from('restaurant-media').uploadToSignedUrl(target.path, target.token, bytes.buffer, { contentType: type })
   if (error) throw new Error('No pudimos subir la foto. Intenta de nuevo.')
   await confirm(target.path)
-  return true
 }

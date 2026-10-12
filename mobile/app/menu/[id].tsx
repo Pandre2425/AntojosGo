@@ -1,17 +1,19 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Alert, Image, Pressable, Text, TextInput, View } from 'react-native'
+import { Alert, Image, Pressable, Switch, Text, View } from 'react-native'
 import { Redirect, useLocalSearchParams } from 'expo-router'
 import { useSession } from '../../src/session'
 import { Action, Card, Chip, Field, Input, Loading, Message, Page, Title, Txt, colors, radius, spacing, type } from '../../src/ui'
 import { api } from '../../src/api'
-import { pickAndUploadDishPhoto } from '../../src/dish-photo'
+import { pickAndUploadDishPhoto, pickPhoto, uploadDishPhoto } from '../../src/dish-photo'
 import { normalize } from '../../../shared/contracts/assistant'
 import {
-  ALLERGEN_LABELS, ALLERGENS, DISH_TAGS, DISH_TAG_LABELS, NO_ALLERGENS, allergenStatus, dishInputSchema, parseIngredients,
-  type AllergenDeclaration, type Dish, type DishTag,
+  ALLERGEN_LABELS, ALLERGENS, DISH_CATEGORY_GROUPS, MAX_CATEGORIES, NO_ALLERGENS, allergenStatus, dishCategories, dishInputSchema,
+  formatPriceInput, ingredientProblem, type AllergenDeclaration, type Dish,
 } from '../../../shared/contracts/menu'
 
-const empty = { name: '', price: '', category: '', description: '', ingredients: '', tags: [] as DishTag[], allergens: [] as AllergenDeclaration[] }
+const empty = { name: '', price: '', description: '', categories: [] as string[], ingredients: [] as string[], hasAllergens: false, allergens: [] as AllergenDeclaration[] }
+type Photo = Awaited<ReturnType<typeof pickPhoto>>
+const known = new Set(DISH_CATEGORY_GROUPS.flatMap(g => g.options.map(o => o.label.toLowerCase())))
 const money = (v: number) => `Q${v.toFixed(2)}`
 type Status = 'all' | 'visible' | 'hidden' | 'soldout'
 const STATUS_LABELS: Record<Status, string> = { all: 'Todos', visible: 'Visibles', hidden: 'Ocultos', soldout: 'Agotados' }
@@ -33,6 +35,10 @@ export default function Menu() {
   const [query, setQuery] = useState('')
   const [status, setStatus] = useState<Status>('all')
   const [expanded, setExpanded] = useState<string | null>(null)
+  const [newCategory, setNewCategory] = useState('')
+  const [newIngredient, setNewIngredient] = useState('')
+  const [photo, setPhoto] = useState<Photo>(null)
+  const [currentPhoto, setCurrentPhoto] = useState<string | null>(null)
   const lock = useRef(false)
   useEffect(() => {
     if (!session) return
@@ -50,7 +56,7 @@ export default function Menu() {
   const shown = useMemo(() => {
     const q = normalize(query)
     return (rows ?? []).filter(d => (status === 'all' || statusOf(d) === status)
-      && (!q || normalize([d.name, d.category, d.description, ...(d.ingredients ?? [])].filter(Boolean).join(' ')).includes(q)))
+      && (!q || normalize([d.name, d.category, ...(d.categories ?? []), d.description, ...(d.ingredients ?? [])].filter(Boolean).join(' ')).includes(q)))
   }, [rows, query, status])
   const undeclared = (rows ?? []).filter(d => !allergenStatus(d.allergens).declared).length
 
@@ -65,20 +71,42 @@ export default function Menu() {
     finally { lock.current = false; setBusy(false) }
   }
   async function save() {
-    const parsed = dishInputSchema.safeParse({ ...form, ingredients: parseIngredients(form.ingredients) })
+    const parsed = dishInputSchema.safeParse({ name: form.name, price: form.price, description: form.description, categories: form.categories,
+      ingredients: form.ingredients, allergens: form.hasAllergens ? form.allergens.filter(a => a !== NO_ALLERGENS) : form.allergens })
     if (!parsed.success) { setFormError(parsed.error.issues[0].message); return }
+    if (form.hasAllergens && !parsed.data.allergens?.length) { setFormError('Marca qué alérgenos contiene, o apaga «Contiene alérgenos».'); return }
     setFormError('')
-    const ok = await run(() => editing ? api.updateDish(editing, parsed.data) : api.createDish(id, parsed.data), setFormError)
-    if (ok) { setForm(empty); setEditing(null) }
+    const ok = await run(async () => {
+      const saved = editing ? await api.updateDish(editing, parsed.data) : await api.createDish(id, parsed.data)
+      if (photo) await uploadDishPhoto(saved.id, photo).catch(() => { throw new Error('El platillo se guardó, pero la foto no se pudo subir. Súbela desde «Más opciones».') })
+    }, setFormError)
+    if (ok) resetForm()
   }
+  function resetForm() { setForm(empty); setEditing(null); setPhoto(null); setCurrentPhoto(null); setNewCategory(''); setNewIngredient('') }
   function edit(dish: Dish) {
-    setEditing(dish.id); setFormError(''); setExpanded(null)
-    setForm({ name: dish.name, price: dish.price.toFixed(2), category: dish.category ?? '', description: dish.description ?? '',
-      ingredients: (dish.ingredients ?? []).join(', '), tags: dish.tags ?? [], allergens: dish.allergens ?? [] })
+    setEditing(dish.id); setFormError(''); setExpanded(null); setPhoto(null); setCurrentPhoto(dish.image_url)
+    const allergens = dish.allergens ?? []
+    setForm({ name: dish.name, price: dish.price.toFixed(2), description: dish.description ?? '', categories: dishCategories(dish),
+      ingredients: dish.ingredients ?? [], hasAllergens: allergenStatus(allergens).contains.length > 0, allergens })
   }
-  const setAllergen = (a: AllergenDeclaration, on: boolean) => setForm(v => ({
-    ...v, allergens: a === NO_ALLERGENS ? (on ? [NO_ALLERGENS] : []) : on ? [...v.allergens.filter(x => x !== NO_ALLERGENS), a] : v.allergens.filter(x => x !== a),
-  }))
+  const hasCategory = (c: string) => form.categories.some(x => x.toLowerCase() === c.toLowerCase())
+  function toggleCategory(c: string) {
+    if (!hasCategory(c) && form.categories.length >= MAX_CATEGORIES) { setFormError(`Elige hasta ${MAX_CATEGORIES} categorías.`); return }
+    setFormError('')
+    setForm(v => ({ ...v, categories: hasCategory(c) ? v.categories.filter(x => x.toLowerCase() !== c.toLowerCase()) : [...v.categories, c] }))
+  }
+  function addCategory() {
+    const c = newCategory.trim().replace(/\s+/g, ' ')
+    if (c.length < 2 || c.length > 30 || /[,;]/.test(c)) { setFormError('Escribe una categoría a la vez, de 2 a 30 letras.'); return }
+    if (!hasCategory(c)) toggleCategory(c)
+    setNewCategory('')
+  }
+  function addIngredient() {
+    const problem = ingredientProblem(newIngredient, form.ingredients)
+    if (problem) { setFormError(problem); return }
+    setFormError(''); setForm(v => ({ ...v, ingredients: [...v.ingredients, newIngredient.trim().replace(/\s+/g, ' ')] })); setNewIngredient('')
+  }
+  const customCategories = form.categories.filter(c => !known.has(c.toLowerCase()))
 
   return <Page><Title>Menú</Title><Message>{error}</Message>
     {!rows ? error ? <Action title="Reintentar" onPress={() => setRetry(v => v + 1)} /> : <Loading /> : rows.length === 0 ? <Message>Tu menú está vacío. Agrega tu primer platillo abajo.</Message> : <>
@@ -126,23 +154,69 @@ export default function Menu() {
     </>}
     <Card>
       <Title>{editing ? 'Editar platillo' : 'Nuevo platillo'}</Title>
-      <Field label="Nombre" value={form.name} onChangeText={name => setForm(v => ({ ...v, name }))} maxLength={120} editable={!busy} />
-      <Field label="Precio (Q)" value={form.price} onChangeText={price => setForm(v => ({ ...v, price }))} keyboardType="decimal-pad" maxLength={9} editable={!busy} />
-      <Field label="Categoría (opcional)" value={form.category} onChangeText={category => setForm(v => ({ ...v, category }))} maxLength={60} editable={!busy} />
-      <Field label="Descripción (opcional)" value={form.description} onChangeText={description => setForm(v => ({ ...v, description }))} maxLength={500} multiline editable={!busy} />
-      <Field label="Ingredientes principales (separados por comas)" value={form.ingredients} onChangeText={ingredients => setForm(v => ({ ...v, ingredients }))} placeholder="pollo, pepita, chile pasa" multiline editable={!busy} />
-      <Txt variant="label">Alérgenos</Txt>
-      <Text style={{ color: colors.muted }}>Marca lo que contiene, o «No contiene ninguno». Sin marcar, los clientes verán «alérgenos sin declarar».</Text>
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-        {ALLERGENS.map(a => <Chip key={a} tone="red" label={ALLERGEN_LABELS[a]} on={form.allergens.includes(a)} disabled={busy} onPress={() => setAllergen(a, !form.allergens.includes(a))} />)}
-        <Chip label="No contiene ninguno" on={form.allergens.includes(NO_ALLERGENS)} disabled={busy} onPress={() => setAllergen(NO_ALLERGENS, !form.allergens.includes(NO_ALLERGENS))} />
+      <Field label="Nombre" placeholder="Ej. Pepián de pollo" value={form.name} onChangeText={name => setForm(v => ({ ...v, name }))} maxLength={120} editable={!busy} />
+      <View style={{ gap: 6 }}>
+        <Txt>Precio</Txt>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+          <Txt variant="headline">Q</Txt>
+          <Input accessibilityLabel="Precio en quetzales" placeholder="45.00" value={form.price} keyboardType="decimal-pad" maxLength={9} editable={!busy} style={{ flex: 1 }}
+            onChangeText={price => setForm(v => ({ ...v, price: price.replace(/[^0-9.,]/g, '') }))} onBlur={() => setForm(v => ({ ...v, price: formatPriceInput(v.price) }))} />
+        </View>
+        <Txt variant="subhead">Solo el número, en quetzales.</Txt>
       </View>
-      <Txt variant="label">Etiquetas (ayudan a que te encuentren)</Txt>
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>{DISH_TAGS.map(tag => <Chip key={tag} label={DISH_TAG_LABELS[tag]} on={form.tags.includes(tag)} disabled={busy}
-        onPress={() => setForm(v => ({ ...v, tags: v.tags.includes(tag) ? v.tags.filter(t => t !== tag) : [...v.tags, tag] }))} />)}</View>
+      <View style={{ gap: 6 }}>
+        <Txt>Descripción (opcional)</Txt>
+        <Input accessibilityLabel="Descripción" placeholder="Cómo se prepara, con qué se acompaña, tamaño de la porción…" value={form.description} maxLength={500} multiline
+          textAlignVertical="top" editable={!busy} style={{ minHeight: 120 }} onChangeText={description => setForm(v => ({ ...v, description }))} />
+        <Txt variant="subhead" style={{ textAlign: 'right' }}>{form.description.length}/500</Txt>
+      </View>
+
+      <Txt variant="label">Foto (opcional)</Txt>
+      {photo || currentPhoto ? <Image source={{ uri: photo?.uri ?? currentPhoto! }} accessibilityLabel="Foto del platillo" style={{ width: '100%', aspectRatio: 4 / 3, borderRadius: radius.md }} /> : null}
+      <Action title={photo || currentPhoto ? 'Cambiar foto' : 'Elegir foto'} secondary disabled={busy}
+        onPress={() => void pickPhoto([4, 3]).then(a => { if (a) setPhoto(a) }).catch(() => setFormError('No pudimos abrir la galería.'))} />
+      {photo ? <Txt variant="subhead">La foto se subirá al guardar.</Txt> : null}
+
+      <Txt variant="label">Categorías</Txt>
+      <Txt variant="subhead">Elige todas las que apliquen. Ayudan a que te encuentren.</Txt>
+      {DISH_CATEGORY_GROUPS.map(g => <View key={g.title} style={{ gap: 6 }}>
+        <Txt variant="subhead" style={{ fontWeight: '600' }}>{g.title}</Txt>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>{g.options.map(o => <Chip key={o.label} label={o.label} on={hasCategory(o.label)} disabled={busy} onPress={() => toggleCategory(o.label)} />)}</View>
+      </View>)}
+      {customCategories.length ? <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>{customCategories.map(c => <Chip key={c} label={`${c} ×`} on disabled={busy} onPress={() => toggleCategory(c)} />)}</View> : null}
+      <View style={{ flexDirection: 'row', gap: spacing.sm }}>
+        <Input accessibilityLabel="Otra categoría" placeholder="¿No está? Escríbela" value={newCategory} onChangeText={setNewCategory} maxLength={30} editable={!busy}
+          returnKeyType="done" onSubmitEditing={addCategory} style={{ flex: 1 }} />
+        <Action title="Agregar" secondary disabled={busy || !newCategory.trim()} onPress={addCategory} />
+      </View>
+
+      <Txt variant="label">Ingredientes principales (opcional)</Txt>
+      <Txt variant="subhead">Agrega un ingrediente a la vez. Los clientes pueden buscar por ingrediente o pedir platillos sin alguno.</Txt>
+      {form.ingredients.length ? <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>{form.ingredients.map(i => <Chip key={i} label={`${i} ×`} on disabled={busy}
+        onPress={() => setForm(v => ({ ...v, ingredients: v.ingredients.filter(x => x !== i) }))} />)}</View> : null}
+      <View style={{ flexDirection: 'row', gap: spacing.sm }}>
+        <Input accessibilityLabel="Ingrediente" placeholder="Ej. pollo" value={newIngredient} onChangeText={setNewIngredient} maxLength={40} editable={!busy}
+          returnKeyType="done" onSubmitEditing={addIngredient} style={{ flex: 1 }} />
+        <Action title="Agregar" secondary disabled={busy || !newIngredient.trim()} onPress={addIngredient} />
+      </View>
+
+      <Txt variant="label">Alérgenos</Txt>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.md }}>
+        <Txt style={{ flex: 1 }}>Contiene alérgenos</Txt>
+        <Switch value={form.hasAllergens} disabled={busy} accessibilityLabel="Contiene alérgenos" trackColor={{ true: colors.orange, false: colors.border }} thumbColor={colors.white}
+          onValueChange={on => setForm(v => ({ ...v, hasAllergens: on, allergens: on ? v.allergens.filter(a => a !== NO_ALLERGENS) : [] }))} />
+      </View>
+      {form.hasAllergens
+        ? <><Txt variant="subhead">Marca todos los que puede contener:</Txt>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>{ALLERGENS.map(a => <Chip key={a} tone="red" label={ALLERGEN_LABELS[a]} on={form.allergens.includes(a)} disabled={busy}
+            onPress={() => setForm(v => ({ ...v, allergens: v.allergens.includes(a) ? v.allergens.filter(x => x !== a) : [...v.allergens, a] }))} />)}</View></>
+        : <><Chip label="Confirmo: no contiene alérgenos comunes" on={form.allergens.includes(NO_ALLERGENS)} disabled={busy}
+            onPress={() => setForm(v => ({ ...v, allergens: v.allergens.includes(NO_ALLERGENS) ? [] : [NO_ALLERGENS] }))} />
+          <Txt variant="subhead">Si no lo confirmas, los clientes verán «alérgenos sin declarar».</Txt></>}
+
       <Message>{formError}</Message>
       <Action title={busy ? 'Guardando…' : editing ? 'Guardar cambios' : 'Agregar platillo'} onPress={save} disabled={busy} />
-      {editing ? <Action title="Cancelar edición" secondary onPress={() => { setEditing(null); setForm(empty); setFormError('') }} disabled={busy} /> : null}
+      {editing ? <Action title="Cancelar edición" secondary onPress={() => { resetForm(); setFormError('') }} disabled={busy} /> : null}
     </Card>
   </Page>
 }
