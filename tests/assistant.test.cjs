@@ -78,3 +78,12 @@ test('menu contract: ingredients parse and allergen declaration rules', () => {
   assert.deepEqual(allergenStatus(['ninguno']), { declared: true, contains: [] })
   assert.deepEqual(allergenStatus(['mani']), { declared: true, contains: ['mani'] })
 })
+
+test('home shortcuts: most searched first, default order otherwise; concepts detected without exclusions', () => {
+  const { rankHomeOptions, HOME_OPTIONS } = require('../shared/contracts/home.ts')
+  const { detectConcepts, extractExclusions, normalize } = require('../shared/contracts/assistant.ts')
+  assert.deepEqual(rankHomeOptions({}, 3).map(o => o.concept), HOME_OPTIONS.slice(0, 3).map(o => o.concept))
+  assert.deepEqual(rankHomeOptions({ mariscos: 5, cafe: 2 }, 3).map(o => o.concept), ['mariscos', 'cafe', 'pizza'])
+  assert.deepEqual(detectConcepts(normalize('Quiero tacos y una pizza')), ['pizza', 'mexicana'])
+  assert.deepEqual(detectConcepts(extractExclusions(normalize('algo sin mariscos')).rest), [])
+})

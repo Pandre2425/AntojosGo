@@ -1,17 +1,64 @@
 'use client'
-import { useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
+import dynamic from 'next/dynamic'
 import { Sparkles } from 'lucide-react'
-import { FoodArt } from './food-art'
+import { webApi } from '@/lib/web-api'
+import { HOME_OPTIONS, type HomeOption } from '@/shared/contracts/home'
+import type { MapBranch } from './branches-overview-map'
+import { Button } from './ui/button'
 
+const BranchDetail = dynamic(() => import('./customer-catalog').then(m => m.BranchDetail))
+const BranchesOverviewMap = dynamic(() => import('./branches-overview-map'), { ssr: false, loading: () => <div className="h-80 animate-pulse rounded-2xl bg-stone-200" /> })
+
+/** Home: ask the assistant, pick a popular craving, or browse the map of registered branches. */
 export default function MobileDiscover({ name, onSearch }: { name?: string; onSearch: (query: string) => void }) {
   const [query, setQuery] = useState('')
-  function submit(event: FormEvent) { event.preventDefault(); onSearch(query.trim()) }
-  return <div className="space-y-6">
-    <div><p className="text-[10px] font-semibold tracking-[.2em] text-primary">EL SABOR ESTÁ CERCA</p><h1 className="mt-3 text-3xl font-bold tracking-tight">{name ? `Hola, ${name}` : 'Hola, ¿qué se te antoja?'} ✳</h1><p className="mt-2 text-sm text-muted-foreground">Tu próximo lugar favorito está por descubrir.</p></div>
-    <section className="overflow-hidden rounded-[28px] bg-[#173F35] text-white">
-      <div className="p-6"><p className="text-[10px] tracking-[.2em]">MENOS VUELTAS. MÁS SABOR.</p><h2 className="mt-5 text-[32px] font-extrabold leading-tight tracking-tight">Hoy se come<br/><span className="text-[#EFAE6E]">lo que se te antoja.</span></h2><p className="mt-4 text-sm leading-6 text-white/85">Cuéntanos qué tienes en mente y encuentra ese lugar que va contigo.</p>
-        <form onSubmit={submit} className="mt-6 space-y-4"><div className="rounded-2xl bg-white p-3 text-[#263D35]"><label htmlFor="craving" className="text-sm font-semibold">¿Qué se te antoja?</label><input id="craving" className="mt-2 w-full bg-transparent py-2 outline-none focus-visible:ring-2 focus-visible:ring-primary rounded" placeholder="Algo calientito, una pizza…" value={query} onChange={(event) => setQuery(event.target.value)} maxLength={200}/></div><button className="flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-primary px-4 py-3 font-semibold" type="submit"><Sparkles className="h-5 w-5"/>Encontrar mi antojo</button></form>
-      </div><div className="relative h-56 bg-[#244E3E]"><FoodArt/><div className="absolute bottom-5 right-5 max-w-[75%] rounded-2xl bg-white/95 p-4 text-[#263D35]"><p className="text-sm font-semibold">Un antojo, mil posibilidades</p><p className="mt-1 text-xs text-muted-foreground">Descubre el sabor local</p></div></div>
+  const [options, setOptions] = useState<HomeOption[]>(HOME_OPTIONS.slice(0, 8))
+  const [branches, setBranches] = useState<MapBranch[] | null>(null)
+  const [selected, setSelected] = useState<string | null>(null)
+  useEffect(() => {
+    webApi.popularOptions().then(setOptions).catch(() => {}) // default order already shown
+    webApi.searchCatalog({ q: '', limit: 50 }).then(r => setBranches(r.items)).catch(() => setBranches([]))
+  }, [])
+  function submit(event: FormEvent) { event.preventDefault(); if (query.trim()) onSearch(query.trim()) }
+  if (selected) return <BranchDetail id={selected} onBack={() => setSelected(null)} />
+
+  return <div className="space-y-8">
+    <section className="rounded-[28px] bg-[#173F35] p-6 text-white">
+      {name && <p className="text-sm text-white/80">Hola, {name}</p>}
+      <h1 className="text-3xl font-extrabold tracking-tight">¿Qué estás buscando?</h1>
+      <p className="mt-2 text-sm text-white/85">Escríbelo como se lo dirías a un amigo. El asistente te dice dónde encontrarlo.</p>
+      <form onSubmit={submit} className="mt-5 flex gap-2">
+        <label htmlFor="craving" className="sr-only">¿Qué estás buscando?</label>
+        <input id="craving" className="min-h-12 min-w-0 flex-1 rounded-2xl bg-white px-4 text-[#263D35] outline-none focus-visible:ring-2 focus-visible:ring-[#EFAE6E]"
+          placeholder="Algo calientito, una pizza cerca…" value={query} onChange={(e) => setQuery(e.target.value)} maxLength={200} />
+        <button type="submit" disabled={!query.trim()} className="flex min-h-12 items-center gap-2 rounded-2xl bg-primary px-4 font-semibold disabled:opacity-60">
+          <Sparkles className="h-5 w-5" /><span className="hidden sm:inline">Preguntar</span><span className="sr-only sm:hidden">Preguntar</span></button>
+      </form>
+    </section>
+
+    <section aria-labelledby="popular-title" className="space-y-3">
+      <h2 id="popular-title" className="text-lg font-semibold">Lo más buscado</h2>
+      <ul className="grid grid-cols-4 gap-2 sm:grid-cols-8">
+        {options.map(o => <li key={o.concept}>
+          <button type="button" onClick={() => onSearch(o.query)}
+            className="flex w-full flex-col items-center gap-1 rounded-2xl border bg-white px-1 py-3 text-center transition-colors hover:border-[#173F35] focus-visible:outline-2 focus-visible:outline-[#173F35] active:bg-stone-100">
+            <span aria-hidden className="text-3xl leading-none">{o.symbol}</span>
+            <span className="w-full break-words px-0.5 text-[11px] font-medium leading-tight sm:text-xs">{o.title}</span>
+          </button>
+        </li>)}
+      </ul>
+    </section>
+
+    <section aria-labelledby="map-title" className="space-y-3">
+      <div className="flex items-baseline justify-between gap-2">
+        <h2 id="map-title" className="text-lg font-semibold">Restaurantes en el mapa</h2>
+        {branches && <p className="text-sm text-muted-foreground">{branches.length === 1 ? '1 sede' : `${branches.length} sedes`}</p>}
+      </div>
+      {branches === null ? <div className="h-80 animate-pulse rounded-2xl bg-stone-200" /> : branches.length
+        ? <BranchesOverviewMap branches={branches} onOpen={setSelected} />
+        : <p className="text-sm text-muted-foreground">Aún no hay sedes publicadas.</p>}
+      <Button variant="outline" className="w-full" onClick={() => onSearch('')}>Ver la lista con filtros</Button>
     </section>
   </div>
 }

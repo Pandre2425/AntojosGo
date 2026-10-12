@@ -108,6 +108,10 @@ export const normalize = (text: string) =>
 
 const hasStem = (text: string, stem: string) => new RegExp(`\\b${stem.trim()}`).test(text)
 
+/** Food concepts mentioned in already-normalized text. "para el frio" / "hace frio" means warm food, not a cold dessert. */
+export const detectConcepts = (text: string): ConceptKey[] => CONCEPT_KEYS.filter(k => CONCEPTS[k].triggers.some(t => hasStem(text, t)))
+  .filter(k => !(k === 'frio' && /\b(para el|hace|con este|tengo) frio/.test(text)))
+
 /** One user turn -> next context + what to do. Never throws on any input. */
 export function interpret(message: string, previous: AssistantContext = emptyContext()): { context: AssistantContext; action: AssistantAction } {
   const exclusions = extractExclusions(normalize(message))
@@ -117,9 +121,7 @@ export function interpret(message: string, previous: AssistantContext = emptyCon
     avoid: [...new Set([...previous.avoid, ...exclusions.avoid])].slice(0, 4),
   }
   const restricted = exclusions.without.length > 0 || exclusions.avoid.length > 0
-  // "para el frio" / "hace frio" means warm food, not a cold dessert.
-  const concepts = (CONCEPT_KEYS.filter(k => CONCEPTS[k].triggers.some(t => hasStem(text, t))))
-    .filter(k => !(k === 'frio' && /\b(para el|hace|con este|tengo) frio/.test(text)))
+  const concepts = detectConcepts(text)
   const intent = Object.fromEntries(Object.entries(INTENTS).map(([k, re]) => [k, re.test(text)])) as Record<keyof typeof INTENTS, boolean>
   const covered = new Set(concepts.flatMap(k => CONCEPTS[k].triggers.flatMap(t => t.split(' '))))
   const words = text.split(' ').filter(w => w.length >= 3 && w.length <= 30 && !STOPWORDS.has(w)

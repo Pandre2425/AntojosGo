@@ -1,7 +1,7 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { KeyboardAvoidingView, Pressable, ScrollView, Text, TextInput, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { router } from 'expo-router'
+import { router, useLocalSearchParams } from 'expo-router'
 import { api } from '../../src/api'
 import { requestUserLocation, type UserCoords } from '../../src/location'
 import { emptyContext, type AssistantContext } from '../../../shared/contracts/assistant'
@@ -42,6 +42,9 @@ export default function Assistant() {
       add({ from: 'bot', text: e instanceof Error ? e.message : 'No pude responder. Revisa tu conexión e intenta de nuevo.' })
     } finally { setBusy(false) }
   }
+  // A question typed or picked on the home tab arrives as ?q=…; send it once, then clear it.
+  const { q } = useLocalSearchParams<{ q?: string }>()
+  useEffect(() => { if (q && !busy) { router.setParams({ q: undefined }); void send(q) } }, [q]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return <SafeAreaView style={{ flex: 1, backgroundColor: colors.cream }} edges={['top', 'left', 'right']}>
     <KeyboardAvoidingView style={{ flex: 1 }} behavior="height">

@@ -1,4 +1,5 @@
 import { createBoundedFetch } from './bounded-fetch'
+import type { HomeOption } from '../shared/contracts/home'
 import type { PublicBranchExtras, PublicCatalogItem, PublicDish } from '../modules/catalog/data/public-catalog'
 import type { OpeningHours } from '../shared/contracts/hours'
 import type { AssistantContext } from '../shared/contracts/assistant'
@@ -89,6 +90,8 @@ export function createApiClient({ baseUrl, getToken, refreshToken }: Options) {
     confirmRestaurantImage: (id: string, kind: 'logo' | 'cover', path: string) => call<{ url: string }>('PUT', `/restaurants/${id}/images/${kind}`, { path }),
     removeRestaurantImage: (id: string, kind: 'logo' | 'cover') => call<{ url: null }>('DELETE', `/restaurants/${id}/images/${kind}`),
     listBusinessTypes: () => call<{ items: string[] }>('GET', '/catalog/business-types', undefined, {}, false).then(r => r.items),
+    /** Home shortcuts, most searched first. */
+    popularOptions: () => call<{ items: HomeOption[] }>('GET', '/catalog/popular', undefined, {}, false).then(r => r.items),
     listFavorites: () => call<{ items: PublicCatalogItem[] }>('GET', '/me/favorites').then(r => r.items),
     addFavorite: (branchId: string) => call<{ ok: true }>('PUT', `/me/favorites/${branchId}`),
     removeFavorite: (branchId: string) => call<{ ok: true }>('DELETE', `/me/favorites/${branchId}`),
