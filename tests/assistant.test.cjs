@@ -74,9 +74,10 @@ test('menu contract: ingredients parse and allergen declaration rules', () => {
   assert.deepEqual(parseIngredients('pollo, Chile pasa ,pollo;  tomate '), ['pollo', 'Chile pasa', 'tomate'])
   assert.equal(dishInputSchema.safeParse({ name: 'X', price: 10, allergens: ['ninguno', 'mani'] }).success, false)
   assert.equal(dishInputSchema.safeParse({ name: 'X', price: 10, allergens: ['mani', 'huevo'] }).success, true)
-  assert.deepEqual(allergenStatus([]), { declared: false, contains: [] })        // not declared != safe
-  assert.deepEqual(allergenStatus(['ninguno']), { declared: true, contains: [] })
-  assert.deepEqual(allergenStatus(['mani']), { declared: true, contains: ['mani'] })
+  assert.deepEqual(allergenStatus([]), { declared: false, contains: [], other: [] })        // not declared != safe
+  assert.deepEqual(allergenStatus(['ninguno']), { declared: true, contains: [], other: [] })
+  assert.deepEqual(allergenStatus(['mani']), { declared: true, contains: ['mani'], other: [] })
+  assert.deepEqual(allergenStatus([], ['mostaza']), { declared: true, contains: [], other: ['mostaza'] }) // own allergens count as declared
 })
 
 test('home shortcuts: most searched first, default order otherwise; concepts detected without exclusions', () => {
@@ -97,8 +98,14 @@ test('dish form rules: categories drive tags and summary; one ingredient at a ti
   assert.equal(m.ingredientProblem('Pollo', ['pollo']), 'Ese ingrediente ya está en la lista.')
   assert.equal(m.ingredientProblem('chile pasa', []), '')
   assert.equal(m.formatPriceInput('45'), '45.00'); assert.equal(m.formatPriceInput('45,5'), '45.50'); assert.equal(m.formatPriceInput('abc'), 'abc')
-  const parsed = m.dishInputSchema.parse({ name: 'X', price: '35', categories: ['Pizza', 'pizza', 'Italiana'] })
-  assert.deepEqual(parsed.categories, ['Pizza', 'Italiana'])
-  assert.equal(m.dishInputSchema.safeParse({ name: 'X', price: '35', categories: ['a,b'] }).success, false)
-  assert.deepEqual(m.dishCategories({ categories: [], category: 'Platos fuertes', tags: ['picante'] }), ['Platos fuertes', 'Picante'])
+  const parsed = m.dishInputSchema.parse({ name: 'X', price: '35', dish_types: ['Pizza', 'pizza'], cuisines: ['Colombiana'] })
+  assert.deepEqual(parsed.dish_types, ['Pizza']); assert.deepEqual(parsed.cuisines, ['Colombiana'])
+  assert.equal(m.dishInputSchema.safeParse({ name: 'X', price: '35', cuisines: ['a,b'] }).success, false)
+  assert.equal(m.dishInputSchema.safeParse({ name: 'X', price: '35', allergens: ['ninguno'], allergens_other: ['Mostaza'] }).success, false)
+  // Dishes saved before the split are sorted into groups from their old category and tags.
+  assert.deepEqual(m.dishDetails({ categories: ['Plato fuerte', 'Colombiana', 'Picante', 'Shucos'] }),
+    { dish_types: ['Plato fuerte', 'Shucos'], cuisines: ['Colombiana'], features: ['Picante'] })
+  assert.deepEqual(m.dishDetails({ category: 'Platos fuertes', tags: ['picante'] }), { dish_types: ['Platos fuertes'], cuisines: [], features: ['Picante'] })
+  assert.deepEqual(m.splitAllergenLabels(['Maní', 'Mostaza']), { allergens: ['mani'], allergens_other: ['Mostaza'] })
+  assert.equal(m.labelProblem('Colombiana, Peruana', []), 'Agrega una opción a la vez (sin comas).')
 })

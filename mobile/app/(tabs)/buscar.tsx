@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { router } from 'expo-router'
 import MapView, { Marker } from 'react-native-maps'
-import { Image, View } from 'react-native'
+import { Image, Linking, View } from 'react-native'
+import { directionsUrl } from '../../../shared/contracts/branches'
 import { useSession } from '../../src/session'
 import { requestUserLocation, type UserCoords } from '../../src/location'
 import { api } from '../../src/api'
@@ -151,7 +152,10 @@ export default function Discover() {
           {item.dish ? <Message>{`${item.dish.name}: Q${item.dish.price.toFixed(2)}`}{filters.without.length && !item.dish.allergensDeclared ? '\n⚠️ Alérgenos sin declarar: confírmalo con el restaurante' : ''}</Message> : null}
           {item.openNow === true ? <Text style={{ color: colors.green, fontWeight: '700' }}>Abierto ahora</Text> : item.openNow === false ? <Txt variant="subhead">Cerrado ahora</Txt> : null}
           {item.distanceKm != null ? <Message>{item.distanceKm < 1 ? `${Math.round(item.distanceKm * 1000)} m en línea recta` : `${item.distanceKm.toFixed(1)} km en línea recta`}</Message> : null}
-          <Action title="Ver sede" onPress={() => router.push({ pathname: '/sede/[id]', params: { id: item.id } })} disabled={busy} />
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            <View style={{ flex: 1 }}><Action title="Ver sede" secondary onPress={() => router.push({ pathname: '/sede/[id]', params: { id: item.id } })} disabled={busy} /></View>
+            {item.latitude != null && item.longitude != null ? <View style={{ flex: 1 }}><Action title="Cómo llegar" onPress={() => void Linking.openURL(directionsUrl(item.latitude!, item.longitude!))} /></View> : null}
+          </View>
         </Card>
       ))}
     </Page>

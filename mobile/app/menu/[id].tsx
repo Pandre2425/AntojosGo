@@ -5,15 +5,16 @@ import { useSession } from '../../src/session'
 import { Action, Card, Chip, Field, Input, Loading, Message, Page, Title, Txt, colors, radius, spacing, type } from '../../src/ui'
 import { api } from '../../src/api'
 import { pickAndUploadDishPhoto, pickPhoto, uploadDishPhoto } from '../../src/dish-photo'
+import { TagField } from '../../src/tag-field'
 import { normalize } from '../../../shared/contracts/assistant'
 import {
-  ALLERGEN_LABELS, ALLERGENS, DISH_CATEGORY_GROUPS, MAX_CATEGORIES, NO_ALLERGENS, allergenStatus, dishCategories, dishInputSchema,
-  formatPriceInput, ingredientProblem, type AllergenDeclaration, type Dish,
+  ALLERGEN_LABELS, ALLERGENS, DISH_DETAIL_GROUPS, NO_ALLERGENS, allergenNames, allergenStatus, dishDetails, dishInputSchema,
+  formatPriceInput, ingredientProblem, labelProblem, splitAllergenLabels, type DetailKey, type Dish,
 } from '../../../shared/contracts/menu'
 
-const empty = { name: '', price: '', description: '', categories: [] as string[], ingredients: [] as string[], hasAllergens: false, allergens: [] as AllergenDeclaration[] }
+const empty = { name: '', price: '', description: '', dish_types: [] as string[], cuisines: [] as string[], features: [] as string[],
+  ingredients: [] as string[], hasAllergens: false, allergenLabels: [] as string[], noAllergens: false }
 type Photo = Awaited<ReturnType<typeof pickPhoto>>
-const known = new Set(DISH_CATEGORY_GROUPS.flatMap(g => g.options.map(o => o.label.toLowerCase())))
 const money = (v: number) => `Q${v.toFixed(2)}`
 type Status = 'all' | 'visible' | 'hidden' | 'soldout'
 const STATUS_LABELS: Record<Status, string> = { all: 'Todos', visible: 'Visibles', hidden: 'Ocultos', soldout: 'Agotados' }
@@ -35,8 +36,6 @@ export default function Menu() {
   const [query, setQuery] = useState('')
   const [status, setStatus] = useState<Status>('all')
   const [expanded, setExpanded] = useState<string | null>(null)
-  const [newCategory, setNewCategory] = useState('')
-  const [newIngredient, setNewIngredient] = useState('')
   const [photo, setPhoto] = useState<Photo>(null)
   const [currentPhoto, setCurrentPhoto] = useState<string | null>(null)
   const lock = useRef(false)
@@ -58,7 +57,7 @@ export default function Menu() {
     return (rows ?? []).filter(d => (status === 'all' || statusOf(d) === status)
       && (!q || normalize([d.name, d.category, ...(d.categories ?? []), d.description, ...(d.ingredients ?? [])].filter(Boolean).join(' ')).includes(q)))
   }, [rows, query, status])
-  const undeclared = (rows ?? []).filter(d => !allergenStatus(d.allergens).declared).length
+  const undeclared = (rows ?? []).filter(d => !allergenStatus(d.allergens, d.allergens_other).declared).length
 
   if (!ready) return <Page><Loading /></Page>
   if (!session) return <Redirect href="/account" />
@@ -71,10 +70,12 @@ export default function Menu() {
     finally { lock.current = false; setBusy(false) }
   }
   async function save() {
-    const parsed = dishInputSchema.safeParse({ name: form.name, price: form.price, description: form.description, categories: form.categories,
-      ingredients: form.ingredients, allergens: form.hasAllergens ? form.allergens.filter(a => a !== NO_ALLERGENS) : form.allergens })
+    const own = splitAllergenLabels(form.allergenLabels)
+    const parsed = dishInputSchema.safeParse({ name: form.name, price: form.price, description: form.description,
+      dish_types: form.dish_types, cuisines: form.cuisines, features: form.features, ingredients: form.ingredients,
+      allergens: form.hasAllergens ? own.allergens : form.noAllergens ? [NO_ALLERGENS] : [], allergens_other: form.hasAllergens ? own.allergens_other : [] })
     if (!parsed.success) { setFormError(parsed.error.issues[0].message); return }
-    if (form.hasAllergens && !parsed.data.allergens?.length) { setFormError('Marca qué alérgenos contiene, o apaga «Contiene alérgenos».'); return }
+    if (form.hasAllergens && !form.allergenLabels.length) { setFormError('Marca o escribe qué alérgenos contiene, o apaga «Contiene alérgenos».'); return }
     setFormError('')
     const ok = await run(async () => {
       const saved = editing ? await api.updateDish(editing, parsed.data) : await api.createDish(id, parsed.data)
@@ -82,32 +83,15 @@ export default function Menu() {
     }, setFormError)
     if (ok) resetForm()
   }
-  function resetForm() { setForm(empty); setEditing(null); setPhoto(null); setCurrentPhoto(null); setNewCategory(''); setNewIngredient('') }
+  function resetForm() { setForm(empty); setEditing(null); setPhoto(null); setCurrentPhoto(null) }
   function edit(dish: Dish) {
     setEditing(dish.id); setFormError(''); setExpanded(null); setPhoto(null); setCurrentPhoto(dish.image_url)
-    const allergens = dish.allergens ?? []
-    setForm({ name: dish.name, price: dish.price.toFixed(2), description: dish.description ?? '', categories: dishCategories(dish),
-      ingredients: dish.ingredients ?? [], hasAllergens: allergenStatus(allergens).contains.length > 0, allergens })
+    const labels = allergenNames(dish.allergens, dish.allergens_other)
+    setForm({ name: dish.name, price: dish.price.toFixed(2), description: dish.description ?? '', ...dishDetails(dish),
+      ingredients: dish.ingredients ?? [], hasAllergens: labels.length > 0, allergenLabels: labels, noAllergens: (dish.allergens ?? []).includes(NO_ALLERGENS) })
   }
-  const hasCategory = (c: string) => form.categories.some(x => x.toLowerCase() === c.toLowerCase())
-  function toggleCategory(c: string) {
-    if (!hasCategory(c) && form.categories.length >= MAX_CATEGORIES) { setFormError(`Elige hasta ${MAX_CATEGORIES} categorías.`); return }
-    setFormError('')
-    setForm(v => ({ ...v, categories: hasCategory(c) ? v.categories.filter(x => x.toLowerCase() !== c.toLowerCase()) : [...v.categories, c] }))
-  }
-  function addCategory() {
-    const c = newCategory.trim().replace(/\s+/g, ' ')
-    if (c.length < 2 || c.length > 30 || /[,;]/.test(c)) { setFormError('Escribe una categoría a la vez, de 2 a 30 letras.'); return }
-    if (!hasCategory(c)) toggleCategory(c)
-    setNewCategory('')
-  }
-  function addIngredient() {
-    const problem = ingredientProblem(newIngredient, form.ingredients)
-    if (problem) { setFormError(problem); return }
-    setFormError(''); setForm(v => ({ ...v, ingredients: [...v.ingredients, newIngredient.trim().replace(/\s+/g, ' ')] })); setNewIngredient('')
-  }
-  const customCategories = form.categories.filter(c => !known.has(c.toLowerCase()))
-  const setAllergensOn = (on: boolean) => setForm(v => ({ ...v, hasAllergens: on, allergens: on ? v.allergens.filter(a => a !== NO_ALLERGENS) : [] }))
+  const setGroup = (key: DetailKey) => (next: string[]) => setForm(v => ({ ...v, [key]: next }))
+  const setAllergensOn = (on: boolean) => setForm(v => ({ ...v, hasAllergens: on, noAllergens: false, allergenLabels: on ? v.allergenLabels : [] }))
 
   return <Page><Title>Menú</Title><Message>{error}</Message>
     {!rows ? error ? <Action title="Reintentar" onPress={() => setRetry(v => v + 1)} /> : <Loading /> : rows.length === 0 ? <Message>Tu menú está vacío. Agrega tu primer platillo abajo.</Message> : <>
@@ -120,7 +104,8 @@ export default function Menu() {
       </View>
       {shown.length === 0 ? <Message>Ningún platillo coincide con la búsqueda.</Message> : shown.map(dish => {
         const st = statusOf(dish)
-        const al = allergenStatus(dish.allergens)
+        const al = allergenStatus(dish.allergens, dish.allergens_other)
+        const names = allergenNames(dish.allergens, dish.allergens_other)
         const open = expanded === dish.id
         return <View key={dish.id} style={{ backgroundColor: colors.white, borderRadius: radius.lg, borderLeftWidth: 6, borderLeftColor: EDGE[st], padding: 14, gap: 8 }}>
           <View style={{ flexDirection: 'row', gap: 12 }}>
@@ -132,8 +117,8 @@ export default function Menu() {
             </View>
           </View>
           {dish.ingredients?.length ? <Text style={{ color: colors.muted }}>Ingredientes: {dish.ingredients.join(', ')}</Text> : null}
-          <Text style={{ color: al.declared ? (al.contains.length ? colors.danger : colors.green) : colors.warning.text }}>
-            {!al.declared ? 'Alérgenos sin declarar' : al.contains.length ? `Contiene: ${al.contains.map(a => ALLERGEN_LABELS[a].toLowerCase()).join(', ')}` : 'Sin alérgenos comunes'}
+          <Text style={{ color: al.declared ? (names.length ? colors.danger : colors.green) : colors.warning.text }}>
+            {!al.declared ? 'Alérgenos sin declarar' : names.length ? `Contiene: ${names.map(a => a.toLowerCase()).join(', ')}` : 'Sin alérgenos comunes'}
           </Text>
           <View style={{ flexDirection: 'row', gap: 8 }}>
             <View style={{ flex: 1 }}><Action title={dish.status === 'published' ? 'Ocultar' : 'Mostrar'} secondary={dish.status === 'published'} disabled={busy}
@@ -178,44 +163,30 @@ export default function Menu() {
         onPress={() => void pickPhoto().then(a => { if (a) setPhoto(a) }).catch(() => setFormError('No pudimos abrir la galería.'))} />
       {photo ? <Txt variant="subhead">La foto se subirá al guardar.</Txt> : null}
 
-      <Txt variant="label">Categorías</Txt>
-      <Txt variant="subhead">Elige todas las que apliquen. Ayudan a que te encuentren.</Txt>
-      {DISH_CATEGORY_GROUPS.map(g => <View key={g.title} style={{ gap: 6 }}>
-        <Txt variant="subhead" style={{ fontWeight: '600' }}>{g.title}</Txt>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>{g.options.map(o => <Chip key={o.label} label={o.label} on={hasCategory(o.label)} disabled={busy} onPress={() => toggleCategory(o.label)} />)}</View>
-      </View>)}
-      {customCategories.length ? <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>{customCategories.map(c => <Chip key={c} label={`${c} ×`} on disabled={busy} onPress={() => toggleCategory(c)} />)}</View> : null}
-      <View style={{ flexDirection: 'row', gap: spacing.sm }}>
-        <Input accessibilityLabel="Otra categoría" placeholder="¿No está? Escríbela" value={newCategory} onChangeText={setNewCategory} maxLength={30} editable={!busy}
-          returnKeyType="done" onSubmitEditing={addCategory} style={{ flex: 1 }} />
-        <Action title="Agregar" secondary disabled={busy || !newCategory.trim()} onPress={addCategory} />
-      </View>
+      {DISH_DETAIL_GROUPS.map(g => <TagField key={g.key} title={g.title} placeholder={g.placeholder} disabled={busy}
+        hint={g.key === 'dish_types' ? 'Elige o escribe todas las que apliquen. Ayudan a que te encuentren.' : undefined}
+        options={g.options.map(o => o.label)} value={form[g.key]} onChange={setGroup(g.key)} validate={(t, cur) => labelProblem(t, cur)} />)}
 
-      <Txt variant="label">Ingredientes principales (opcional)</Txt>
-      <Txt variant="subhead">Agrega un ingrediente a la vez. Los clientes pueden buscar por ingrediente o pedir platillos sin alguno.</Txt>
-      {form.ingredients.length ? <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>{form.ingredients.map(i => <Chip key={i} label={`${i} ×`} on disabled={busy}
-        onPress={() => setForm(v => ({ ...v, ingredients: v.ingredients.filter(x => x !== i) }))} />)}</View> : null}
-      <View style={{ flexDirection: 'row', gap: spacing.sm }}>
-        <Input accessibilityLabel="Ingrediente" placeholder="Ej. pollo" value={newIngredient} onChangeText={setNewIngredient} maxLength={40} editable={!busy}
-          returnKeyType="done" onSubmitEditing={addIngredient} style={{ flex: 1 }} />
-        <Action title="Agregar" secondary disabled={busy || !newIngredient.trim()} onPress={addIngredient} />
-      </View>
+      <TagField title="Ingredientes principales (opcional)" placeholder="Escribe uno: Ej. pollo" disabled={busy}
+        hint="Agrega un ingrediente a la vez. Los clientes pueden buscar por ingrediente o pedir platillos sin alguno."
+        value={form.ingredients} onChange={ingredients => setForm(v => ({ ...v, ingredients }))} validate={ingredientProblem} />
 
-      <Txt variant="label">Alérgenos</Txt>
-      {/* The whole row toggles: people tap the words, not only the switch. */}
-      <Pressable accessibilityRole="switch" accessibilityState={{ checked: form.hasAllergens, disabled: busy }} disabled={busy}
-        onPress={() => setAllergensOn(!form.hasAllergens)} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.md, minHeight: 48 }}>
-        <Txt style={{ flex: 1 }}>Contiene alérgenos</Txt>
-        <Switch value={form.hasAllergens} disabled={busy} importantForAccessibility="no" trackColor={{ true: colors.orange, false: colors.border }} thumbColor={colors.white}
-          onValueChange={setAllergensOn} />
-      </Pressable>
-      {form.hasAllergens
-        ? <><Txt variant="subhead">Marca todos los que puede contener:</Txt>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>{ALLERGENS.map(a => <Chip key={a} tone="red" label={ALLERGEN_LABELS[a]} on={form.allergens.includes(a)} disabled={busy}
-            onPress={() => setForm(v => ({ ...v, allergens: v.allergens.includes(a) ? v.allergens.filter(x => x !== a) : [...v.allergens, a] }))} />)}</View></>
-        : <><Chip label="Confirmo: no contiene alérgenos comunes" on={form.allergens.includes(NO_ALLERGENS)} disabled={busy}
-            onPress={() => setForm(v => ({ ...v, allergens: v.allergens.includes(NO_ALLERGENS) ? [] : [NO_ALLERGENS] }))} />
-          <Txt variant="subhead">Si no lo confirmas, los clientes verán «alérgenos sin declarar».</Txt></>}
+      <View style={{ gap: spacing.sm, paddingTop: spacing.sm, borderTopWidth: 1, borderTopColor: colors.border }}>
+        <Txt variant="label" accessibilityRole="header">Alérgenos</Txt>
+        {/* The whole row toggles: people tap the words, not only the switch. */}
+        <Pressable accessibilityRole="switch" accessibilityState={{ checked: form.hasAllergens, disabled: busy }} disabled={busy}
+          onPress={() => setAllergensOn(!form.hasAllergens)} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.md, minHeight: 48 }}>
+          <Txt style={{ flex: 1 }}>Contiene alérgenos</Txt>
+          <Switch value={form.hasAllergens} disabled={busy} importantForAccessibility="no" trackColor={{ true: colors.orange, false: colors.border }} thumbColor={colors.white}
+            onValueChange={setAllergensOn} />
+        </Pressable>
+        {form.hasAllergens
+          ? <TagField title="¿Qué alérgenos contiene?" placeholder="¿Otro? Escríbelo: Ej. mostaza" tone="red" disabled={busy}
+              options={ALLERGENS.map(a => ALLERGEN_LABELS[a])} value={form.allergenLabels} onChange={allergenLabels => setForm(v => ({ ...v, allergenLabels }))}
+              validate={(t, cur) => labelProblem(t, cur, 'un alérgeno', 19)} />
+          : <><Chip label="Confirmo: no contiene alérgenos comunes" on={form.noAllergens} disabled={busy} onPress={() => setForm(v => ({ ...v, noAllergens: !v.noAllergens }))} />
+            <Txt variant="subhead">Si no lo confirmas, los clientes verán «alérgenos sin declarar».</Txt></>}
+      </View>
 
       <Message>{formError}</Message>
       <Action title={busy ? 'Guardando…' : editing ? 'Guardar cambios' : 'Agregar platillo'} onPress={save} disabled={busy} />

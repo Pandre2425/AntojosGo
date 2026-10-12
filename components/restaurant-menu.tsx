@@ -5,16 +5,18 @@ import { webApi } from '@/lib/web-api'
 import { uploadDishImage } from '@/lib/web-image-upload'
 import { normalize } from '@/shared/contracts/assistant'
 import {
-  ALLERGEN_LABELS, ALLERGENS, DISH_CATEGORY_GROUPS, DISH_TAGS, DISH_TAG_LABELS, MAX_CATEGORIES, NO_ALLERGENS, allergenStatus, dishCategories,
-  dishInputSchema, formatPriceInput, ingredientProblem, type Allergen, type AllergenDeclaration, type Dish, type DishPatch, type DishTag,
+  ALLERGEN_LABELS, ALLERGENS, DISH_DETAIL_GROUPS, DISH_TAGS, DISH_TAG_LABELS, NO_ALLERGENS, allergenNames, allergenStatus, dishDetails,
+  dishInputSchema, formatPriceInput, ingredientProblem, labelProblem, splitAllergenLabels, type Allergen, type DetailKey, type Dish, type DishPatch, type DishTag,
 } from '@/shared/contracts/menu'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
 import { Label } from './ui/label'
 import { Textarea } from './ui/textarea'
+import TagField from './tag-field'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu'
 
-const empty = { name: '', price: '', description: '', categories: [] as string[], ingredients: [] as string[], hasAllergens: false, allergens: [] as AllergenDeclaration[] }
+const empty = { name: '', price: '', description: '', dish_types: [] as string[], cuisines: [] as string[], features: [] as string[],
+  ingredients: [] as string[], hasAllergens: false, allergenLabels: [] as string[], noAllergens: false }
 const money = (v: number) => `Q${v.toFixed(2)}`
 type Status = 'all' | 'visible' | 'hidden' | 'soldout'
 const STATUS_LABELS: Record<Status, string> = { all: 'Todos', visible: 'Visibles', hidden: 'Ocultos', soldout: 'Agotados' }
@@ -50,9 +52,6 @@ export default function RestaurantMenu({ restaurantId, restaurantName, onClose }
   const photoInput = useRef<HTMLInputElement>(null)
   const photoFor = useRef<string | null>(null)
   const formRef = useRef<HTMLFormElement>(null)
-  const [newCategory, setNewCategory] = useState('')
-  const [newIngredient, setNewIngredient] = useState('')
-  const [fieldHint, setFieldHint] = useState('')
   const [photo, setPhoto] = useState<File | null>(null)
   const [currentPhoto, setCurrentPhoto] = useState<string | null>(null)
   const photoPreview = useMemo(() => photo ? URL.createObjectURL(photo) : null, [photo])
@@ -71,7 +70,7 @@ export default function RestaurantMenu({ restaurantId, restaurantName, onClose }
     for (const d of dishes ?? []) { c.all++; c[statusOf(d)]++ }
     return c
   }, [dishes])
-  const undeclared = (dishes ?? []).filter((d) => !allergenStatus(d.allergens).declared).length
+  const undeclared = (dishes ?? []).filter((d) => !allergenStatus(d.allergens, d.allergens_other).declared).length
 
   // Search covers name, category, description and ingredients (accent-insensitive).
   const visibleRows = useMemo(() => {
@@ -96,45 +95,29 @@ export default function RestaurantMenu({ restaurantId, restaurantName, onClose }
   async function submit(event: FormEvent) {
     event.preventDefault()
     if (saving.current) return
+    const own = splitAllergenLabels(form.allergenLabels)
     const parsed = dishInputSchema.safeParse({ name: form.name, price: form.price, description: form.description,
-      categories: form.categories, ingredients: form.ingredients, allergens: form.hasAllergens ? form.allergens.filter((a) => a !== NO_ALLERGENS) : form.allergens })
+      dish_types: form.dish_types, cuisines: form.cuisines, features: form.features, ingredients: form.ingredients,
+      allergens: form.hasAllergens ? own.allergens : form.noAllergens ? [NO_ALLERGENS] : [], allergens_other: form.hasAllergens ? own.allergens_other : [] })
     if (!parsed.success) { setError(parsed.error.issues[0].message); return }
-    if (form.hasAllergens && !parsed.data.allergens?.length) { setError('Marca qué alérgenos contiene, o apaga «Contiene alérgenos».'); return }
+    if (form.hasAllergens && !form.allergenLabels.length) { setError('Marca o escribe qué alérgenos contiene, o apaga «Contiene alérgenos».'); return }
     const ok = await run(async () => {
       const saved = editing ? await webApi.updateDish(editing, parsed.data) : await webApi.createDish(restaurantId, parsed.data)
       if (photo) await uploadDishImage(saved.id, photo).catch((e: unknown) => { throw new Error(`El platillo se guardó, pero la foto no se pudo subir (${e instanceof Error ? e.message : 'error desconocido'}). Intenta de nuevo desde «Editar».`) })
     }, editing ? 'Platillo actualizado.' : 'Platillo agregado como oculto. Pulsa «Mostrar» cuando esté listo.')
     if (ok) resetForm()
   }
-  function resetForm() { setForm(empty); setEditing(null); setPhoto(null); setCurrentPhoto(null); setNewCategory(''); setNewIngredient(''); setFieldHint('') }
+  function resetForm() { setForm(empty); setEditing(null); setPhoto(null); setCurrentPhoto(null) }
   const patch = (dish: Dish, values: DishPatch, done: string) => run(() => webApi.updateDish(dish.id, values), done)
   function edit(dish: Dish) {
-    setEditing(dish.id); setError(''); setPhoto(null); setCurrentPhoto(dish.image_url); setFieldHint('')
-    const allergens = dish.allergens ?? []
-    setForm({ name: dish.name, price: dish.price.toFixed(2), description: dish.description ?? '', categories: dishCategories(dish),
-      ingredients: dish.ingredients ?? [], hasAllergens: allergenStatus(allergens).contains.length > 0, allergens })
+    setEditing(dish.id); setError(''); setPhoto(null); setCurrentPhoto(dish.image_url)
+    const labels = allergenNames(dish.allergens, dish.allergens_other)
+    setForm({ name: dish.name, price: dish.price.toFixed(2), description: dish.description ?? '', ...dishDetails(dish),
+      ingredients: dish.ingredients ?? [], hasAllergens: labels.length > 0, allergenLabels: labels, noAllergens: (dish.allergens ?? []).includes(NO_ALLERGENS) })
     formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
   const toggle = <T,>(list: T[], value: T) => list.includes(value) ? list.filter((v) => v !== value) : [...list, value]
-  const hasCategory = (c: string) => form.categories.some((x) => x.toLowerCase() === c.toLowerCase())
-  function toggleCategory(c: string) {
-    setFieldHint('')
-    if (!hasCategory(c) && form.categories.length >= MAX_CATEGORIES) { setFieldHint(`Elige hasta ${MAX_CATEGORIES} categorías.`); return }
-    setForm((v) => ({ ...v, categories: hasCategory(c) ? v.categories.filter((x) => x.toLowerCase() !== c.toLowerCase()) : [...v.categories, c] }))
-  }
-  function addCategory() {
-    const c = newCategory.trim().replace(/\s+/g, ' ')
-    if (c.length < 2 || c.length > 30 || /[,;]/.test(c)) { setFieldHint('Escribe una categoría a la vez, de 2 a 30 letras.'); return }
-    if (!hasCategory(c)) toggleCategory(c)
-    setNewCategory('')
-  }
-  function addIngredient() {
-    const problem = ingredientProblem(newIngredient, form.ingredients)
-    if (problem) { setFieldHint(problem); return }
-    setFieldHint(''); setForm((v) => ({ ...v, ingredients: [...v.ingredients, newIngredient.trim().replace(/\s+/g, ' ')] })); setNewIngredient('')
-  }
-  const known = new Set(DISH_CATEGORY_GROUPS.flatMap((g) => g.options.map((o) => o.label.toLowerCase())))
-  const customCategories = form.categories.filter((c) => !known.has(c.toLowerCase()))
+  const setGroup = (key: DetailKey) => (next: string[]) => setForm((v) => ({ ...v, [key]: next }))
 
   return <section className="space-y-5 rounded-[24px] border bg-white p-5">
     <Button variant="ghost" disabled={busy} onClick={onClose}>← Mis restaurantes</Button>
@@ -183,7 +166,7 @@ export default function RestaurantMenu({ restaurantId, restaurantName, onClose }
         {visibleRows.length === 0 ? <p className="rounded-xl border border-dashed p-6 text-center text-muted-foreground">Ningún platillo coincide con estos filtros.</p>
           : <ul className="space-y-2">{visibleRows.map((dish) => {
             const st = statusOf(dish)
-            const al = allergenStatus(dish.allergens)
+            const al = allergenStatus(dish.allergens, dish.allergens_other)
             return <li key={dish.id} className={`flex flex-wrap items-start gap-3 rounded-xl border border-l-4 bg-white p-3 ${EDGE[st]}`}>
               {dish.image_url ? <img src={dish.image_url} alt={`Foto de ${dish.name}`} className="h-16 w-16 shrink-0 rounded-lg object-cover" />
                 : <button type="button" disabled={busy} onClick={() => { photoFor.current = dish.id; photoInput.current?.click() }}
@@ -194,9 +177,9 @@ export default function RestaurantMenu({ restaurantId, restaurantName, onClose }
                 {dish.description && <p className="line-clamp-2 text-sm text-stone-600">{dish.description}</p>}
                 {dish.ingredients?.length ? <p className="text-sm text-stone-600"><span className="text-stone-500">Ingredientes:</span> {dish.ingredients.join(', ')}</p> : null}
                 <div className="flex flex-wrap gap-1.5">
-                  {dishCategories(dish).map((c) => <span key={c} className="rounded-full bg-stone-100 px-2 py-0.5 text-xs text-stone-700">{c}</span>)}
+                  {Object.values(dishDetails(dish)).flat().map((c) => <span key={c} className="rounded-full bg-stone-100 px-2 py-0.5 text-xs text-stone-700">{c}</span>)}
                   {!al.declared ? <span className="rounded-full border border-dashed border-amber-500 px-2 py-0.5 text-xs text-amber-900">Alérgenos sin declarar</span>
-                    : al.contains.length ? al.contains.map((a) => <span key={a} className="rounded-full border border-[#BD481F] px-2 py-0.5 text-xs text-[#9a3a18]">Contiene {ALLERGEN_LABELS[a].toLowerCase()}</span>)
+                    : al.contains.length || al.other.length ? allergenNames(dish.allergens, dish.allergens_other).map((a) => <span key={a} className="rounded-full border border-[#BD481F] px-2 py-0.5 text-xs text-[#9a3a18]">Contiene {a.toLowerCase()}</span>)
                     : <span className="rounded-full border border-[#173F35]/40 px-2 py-0.5 text-xs text-[#173F35]">Sin alérgenos comunes</span>}
                 </div>
               </div>
@@ -249,44 +232,28 @@ export default function RestaurantMenu({ restaurantId, restaurantName, onClose }
         </div>
       </div>
 
-      <fieldset className="space-y-3 rounded-xl border p-3">
-        <legend className="px-1 text-sm font-medium">Categorías <span className="font-normal text-muted-foreground">(elige todas las que apliquen; ayudan a que te encuentren)</span></legend>
-        {DISH_CATEGORY_GROUPS.map((g) => <div key={g.title} className="space-y-1.5">
-          <p className="text-xs font-medium text-stone-500">{g.title}</p>
-          <div className="flex flex-wrap gap-2">{g.options.map((o) => <Chip key={o.label} on={hasCategory(o.label)} onClick={() => toggleCategory(o.label)}>{o.label}</Chip>)}</div>
-        </div>)}
-        {customCategories.length > 0 && <div className="flex flex-wrap gap-2">{customCategories.map((c) => <Chip key={c} on onClick={() => toggleCategory(c)}>{c} ×</Chip>)}</div>}
-        <div className="flex gap-2"><Input aria-label="Otra categoría" placeholder="¿No está? Escríbela: Ej. Shucos" value={newCategory} maxLength={30} disabled={busy}
-          onChange={(e) => setNewCategory(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addCategory() } }} />
-          <Button type="button" variant="outline" disabled={busy || !newCategory.trim()} onClick={addCategory}>Agregar</Button></div>
-      </fieldset>
+      {DISH_DETAIL_GROUPS.map((g) => <TagField key={g.key} id={`dish-${g.key}`} legend={g.title} placeholder={g.placeholder} disabled={busy}
+        hint={g.key === 'dish_types' ? 'Elige o escribe todas las que apliquen; ayudan a que te encuentren.' : undefined}
+        options={g.options.map((o) => o.label)} value={form[g.key]} onChange={setGroup(g.key)} validate={(t, cur) => labelProblem(t, cur)} />)}
 
-      <fieldset className="space-y-2 rounded-xl border p-3">
-        <legend className="px-1 text-sm font-medium">Ingredientes principales (opcional)</legend>
-        <p className="text-xs text-muted-foreground">Agrega <strong>un ingrediente a la vez</strong>. Los clientes pueden buscar por ingrediente o pedir platillos sin alguno («sin cebolla»).</p>
-        {form.ingredients.length > 0 && <ul className="flex flex-wrap gap-2">{form.ingredients.map((i) => <li key={i}>
-          <span className="inline-flex items-center gap-1 rounded-full border border-[#173F35] bg-[#173F35]/10 py-1 pl-3 pr-1 text-sm text-[#173F35]">{i}
-            <button type="button" aria-label={`Quitar ${i}`} disabled={busy} onClick={() => setForm((v) => ({ ...v, ingredients: v.ingredients.filter((x) => x !== i) }))}
-              className="rounded-full p-0.5 hover:bg-[#173F35]/15"><X className="h-3.5 w-3.5" /></button></span></li>)}</ul>}
-        <div className="flex gap-2"><Input aria-label="Ingrediente" placeholder="Ej. pollo" value={newIngredient} maxLength={40} disabled={busy}
-          onChange={(e) => setNewIngredient(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addIngredient() } }} />
-          <Button type="button" variant="outline" disabled={busy || !newIngredient.trim()} onClick={addIngredient}>Agregar</Button></div>
-      </fieldset>
-      {fieldHint && <p role="alert" className="text-sm text-[#9a3a18]">{fieldHint}</p>}
+      <TagField id="dish-ingredients" legend="Ingredientes principales (opcional)" placeholder="Escribe uno: Ej. pollo" disabled={busy}
+        hint={<>Agrega <strong>un ingrediente a la vez</strong>. Los clientes pueden buscar por ingrediente o pedir platillos sin alguno («sin cebolla»).</>}
+        value={form.ingredients} onChange={(ingredients) => setForm((v) => ({ ...v, ingredients }))} validate={ingredientProblem} />
 
       <fieldset className="space-y-3 rounded-xl border p-3">
         <legend className="px-1 text-sm font-medium">Alérgenos</legend>
         <button type="button" role="switch" aria-checked={form.hasAllergens} disabled={busy}
-          onClick={() => setForm((v) => ({ ...v, hasAllergens: !v.hasAllergens, allergens: v.hasAllergens ? [] : v.allergens.filter((a) => a !== NO_ALLERGENS) }))}
+          onClick={() => setForm((v) => ({ ...v, hasAllergens: !v.hasAllergens, noAllergens: false, allergenLabels: v.hasAllergens ? [] : v.allergenLabels }))}
           className="flex items-center gap-3 text-sm font-medium focus-visible:outline-2 focus-visible:outline-[#173F35]">
           <span className={`relative h-6 w-11 rounded-full transition-colors ${form.hasAllergens ? 'bg-[#BD481F]' : 'bg-stone-300'}`}>
             <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${form.hasAllergens ? 'left-[22px]' : 'left-0.5'}`} /></span>
           Contiene alérgenos</button>
         {form.hasAllergens
-          ? <div className="space-y-1.5"><p className="text-xs text-muted-foreground">Marca todos los que puede contener:</p>
-              <div className="flex flex-wrap gap-2">{ALLERGENS.map((a) => <Chip key={a} tone="red" on={form.allergens.includes(a)} onClick={() => setForm((v) => ({ ...v, allergens: toggle(v.allergens, a as AllergenDeclaration) }))}>{ALLERGEN_LABELS[a]}</Chip>)}</div></div>
+          ? <TagField id="dish-allergens" legend="¿Qué alérgenos contiene?" placeholder="¿Otro? Escríbelo: Ej. mostaza" tone="red" disabled={busy}
+              options={ALLERGENS.map((a) => ALLERGEN_LABELS[a])} value={form.allergenLabels} onChange={(allergenLabels) => setForm((v) => ({ ...v, allergenLabels }))}
+              validate={(t, cur) => labelProblem(t, cur, 'un alérgeno', 19)} />
           : <label className="flex items-start gap-2 text-sm">
-              <input type="checkbox" className="mt-1" disabled={busy} checked={form.allergens.includes(NO_ALLERGENS)} onChange={(e) => setForm((v) => ({ ...v, allergens: e.target.checked ? [NO_ALLERGENS] : [] }))} />
+              <input type="checkbox" className="mt-1" disabled={busy} checked={form.noAllergens} onChange={(e) => setForm((v) => ({ ...v, noAllergens: e.target.checked }))} />
               <span>Confirmo que no contiene ninguno de los alérgenos comunes (maní, nueces, lácteos, huevo, gluten, mariscos, pescado, soya, ajonjolí).
                 <span className="block text-xs text-muted-foreground">Si no lo confirmas, los clientes verán «alérgenos sin declarar».</span></span></label>}
       </fieldset>

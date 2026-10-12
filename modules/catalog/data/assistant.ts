@@ -1,7 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { z } from 'zod'
 import { dbError } from '../../../lib/app-error'
-import { assistantRequestSchema, avoidRegex, contextLabel, emptyContext, interpret, searchGroups, type AssistantContext } from '../../../shared/contracts/assistant'
+import { assistantRequestSchema, avoidRegex, contextLabel, emptyContext, interpret, normalize, searchGroups, type AssistantContext } from '../../../shared/contracts/assistant'
 import { ALLERGEN_LABELS, allergenStatus, type Allergen } from '../../../shared/contracts/menu'
 import { isOpenNow, type OpeningHours } from '../../../shared/contracts/hours'
 import { getPublicMenu, getPublishedBranch } from './public-catalog'
@@ -111,8 +111,10 @@ async function menuReply(db: SupabaseClient, ctx: AssistantContext, source: Assi
   const [branch, dishes] = await Promise.all([getPublishedBranch(db, ctx.lastBranchId!), getPublicMenu(db, ctx.lastBranchId!)])
   if (!branch) return { reply: 'Esa sede ya no está publicada. Busquemos otra opción.', items: [], context: { ...ctx, lastBranchId: null }, source }
   const list = dishes.slice(0, 8).map(d => {
-    const { declared, contains } = allergenStatus(d.allergens)
-    const hit = contains.filter(a => ctx.without.includes(a)).map(a => ALLERGEN_LABELS[a].toLowerCase())
+    const { declared, contains, other } = allergenStatus(d.allergens, d.allergens_other)
+    // Fixed-list allergens the diner excluded, plus restaurant-written ones matching what they avoid ("sin mostaza").
+    const hit = [...contains.filter(a => ctx.without.includes(a)).map(a => ALLERGEN_LABELS[a].toLowerCase()),
+      ...other.filter(o => ctx.avoid.some(w => normalize(o).includes(normalize(w)))).map(o => o.toLowerCase())]
     const allergy = hit.length ? ` ⛔ contiene ${hit.join(', ')}` : ctx.without.length && !declared ? ' ⚠️ alérgenos no indicados' : ''
     return `• ${d.name} — ${money(d.price)}${d.is_available ? '' : ' (agotado por ahora)'}${allergy}`
   })

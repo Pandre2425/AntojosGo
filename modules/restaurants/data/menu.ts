@@ -4,13 +4,17 @@ import { AppError, dbError } from '../../../lib/app-error'
 import { categorySummary, dishInputSchema, dishPatchSchema, tagsForCategories, type Dish, type DishInput, type DishPatch } from '../../../shared/contracts/menu'
 
 // RLS (food_owner_* policies) restricts every query to dishes of the caller's restaurants.
-const fields = 'id,restaurant_id,name,price,category,description,status,is_available,image_url,tags,categories,ingredients,allergens'
+const fields = 'id,restaurant_id,name,price,category,description,status,is_available,image_url,tags,categories,dish_types,cuisines,features,ingredients,allergens,allergens_other'
 const uuid = z.string().uuid()
 const notFound = 'No encontramos ese platillo en tu cuenta.'
-const toDish = (row: Dish): Dish => ({ ...row, price: Number(row.price), categories: row.categories ?? [], ingredients: row.ingredients ?? [], allergens: row.allergens ?? [] })
-/** Chosen categories drive the diner filter tags and the short `category` summary. */
-const withDerived = <T extends { categories?: string[]; tags?: unknown; category?: unknown }>(v: T): T =>
-  v.categories ? { ...v, tags: tagsForCategories(v.categories), category: categorySummary(v.categories) } : v
+const toDish = (row: Dish): Dish => ({ ...row, price: Number(row.price), categories: row.categories ?? [], dish_types: row.dish_types ?? [], cuisines: row.cuisines ?? [],
+  features: row.features ?? [], ingredients: row.ingredients ?? [], allergens: row.allergens ?? [], allergens_other: row.allergens_other ?? [] })
+/** The chosen details (sent together by the forms) drive the search list, the diner filter tags and the short summary. */
+function withDerived<T extends { dish_types?: string[]; cuisines?: string[]; features?: string[] }>(v: T) {
+  if (!v.dish_types && !v.cuisines && !v.features) return v
+  const categories = [...(v.dish_types ?? []), ...(v.cuisines ?? []), ...(v.features ?? [])]
+  return { ...v, categories, tags: tagsForCategories(categories), category: categorySummary(categories) }
+}
 
 // ponytail: no pagination, menus are tens of dishes; page like listBranches if one passes ~200.
 export async function listDishes(db: SupabaseClient, restaurantId: string): Promise<Dish[]> {

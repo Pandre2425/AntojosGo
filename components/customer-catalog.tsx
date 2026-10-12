@@ -6,8 +6,8 @@ import { webApi } from '@/lib/web-api'
 import { ApiError } from '@/lib/api-client'
 import type { PublicBranchExtras, PublicCatalogItem, PublicDish } from '@/modules/catalog/data/public-catalog'
 import { describeHours, isOpenNow } from '@/shared/contracts/hours'
-import { phoneUrl, whatsappUrl } from '@/shared/contracts/branches'
-import { ALLERGEN_LABELS, ALLERGENS, DISH_TAGS, DISH_TAG_LABELS, allergenStatus, type Allergen, type DishTag } from '@/shared/contracts/menu'
+import { directionsUrl, phoneUrl, whatsappUrl } from '@/shared/contracts/branches'
+import { ALLERGEN_LABELS, ALLERGENS, DISH_TAGS, DISH_TAG_LABELS, allergenNames, allergenStatus, type Allergen, type DishTag } from '@/shared/contracts/menu'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
 
@@ -188,7 +188,7 @@ export function BranchDetail({ id, onBack }: { id: string; onBack: () => void })
         <p className="text-sm text-muted-foreground">{b.description || 'Sin descripción.'}</p>
         <Hours hours={b.opening_hours ?? []} />
         {b.phone && <div className="flex flex-wrap gap-2"><a className="rounded-md border px-3 py-1.5 text-sm" href={phoneUrl(b.phone)}>Llamar · {b.phone}</a>{b.whatsapp && <a className="rounded-md border px-3 py-1.5 text-sm" target="_blank" rel="noreferrer" href={whatsappUrl(b.phone)}>WhatsApp</a>}</div>}
-        {b.latitude != null && b.longitude != null && <a className="inline-block text-sm underline" target="_blank" rel="noreferrer" href={`https://www.openstreetmap.org/?mlat=${b.latitude}&mlon=${b.longitude}#map=18/${b.latitude}/${b.longitude}`}>Ver en el mapa</a>}
+        {b.latitude != null && b.longitude != null && <a className="inline-flex items-center gap-2 rounded-xl bg-[#BD481F] px-4 py-2 text-sm font-semibold text-white hover:bg-[#9a3a18]" target="_blank" rel="noreferrer" href={directionsUrl(b.latitude, b.longitude)}><MapPin className="h-4 w-4" />Cómo llegar</a>}
         </div>
       </section>
       <section className="rounded-2xl border bg-white p-5 space-y-3">
@@ -201,7 +201,7 @@ export function BranchDetail({ id, onBack }: { id: string; onBack: () => void })
               {dish.category && <p className="text-xs text-muted-foreground">{dish.category}</p>}
               {dish.description && <p className="text-sm text-muted-foreground">{dish.description}</p>}
               {dish.ingredients?.length ? <p className="text-sm text-muted-foreground">Ingredientes: {dish.ingredients.join(', ')}</p> : null}
-              <DishAllergens allergens={dish.allergens} />
+              <DishAllergens allergens={dish.allergens} other={dish.allergens_other} />
               {!dish.is_available && <p className="text-xs font-semibold text-red-700">Agotado por ahora</p>}
             </div>
           </li>)}</ul>}
@@ -217,9 +217,9 @@ function Hours({ hours }: { hours: NonNullable<PublicBranchExtras['opening_hours
     <ul className="mt-1">{describeHours(hours).map((line) => <li key={line}>{line}</li>)}</ul></details>
 }
 
-function DishAllergens({ allergens }: { allergens?: readonly string[] }) {
-  const { declared, contains } = allergenStatus(allergens)
+function DishAllergens({ allergens, other = [] }: { allergens?: readonly string[]; other?: readonly string[] }) {
+  const { declared, contains } = allergenStatus(allergens, other)
   if (!declared) return <p className="text-xs text-amber-900">Alérgenos no declarados por el restaurante</p>
-  if (!contains.length) return <p className="text-xs text-green-800">Sin alérgenos comunes, según el restaurante</p>
-  return <p className="flex flex-wrap gap-1">{contains.map((a) => <span key={a} className="rounded-full border border-[#BD481F] px-2 py-0.5 text-xs text-[#9a3a18]">Contiene {ALLERGEN_LABELS[a].toLowerCase()}</span>)}</p>
+  if (!contains.length && !other.length) return <p className="text-xs text-green-800">Sin alérgenos comunes, según el restaurante</p>
+  return <p className="flex flex-wrap gap-1">{allergenNames(allergens, other).map((a) => <span key={a} className="rounded-full border border-[#BD481F] px-2 py-0.5 text-xs text-[#9a3a18]">Contiene {a.toLowerCase()}</span>)}</p>
 }

@@ -39,7 +39,7 @@ test('catalog errors are not reported as empty results', async () => {
 
 test('public menu converts prices and skips malformed ids', async () => {
   const { getPublicMenu } = require('../modules/catalog/data/public-catalog.ts')
-  const client = { rpc: async (name, args) => ({ data: name === 'get_public_dishes_full' && args.p_branch_id ? [{ id: 'd', name: 'Pepián', price: '42.00', category: null, description: null, is_available: false }] : null, error: null }) }
+  const client = { rpc: async (name, args) => ({ data: name === 'get_public_dishes_v3' && args.p_branch_id ? [{ id: 'd', name: 'Pepián', price: '42.00', category: null, description: null, is_available: false }] : null, error: null }) }
   assert.equal((await getPublicMenu(client, '9d5ed486-e10f-4c76-8ce4-a9465d748724'))[0].price, 42)
   assert.deepEqual(await getPublicMenu({ rpc: async () => { throw new Error('should not query') } }, 'x'), [])
 })

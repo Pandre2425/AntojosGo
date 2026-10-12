@@ -37,3 +37,8 @@ export const branchLocationSchema = z.object({
   longitude: z.number().finite().min(-180).max(180),
 })
 export type BranchLocation = z.infer<typeof branchLocationSchema>
+
+/** Directions from wherever the user is: opens Google Maps (app or web) with the route ready. */
+export const directionsUrl = (lat: number, lng: number) => `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`
+/** Android "open with…": lets the user pick Waze or any other maps app. */
+export const geoUrl = (lat: number, lng: number, label: string) => `geo:${lat},${lng}?q=${lat},${lng}(${encodeURIComponent(label)})`

@@ -106,12 +106,13 @@ export function toCatalogItem(row: SearchRow): PublicCatalogItem {
 export type PublicDish = {
   id: string; name: string; price: number; category: string | null; description: string | null; is_available: boolean
   image_path?: string | null; image_url?: string | null; tags?: DishTag[]; ingredients?: string[]; allergens?: AllergenDeclaration[]
+  allergens_other?: string[]; dish_types?: string[]; cuisines?: string[]; features?: string[]
 }
 
 /** Published dishes of a published branch; empty for drafts or unknown ids. */
 export async function getPublicMenu(client: SupabaseClient, branchId: string): Promise<PublicDish[]> {
   if (!UUID.test(branchId)) return []
-  const { data, error } = await client.rpc('get_public_dishes_full', { p_branch_id: branchId })
+  const { data, error } = await client.rpc('get_public_dishes_v3', { p_branch_id: branchId })
   if (error) throw dbError(error, 'No pudimos cargar el menú.')
   return ((data || []) as PublicDish[]).map(d => ({ ...d, price: Number(d.price) }))
 }

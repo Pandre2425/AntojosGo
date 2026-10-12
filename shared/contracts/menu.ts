@@ -21,31 +21,38 @@ export const ALLERGEN_LABELS: Record<Allergen, string> = {
 export const NO_ALLERGENS = 'ninguno' as const
 export type AllergenDeclaration = Allergen | typeof NO_ALLERGENS
 
-/** Quick-pick categories, grouped. Options with `tag` also power the diner filters (foods.tags).
- * Owners can add their own; categories are free text (foods.categories). */
-export const DISH_CATEGORY_GROUPS: { title: string; options: { label: string; tag?: DishTag }[] }[] = [
-  { title: 'Tipo de plato', options: [
+/** Dish details split by kind. Each group has quick-pick options and accepts the restaurant's own entries.
+ * Options with `tag` also power the diner filters (foods.tags). Stored in foods.dish_types / cuisines / features. */
+export const DISH_DETAIL_GROUPS = [
+  { key: 'dish_types', title: 'Tipo de plato', placeholder: 'Escribe uno: Ej. Shucos, Ceviche', options: [
     { label: 'Desayuno', tag: 'desayuno' }, { label: 'Entrada' }, { label: 'Plato fuerte' }, { label: 'Sopa o caldo', tag: 'caliente' },
-    { label: 'Ensalada' }, { label: 'Antojito' }, { label: 'Acompañamiento' }, { label: 'Postre', tag: 'postre' },
-    { label: 'Bebida', tag: 'bebida' }, { label: 'Bebida caliente', tag: 'caliente' }, { label: 'Menú infantil' }, { label: 'Combo' },
+    { label: 'Ensalada' }, { label: 'Antojito' }, { label: 'Hamburguesa' }, { label: 'Pizza' }, { label: 'Tacos' }, { label: 'Sándwich' },
+    { label: 'Pasta' }, { label: 'Mariscos' }, { label: 'Carnes' }, { label: 'Pollo' }, { label: 'Acompañamiento' },
+    { label: 'Postre', tag: 'postre' }, { label: 'Bebida', tag: 'bebida' }, { label: 'Bebida caliente', tag: 'caliente' },
+    { label: 'Menú infantil' }, { label: 'Combo' },
   ] },
-  { title: 'Cocina', options: [
-    { label: 'Comida típica' }, { label: 'Comida rápida' }, { label: 'Hamburguesa' }, { label: 'Pizza' }, { label: 'Italiana' },
-    { label: 'Mexicana' }, { label: 'Tacos' }, { label: 'China' }, { label: 'Japonesa / sushi' }, { label: 'Internacional' },
-    { label: 'Mariscos' }, { label: 'Carnes y parrilla' }, { label: 'Pollo' }, { label: 'Cafetería' }, { label: 'Panadería y repostería' },
+  { key: 'cuisines', title: 'Cocina', placeholder: 'Escribe una: Ej. Colombiana, Francesa', options: [
+    { label: 'Comida típica' }, { label: 'Mexicana' }, { label: 'Salvadoreña' }, { label: 'Colombiana' }, { label: 'Peruana' },
+    { label: 'Argentina' }, { label: 'Estadounidense' }, { label: 'Italiana' }, { label: 'Francesa' }, { label: 'Española' },
+    { label: 'China' }, { label: 'Japonesa / sushi' }, { label: 'Coreana' }, { label: 'Tailandesa' }, { label: 'India' },
+    { label: 'Árabe' }, { label: 'Internacional' }, { label: 'Fusión' }, { label: 'Comida rápida' }, { label: 'Cafetería' },
+    { label: 'Panadería y repostería' },
   ] },
-  { title: 'Características', options: [
+  { key: 'features', title: 'Características', placeholder: 'Escribe una: Ej. Sin azúcar', options: [
     { label: 'Picante', tag: 'picante' }, { label: 'Vegetariano', tag: 'vegetariano' }, { label: 'Vegano', tag: 'vegano' },
     { label: 'Sin gluten', tag: 'sin_gluten' }, { label: 'Frío', tag: 'frio' }, { label: 'Caliente', tag: 'caliente' },
-    { label: 'Para compartir' }, { label: 'Especialidad de la casa' },
+    { label: 'Saludable' }, { label: 'Para compartir' }, { label: 'Especialidad de la casa' },
   ] },
-]
-const CATEGORY_TAG = new Map(DISH_CATEGORY_GROUPS.flatMap(g => g.options).filter(o => o.tag).map(o => [o.label.toLowerCase(), o.tag!]))
-export const MAX_CATEGORIES = 12
+] as const satisfies readonly { key: string; title: string; placeholder: string; options: readonly { label: string; tag?: DishTag }[] }[]
+export type DetailKey = typeof DISH_DETAIL_GROUPS[number]['key']
+export const DETAIL_KEYS: DetailKey[] = DISH_DETAIL_GROUPS.map(g => g.key)
+export const MAX_PER_GROUP = 12
+const OPTION_TAG = new Map<string, DishTag>(DISH_DETAIL_GROUPS.flatMap(g => g.options as readonly { label: string; tag?: DishTag }[])
+  .filter(o => o.tag).map(o => [o.label.toLowerCase(), o.tag!]))
 
-/** Tags (diner filters) implied by the chosen categories. */
+/** Tags (diner filters) implied by the chosen details. */
 export const tagsForCategories = (categories: readonly string[]): DishTag[] =>
-  [...new Set(categories.map(c => CATEGORY_TAG.get(c.toLowerCase())).filter((t): t is DishTag => Boolean(t)))]
+  [...new Set(categories.map(c => OPTION_TAG.get(c.toLowerCase())).filter((t): t is DishTag => Boolean(t)))]
 
 /** Short text kept in foods.category for displays and older app versions: "Hamburguesa, Comida rápida". */
 export function categorySummary(categories: readonly string[]): string | null {
@@ -54,11 +61,29 @@ export function categorySummary(categories: readonly string[]): string | null {
   return out || null
 }
 
-/** Categories of a dish saved before multi-select existed: its old category text plus its tags. */
-export function dishCategories(dish: Pick<Dish, 'categories' | 'category' | 'tags'>): string[] {
-  if (dish.categories?.length) return dish.categories
-  const fromTags = (dish.tags ?? []).map(t => DISH_TAG_LABELS[t])
-  return [...new Set([...(dish.category ? [dish.category] : []), ...fromTags])]
+type DetailSource = { dish_types?: string[]; cuisines?: string[]; features?: string[]; categories?: string[]; category?: string | null; tags?: DishTag[] }
+/** A dish's details by group; dishes saved before the split are sorted from their categories / old category / tags. */
+export function dishDetails(dish: DetailSource): Record<DetailKey, string[]> {
+  if ((dish.dish_types?.length ?? 0) + (dish.cuisines?.length ?? 0) + (dish.features?.length ?? 0) > 0)
+    return { dish_types: dish.dish_types ?? [], cuisines: dish.cuisines ?? [], features: dish.features ?? [] }
+  const legacy = dish.categories?.length ? dish.categories : [...(dish.category ? [dish.category] : []), ...(dish.tags ?? []).map(t => DISH_TAG_LABELS[t])]
+  const groupOf = (c: string) => DISH_DETAIL_GROUPS.find(g => g.options.some(o => o.label.toLowerCase() === c.toLowerCase()))?.key ?? 'dish_types'
+  const out: Record<DetailKey, string[]> = { dish_types: [], cuisines: [], features: [] }
+  for (const c of new Set(legacy)) out[groupOf(c)].push(c)
+  return out
+}
+/** Old helper name: all details in one list. */
+export const dishCategories = (dish: DetailSource): string[] => Object.values(dishDetails(dish)).flat()
+
+/** One label per entry (no lists): returns an error message, or '' when valid. */
+export function labelProblem(text: string, current: readonly string[], what = 'una opción', max = MAX_PER_GROUP): string {
+  const value = text.trim()
+  if (value.length < 2) return 'Escribe al menos 2 letras.'
+  if (/[,;\n]/.test(value)) return `Agrega ${what} a la vez (sin comas).`
+  if (value.length > 30) return 'Admite hasta 30 caracteres.'
+  if (current.some(i => i.toLowerCase() === value.toLowerCase())) return 'Ya está en la lista.'
+  if (current.length >= max) return `Puedes agregar hasta ${max}.`
+  return ''
 }
 
 /** One ingredient per entry: returns an error message, or '' when valid. */
@@ -88,10 +113,20 @@ export function parseIngredients(text: string): string[] {
   })
 }
 
-/** Allergen state for display and filters: declared-free, contains X, or not declared (never "safe"). */
-export function allergenStatus(allergens: readonly string[] | null | undefined): { declared: boolean; contains: Allergen[] } {
+/** Allergen state for display and filters: declared-free, contains X, or not declared (never "safe").
+ * `other` = allergens the restaurant wrote itself (foods.allergens_other); they also count as declared. */
+export function allergenStatus(allergens: readonly string[] | null | undefined, other: readonly string[] = []): { declared: boolean; contains: Allergen[]; other: string[] } {
   const list = allergens ?? []
-  return { declared: list.length > 0, contains: list.filter((a): a is Allergen => (ALLERGENS as readonly string[]).includes(a)) }
+  return { declared: list.length > 0 || other.length > 0, contains: list.filter((a): a is Allergen => (ALLERGENS as readonly string[]).includes(a)), other: [...other] }
+}
+/** Display names of everything a dish contains: fixed list + restaurant-written. */
+export const allergenNames = (allergens: readonly string[] | null | undefined, other: readonly string[] = []): string[] =>
+  [...allergenStatus(allergens, other).contains.map(a => ALLERGEN_LABELS[a]), ...other]
+/** Labels picked in the form -> fixed allergen keys + free-text others. */
+export function splitAllergenLabels(labels: readonly string[]): { allergens: Allergen[]; allergens_other: string[] } {
+  const byLabel = new Map(ALLERGENS.map(a => [ALLERGEN_LABELS[a].toLowerCase(), a]))
+  return { allergens: labels.map(l => byLabel.get(l.toLowerCase())).filter((a): a is Allergen => Boolean(a)),
+           allergens_other: labels.filter(l => !byLabel.has(l.toLowerCase())) }
 }
 
 /** Mirrors the foods_* CHECK constraints in supabase/migrations/20261002100000_menu_foods.sql. */
@@ -106,9 +141,14 @@ export const dishInputSchema = z.object({
   category: optionalText(60),
   description: optionalText(500),
   // Optional so a client that does not send them never clears them.
-  categories: z.array(z.string().trim().min(2, 'Cada categoría necesita al menos 2 letras.').max(30, 'Cada categoría admite hasta 30 caracteres.')
-    .refine(c => !/[,;]/.test(c), 'Escribe una categoría a la vez.'))
-    .max(MAX_CATEGORIES, `Elige hasta ${MAX_CATEGORIES} categorías.`)
+  dish_types: z.array(z.string().trim().min(2, 'Cada opción necesita al menos 2 letras.').max(30, 'Cada opción admite hasta 30 caracteres.')
+    .refine(c => !/[,;]/.test(c), 'Escribe una opción a la vez.')).max(MAX_PER_GROUP, `Elige hasta ${MAX_PER_GROUP} por grupo.`)
+    .transform(list => list.filter((c, i) => list.findIndex(x => x.toLowerCase() === c.toLowerCase()) === i)).optional(),
+  cuisines: z.array(z.string().trim().min(2, 'Cada opción necesita al menos 2 letras.').max(30, 'Cada opción admite hasta 30 caracteres.')
+    .refine(c => !/[,;]/.test(c), 'Escribe una opción a la vez.')).max(MAX_PER_GROUP, `Elige hasta ${MAX_PER_GROUP} por grupo.`)
+    .transform(list => list.filter((c, i) => list.findIndex(x => x.toLowerCase() === c.toLowerCase()) === i)).optional(),
+  features: z.array(z.string().trim().min(2, 'Cada opción necesita al menos 2 letras.').max(30, 'Cada opción admite hasta 30 caracteres.')
+    .refine(c => !/[,;]/.test(c), 'Escribe una opción a la vez.')).max(MAX_PER_GROUP, `Elige hasta ${MAX_PER_GROUP} por grupo.`)
     .transform(list => list.filter((c, i) => list.findIndex(x => x.toLowerCase() === c.toLowerCase()) === i)).optional(),
   tags: z.array(z.enum(DISH_TAGS)).max(DISH_TAGS.length).transform(t => [...new Set(t)]).optional(),
   ingredients: z.array(z.string().trim().min(1).max(40, 'Cada ingrediente admite hasta 40 caracteres.')).max(30, 'Registra hasta 30 ingredientes.')
@@ -116,12 +156,15 @@ export const dishInputSchema = z.object({
   // [] = not declared; ['ninguno'] = declared free of common allergens; 'ninguno' cannot be combined.
   allergens: z.array(z.enum([...ALLERGENS, NO_ALLERGENS])).max(ALLERGENS.length).transform(a => [...new Set(a)])
     .refine(a => !(a.includes(NO_ALLERGENS) && a.length > 1), 'Marca «No contiene alérgenos comunes» o los alérgenos que contiene, no ambos.').optional(),
-})
+  allergens_other: z.array(z.string().trim().min(2, 'Cada alérgeno necesita al menos 2 letras.').max(30, 'Cada alérgeno admite hasta 30 caracteres.')
+    .refine(c => !/[,;]/.test(c), 'Escribe un alérgeno a la vez.')).max(10, 'Registra hasta 10 alérgenos propios.')
+    .transform(list => list.filter((c, i) => list.findIndex(x => x.toLowerCase() === c.toLowerCase()) === i)).optional(),
+}).refine(v => !(v.allergens?.includes(NO_ALLERGENS) && v.allergens_other?.length), { path: ['allergens'], message: 'Marca «No contiene alérgenos» o los alérgenos que contiene, no ambos.' })
 /** Raw input (price may be "35,50"); adapters parse it with dishInputSchema. */
 export type DishInput = z.input<typeof dishInputSchema>
 
 /** Partial update: omitted fields stay unchanged; unknown keys are dropped. */
-export const dishPatchSchema = dishInputSchema.partial().extend({
+export const dishPatchSchema = dishInputSchema.innerType().partial().extend({
   status: z.enum(['draft', 'published']).optional(),
   is_available: z.boolean().optional(),
 })
@@ -139,8 +182,13 @@ export interface Dish {
   /** Storage path from the DB; the API replaces it with a public URL. */
   image_url: string | null
   tags: DishTag[]
-  /** Multi-select categories (free text); `category` keeps a short summary of them. */
+  /** Union of dish_types + cuisines + features (search); `category` keeps a short summary. */
   categories: string[]
+  dish_types: string[]
+  cuisines: string[]
+  features: string[]
+  /** Allergens written by the restaurant (not in the fixed list). */
+  allergens_other: string[]
   ingredients: string[]
   /** [] = not declared; ['ninguno'] = declared free of common allergens. */
   allergens: AllergenDeclaration[]

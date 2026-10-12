@@ -22,7 +22,8 @@ test('dish contract rejects values the DB would refuse with a 500', () => {
 })
 
 test('partial dish patches leave omitted fields untouched', () => {
-  assert.deepEqual(dishInputSchema.partial().parse({ price: '20' }), { price: 20 })
+  const { dishPatchSchema } = require('../shared/contracts/menu.ts')
+  assert.deepEqual(dishPatchSchema.parse({ price: '20' }), { price: 20 })
 })
 
 test('price is rounded before the range check (never reaches the DB as 0 or 100000)', () => {
