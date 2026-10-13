@@ -2,7 +2,7 @@
 
 import { useRef, useState, type FormEvent } from 'react'
 import { getSupabase, isSupabaseConfigured } from '@/lib/supabase/client'
-import { authErrorMessage, loginSchema, registrationSchema } from '@/lib/auth-validation'
+import { accountEmailSent, accountLink, authErrorMessage, loginSchema, registrationSchema, sendAccountEmail } from '@/lib/auth-validation'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
 import { Label } from './ui/label'
@@ -17,12 +17,13 @@ export default function AccountAccess({ audience, onBack }: { audience: 'custome
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
+  const [unconfirmed, setUnconfirmed] = useState(false)
   const submitting = useRef(false)
 
   async function submit(event: FormEvent) {
     event.preventDefault()
     if (submitting.current) return
-    setError(''); setNotice('')
+    setError(''); setNotice(''); setUnconfirmed(false)
     const parsed = mode === 'register' ? registrationSchema.safeParse({ name, email, password, confirmPassword }) : loginSchema.safeParse({ email, password })
     if (!parsed.success) { setError(parsed.error.issues[0].message); return }
     const db = getSupabase()
@@ -32,7 +33,7 @@ export default function AccountAccess({ audience, onBack }: { audience: 'custome
     try {
       if (mode === 'register') {
         const { data, error } = await db.auth.signUp({ email: parsed.data.email, password: parsed.data.password,
-          options: { data: { display_name: name.trim() } } })
+          options: { data: { display_name: name.trim() }, emailRedirectTo: accountLink(window.location.origin, 'confirmar') } })
         if (error) throw error
         setPassword(''); setConfirmPassword('')
         if (!data.session) {
@@ -44,7 +45,24 @@ export default function AccountAccess({ audience, onBack }: { audience: 'custome
         if (error) throw error
         setPassword('')
       }
-    } catch (err) { setError(authErrorMessage(err as { code?: string; status?: number; name?: string })) }
+    } catch (err) {
+      setError(authErrorMessage(err as { code?: string; status?: number; name?: string }))
+      setUnconfirmed((err as { code?: string }).code === 'email_not_confirmed')
+    }
+    finally { submitting.current = false; setBusy(false) }
+  }
+
+  async function emailLink(kind: 'reset' | 'resend') {
+    setError(''); setNotice('')
+    const parsed = loginSchema.shape.email.safeParse(email)
+    if (!parsed.success) { setError('Escribe tu correo arriba y vuelve a tocar el botón.'); return }
+    const db = getSupabase()
+    if (!db || submitting.current) return
+    submitting.current = true; setBusy(true)
+    try {
+      const error = await sendAccountEmail(db.auth, kind, parsed.data, window.location.origin)
+      if (error) setError(authErrorMessage(error)); else { setNotice(accountEmailSent(kind)); setUnconfirmed(false) }
+    } catch (err) { setError(authErrorMessage(err as { name?: string })) }
     finally { submitting.current = false; setBusy(false) }
   }
 
@@ -66,6 +84,10 @@ export default function AccountAccess({ audience, onBack }: { audience: 'custome
         {mode === 'register' && <div className="space-y-1"><Label htmlFor="account-confirm">Confirmar contraseña</Label><Input id="account-confirm" type={showPassword ? 'text' : 'password'} autoComplete="new-password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} maxLength={128} required disabled={busy} /></div>}
         <Button className="w-full" disabled={busy || !isSupabaseConfigured} type="submit">{busy ? 'Un momento…' : mode === 'register' ? 'Crear cuenta' : 'Iniciar sesión'}</Button>
       </form>
+      {mode === 'login' && <div className="flex flex-wrap justify-center gap-x-4">
+        <Button variant="link" size="sm" disabled={busy} onClick={() => emailLink('reset')}>¿Olvidaste tu contraseña?</Button>
+        {unconfirmed && <Button variant="link" size="sm" disabled={busy} onClick={() => emailLink('resend')}>Reenviar confirmación</Button>}
+      </div>}
       <Button className="w-full" variant="outline" disabled={busy} onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setError(''); setNotice(''); setPassword(''); setConfirmPassword('') }}>{mode === 'login' ? 'No tengo cuenta · Registrarme' : 'Ya tengo cuenta · Iniciar sesión'}</Button>
       <p className="text-xs text-muted-foreground">El correo identifica tu cuenta. Tu nombre personal y el nombre comercial se guardan por separado.</p>
     </section>

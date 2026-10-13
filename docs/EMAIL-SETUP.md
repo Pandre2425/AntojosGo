@@ -1,28 +1,78 @@
-# Desbloquear registro y pruebas
+# Correo: confirmación de cuenta y recuperación de contraseña
 
-Actualización: ya existe una cuenta sintética de restaurante creada mediante SQL administrativo y verificada con Auth/Data API reales. No se necesitó cambiar el registro público. El script Admin API descrito abajo sigue requiriendo clave administrativa; no fue la vía usada para esta prueba. Ver AUTH.md para los resultados. La observación de 0 cuentas que sigue es histórica, anterior a esta creación.
+## Qué está hecho en el código (12 de octubre de 2026)
 
-El 14 de septiembre se verificaron 0 cuentas en Auth. El registro devuelve `over_email_send_rate_limit`. Esto no mide capacidad de usuarios concurrentes y no confirma qué SMTP está activo.
+- **Registro** (web y app): pide a Supabase que el enlace del correo regrese a `https://antojos-go.vercel.app/cuenta?accion=confirmar`. Si la confirmación está activa, el formulario dice «Te enviamos un enlace a …» y vuelve a «Iniciar sesión».
+- **«¿Olvidaste tu contraseña?»** (web y app, en «Iniciar sesión»): envía un enlace a `…/cuenta?accion=restablecer`. El mensaje es el mismo exista o no la cuenta, para no revelar qué correos están registrados.
+- **«Reenviar confirmación»**: aparece si al iniciar sesión Supabase responde que el correo no está confirmado.
+- **Página `/cuenta`** (web): muestra «Correo confirmado», o el formulario «Crea tu contraseña nueva» (mínimo 10 caracteres, con confirmación). Si el enlace venció o ya se usó, lo dice y explica cómo pedir otro.
+- Los enlaces se abren en el navegador, también si se pidieron desde la app. Después la persona vuelve a la app e inicia sesión. Esto funciona porque el cliente usa el flujo `implicit`, que no depende del dispositivo que pidió el enlace.
+- Código: `lib/auth-validation.ts` (`accountLink`, `sendAccountEmail`, `newPasswordSchema`), `app/cuenta/page.tsx`, `components/account-access.tsx`, `mobile/src/access-form.tsx`.
 
-## Registro público
+## Qué falta configurar (solo desde el panel de Supabase)
 
-1. Abrir https://supabase.com/dashboard/project/dmskwpquomqcsumaqaej/auth/smtp y revisar proveedor configurado.
-2. Configurar SMTP transaccional con dominio y remitente verificados. Introducir secretos en Supabase, nunca en variables públicas del frontend.
-3. Revisar https://supabase.com/dashboard/project/dmskwpquomqcsumaqaej/auth/rate-limits y acordar cuotas de registro/correo según volumen y capacidad del proveedor. Mantener controles de abuso y confirmación.
-4. Al restablecer el cupo, probar registro, recepción, confirmación y acceso con un buzón autorizado. No repetir registros continuamente para comprobar el cupo.
+El correo integrado de Supabase solo envía a los miembros del equipo del proyecto y unos pocos correos por hora. Para usuarios reales hace falta un SMTP propio.
 
-El conector actual no expone configuración Auth/SMTP. Pendientes: proveedor, dominio y acceso a configuración. Documentación: https://supabase.com/docs/guides/auth/auth-smtp
+### 1. SMTP con Gmail (sin dominio propio)
+
+1. Crear una cuenta de Gmail para el proyecto (por ejemplo `antojosgo.app@gmail.com`) y activar la verificación en dos pasos.
+2. En https://myaccount.google.com/apppasswords crear una «contraseña de aplicación» llamada «Supabase». Son 16 letras y solo se muestran una vez.
+3. En https://supabase.com/dashboard/project/dmskwpquomqcsumaqaej/auth/smtp activar **Enable custom SMTP**:
+   - Sender email: el Gmail del proyecto. Sender name: `AntojosGo`.
+   - Host `smtp.gmail.com`, puerto `465`, usuario: el Gmail del proyecto, contraseña: la contraseña de aplicación.
+4. No guardar esa contraseña en git, Vercel ni el chat.
+
+Límite de Gmail: unos 500 correos al día, suficiente para la tesis. Alternativa sin dominio: Brevo (300 al día, verifica un solo remitente). Resend necesita un dominio propio.
+
+### 2. URLs permitidas
+
+En https://supabase.com/dashboard/project/dmskwpquomqcsumaqaej/auth/url-configuration:
+
+- Site URL: `https://antojos-go.vercel.app`
+- Redirect URLs: `https://antojos-go.vercel.app/cuenta` y, para pruebas locales, `http://localhost:3001/cuenta`.
+
+Si falta, el enlace del correo regresa al inicio en lugar de `/cuenta` y no se puede cambiar la contraseña.
+
+### 3. Activar la confirmación
+
+En https://supabase.com/dashboard/project/dmskwpquomqcsumaqaej/auth/providers → Email: activar **Confirm email**. De paso, poner la longitud mínima de contraseña en 10 y activar la protección contra contraseñas filtradas, si el plan la incluye.
+
+Las cuentas creadas antes quedan como confirmadas; solo las nuevas tienen que confirmar.
+
+### 4. Límites
+
+En https://supabase.com/dashboard/project/dmskwpquomqcsumaqaej/auth/rate-limits subir «emails per hour» (por ejemplo a 30) una vez activo el SMTP propio.
+
+### 5. Plantillas en español
+
+En https://supabase.com/dashboard/project/dmskwpquomqcsumaqaej/auth/templates:
+
+**Confirm signup**. Asunto: `Confirma tu cuenta de AntojosGo`
+
+```html
+<h2>¡Bienvenido a AntojosGo!</h2>
+<p>Toca el botón para confirmar tu correo y activar tu cuenta.</p>
+<p><a href="{{ .ConfirmationURL }}" style="background:#BD481F;color:#fff;padding:12px 20px;border-radius:8px;text-decoration:none;font-weight:bold">Confirmar mi correo</a></p>
+<p>Si no creaste una cuenta, ignora este mensaje.</p>
+```
+
+**Reset password**. Asunto: `Crea una contraseña nueva para AntojosGo`
+
+```html
+<h2>¿Olvidaste tu contraseña?</h2>
+<p>Toca el botón para crear una contraseña nueva. El enlace sirve una sola vez y vence en una hora.</p>
+<p><a href="{{ .ConfirmationURL }}" style="background:#BD481F;color:#fff;padding:12px 20px;border-radius:8px;text-decoration:none;font-weight:bold">Crear contraseña nueva</a></p>
+<p>Si no lo pediste, ignora este mensaje: tu contraseña no cambia.</p>
+```
+
+### 6. Prueba
+
+Con un correo real: registrarse en la app, abrir el correo, ver «Correo confirmado», iniciar sesión en la app. Luego «¿Olvidaste tu contraseña?», abrir el enlace, guardar una contraseña nueva e iniciar sesión con ella. Revisar también la carpeta de spam.
 
 ## Cuenta de prueba independiente del correo
 
-El script administrativo usa `auth.admin.createUser` con `email_confirm: true` exclusivamente para una identidad sintética en `example.invalid`. No cambia ajustes generales ni otorga roles administrativos. No modifica cuentas existentes. Esta cuenta sirve para probar componentes; no verifica envío de correos.
-
-Configurar una clave privada `SUPABASE_SECRET_KEY` o `SUPABASE_SERVICE_ROLE_KEY` en el archivo ignorado `.env.local`, sin prefijo `NEXT_PUBLIC`. No compartir la clave en el chat. Ejecutar localmente:
+`scripts/create-test-account.cjs` crea una cuenta confirmada en `example.invalid` con `auth.admin.createUser`. Necesita `SUPABASE_SECRET_KEY` o `SUPABASE_SERVICE_ROLE_KEY` en `.env.local` (nunca con prefijo `NEXT_PUBLIC`):
 
 ```powershell
 node --env-file=.env.local scripts/create-test-account.cjs
 ```
-
-Cada ejecución crea una cuenta distinta, imprime una contraseña aleatoria solo en esa terminal y verifica inicio y cierre de sesión con la clave pública. No ejecutar repetidamente. Guardar credenciales fuera del repositorio; retirar cuentas de prueba antes del lanzamiento mediante el administrador de Auth.
-
-Estado: script preparado; no se ha creado la cuenta porque no hay clave administrativa disponible.

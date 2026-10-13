@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import type { SupabaseClient } from '@supabase/supabase-js'
 
 import { displayNameSchema } from '../shared/contracts/names'
 export { displayNameSchema } from '../shared/contracts/names'
@@ -6,11 +7,25 @@ export const loginSchema = z.object({
   email: z.string().trim().email('Escribe un correo válido.').max(254).transform((value) => value.toLowerCase()),
   password: z.string().min(1, 'Escribe tu contraseña.').max(128),
 })
-export const registrationSchema = loginSchema.extend({
-  name: displayNameSchema,
-  password: z.string().min(10, 'Usa una contraseña de al menos 10 caracteres.').max(128, 'Usa hasta 128 caracteres.'),
-  confirmPassword: z.string(),
-}).refine((data) => data.password === data.confirmPassword, { path: ['confirmPassword'], message: 'Las contraseñas no coinciden.' })
+const newPassword = z.string().min(10, 'Usa una contraseña de al menos 10 caracteres.').max(128, 'Usa hasta 128 caracteres.')
+const same = (data: { password: string; confirmPassword: string }) => data.password === data.confirmPassword
+const mismatch = { path: ['confirmPassword'], message: 'Las contraseñas no coinciden.' }
+export const registrationSchema = loginSchema.extend({ name: displayNameSchema, password: newPassword, confirmPassword: z.string() }).refine(same, mismatch)
+export const newPasswordSchema = z.object({ password: newPassword, confirmPassword: z.string() }).refine(same, mismatch)
+
+/** Web page the email links return to (works from any device, so app users finish there too). */
+export const accountLink = (base: string, accion: 'confirmar' | 'restablecer') => `${base.replace(/\/+$/, '')}/cuenta?accion=${accion}`
+
+/** Password reset link or a new confirmation email. Returns the auth error, if any. */
+export async function sendAccountEmail(auth: SupabaseClient['auth'], kind: 'reset' | 'resend', email: string, base: string) {
+  const { error } = kind === 'reset'
+    ? await auth.resetPasswordForEmail(email, { redirectTo: accountLink(base, 'restablecer') })
+    : await auth.resend({ type: 'signup', email, options: { emailRedirectTo: accountLink(base, 'confirmar') } })
+  return error
+}
+export const accountEmailSent = (kind: 'reset' | 'resend') => kind === 'reset'
+  ? 'Si hay una cuenta con ese correo, te enviamos un enlace para crear una contraseña nueva. Revisa también la carpeta de spam.'
+  : 'Te enviamos otro correo de confirmación. Abre el enlace y después inicia sesión. Revisa también la carpeta de spam.'
 
 export function authErrorMessage(error: { code?: string; message?: string; status?: number; name?: string } | null | undefined): string {
   switch (error?.code) {
