@@ -6,6 +6,7 @@ import { webApi } from '@/lib/web-api'
 import { HOME_OPTIONS, type HomeOption } from '@/shared/contracts/home'
 import type { MapBranch } from './branches-overview-map'
 import { Button } from './ui/button'
+import { AppDownloadBanner } from './app-download'
 
 const BranchDetail = dynamic(() => import('./customer-catalog').then(m => m.BranchDetail))
 const BranchesOverviewMap = dynamic(() => import('./branches-overview-map'), { ssr: false, loading: () => <div className="h-80 animate-pulse rounded-2xl bg-stone-200" /> })
@@ -37,6 +38,8 @@ export default function MobileDiscover({ name, onSearch }: { name?: string; onSe
       </form>
     </section>
 
+    <AppDownloadBanner />
+
     <section aria-labelledby="popular-title" className="space-y-3">
       <h2 id="popular-title" className="text-lg font-semibold">Lo más buscado</h2>
       <ul className="grid grid-cols-4 gap-2 sm:grid-cols-8">
@@ -44,7 +47,7 @@ export default function MobileDiscover({ name, onSearch }: { name?: string; onSe
           <button type="button" onClick={() => onSearch(o.query)}
             className="flex w-full flex-col items-center gap-1 rounded-2xl border bg-white px-1 py-3 text-center transition-colors hover:border-[#173F35] focus-visible:outline-2 focus-visible:outline-[#173F35] active:bg-stone-100">
             <span aria-hidden className="text-3xl leading-none">{o.symbol}</span>
-            <span className="w-full break-words px-0.5 text-[11px] font-medium leading-tight sm:text-xs">{o.title}</span>
+            <span className="w-full hyphens-auto px-0.5 text-[11px] font-medium leading-tight sm:text-xs">{o.title}</span>
           </button>
         </li>)}
       </ul>

@@ -4,6 +4,7 @@ import MapView, { Marker } from 'react-native-maps'
 import { router } from 'expo-router'
 import { api } from '../../src/api'
 import { mapsEnabled } from '../../src/maps'
+import { NotificationsBell } from '../../src/notifications'
 import { Action, Input, Page, ScreenBoundary, Title, Txt, colors, radius, spacing } from '../../src/ui'
 import { HOME_OPTIONS, type HomeOption } from '../../../shared/contracts/home'
 import type { PublicCatalogItem } from '../../../modules/catalog/data/public-catalog'
@@ -32,7 +33,10 @@ export default function Home() {
   const submit = () => { if (query.trim()) { ask(query.trim()); setQuery('') } }
 
   return <Page tab>
-    <Title>¿Qué estás buscando?</Title>
+    <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: spacing.md }}>
+      <View style={{ flex: 1 }}><Title>¿Qué estás buscando?</Title></View>
+      <NotificationsBell />
+    </View>
     <Txt variant="subhead">Escríbelo como se lo dirías a un amigo. El asistente te dice dónde encontrarlo.</Txt>
     <View style={{ flexDirection: 'row', gap: spacing.sm }}>
       <Input accessibilityLabel="¿Qué estás buscando?" placeholder="Algo calientito, una pizza…" value={query} onChangeText={setQuery}

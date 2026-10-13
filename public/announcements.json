@@ -1,0 +1,17 @@
+[
+  {
+    "id": "play-store-pronto-web",
+    "date": "2026-10-13",
+    "for": "web",
+    "title": "AntojosGo pronto en Google Play",
+    "body": "Estamos preparando la publicación en la Play Store. Mientras tanto, la app para Android se instala como archivo APK.",
+    "link": { "label": "Descargar APK", "url": "https://qr.codes/0Z1jMD" }
+  },
+  {
+    "id": "play-store-pronto-app",
+    "date": "2026-10-13",
+    "for": "app",
+    "title": "AntojosGo pronto en Google Play",
+    "body": "Estamos preparando la publicación en la Play Store. Mientras tanto, esta versión se instala como APK y te avisaremos aquí cuando haya una nueva."
+  }
+]
