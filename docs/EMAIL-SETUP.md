@@ -78,3 +78,5 @@ Con un correo real: registrarse en la app, abrir el correo, ver «Correo confirm
 ```powershell
 node --env-file=.env.local scripts/create-test-account.cjs
 ```
+
+Prueba completa del 16 de octubre, después de corregir el Site URL y activar «Confirm email»: una contraseña de 8 caracteres se rechaza con `weak_password`; el registro no abre sesión; entrar sin confirmar da `email_not_confirmed`; el enlace de confirmación lleva a `/cuenta?accion=confirmar` y muestra «Correo confirmado»; después se puede entrar; el enlace de recuperación lleva a `/cuenta?accion=restablecer`; la contraseña nueva entra y la anterior se rechaza.

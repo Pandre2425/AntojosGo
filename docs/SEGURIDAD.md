@@ -48,7 +48,7 @@ Leyenda: ✅ cumple y se probó · 🔧 falló y se corrigió · ⚠️ pendient
 | D10 | Contraseñas: mínimo 10 caracteres también en el servidor; protección contra contraseñas filtradas | ⚠️ | La app exige 10, pero Supabase acepta 6 si se le llama directo. La protección contra filtradas requiere plan Pro |
 | D11 | El inicio de sesión no revela si un correo está registrado | ✅ | Mismo error para correo existente e inexistente |
 | D12 | Cerrar sesión invalida el token de renovación | ✅ | |
-| D13 | Confirmación de correo al registrarse | ⚠️ decisión | Desactivada: alguien podría registrarse con un correo ajeno. Activarla requiere SMTP (`docs/EMAIL-SETUP.md`) |
+| D13 | Confirmación de correo al registrarse | ✅ | Activa desde el 16 de octubre; sin confirmar, el inicio de sesión da `email_not_confirmed`. Contraseña mínima de 10 también en Auth |
 
 ## 3. Controles de la app Android
 

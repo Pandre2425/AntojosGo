@@ -144,7 +144,7 @@ AntojosGo ayuda a los comensales de Guatemala (piloto en Quetzaltenango) a encon
 ### Decisiones pendientes
 
 12. Clave de Gemini (`GEMINI_API_KEY` en `.env.local` y en Vercel).
-13. Confirmación de correo y recuperación de contraseña: el código está listo (página `/cuenta`, «¿Olvidaste tu contraseña?», «Reenviar confirmación»). Falta configurar SMTP, URLs y plantillas en Supabase (`docs/EMAIL-SETUP.md`).
+13. ✅ Confirmación de correo y recuperación de contraseña: activas y probadas de punta a punta el 16 de octubre (SMTP Gmail, `docs/EMAIL-SETUP.md`).
 14. Límite de peticiones en la API (antes de usar IA de pago).
 15. Documentos de la tesis en el repositorio público.
 16. Varios administradores por restaurante; segundo proyecto de Supabase para pruebas.
