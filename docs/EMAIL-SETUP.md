@@ -29,7 +29,9 @@ Límite de Gmail: unos 500 correos al día, suficiente para la tesis. Alternativ
 En https://supabase.com/dashboard/project/dmskwpquomqcsumaqaej/auth/url-configuration:
 
 - Site URL: `https://antojos-go.vercel.app`
-- Redirect URLs: `https://antojos-go.vercel.app/cuenta` y, para pruebas locales, `http://localhost:3001/cuenta`.
+- Redirect URLs: `https://antojos-go.vercel.app/**` y, para pruebas locales, `http://localhost:3001/**`. Con `/**` también se aceptan los enlaces que llevan `?accion=…`; sin eso Supabase manda al Site URL.
+
+Prueba del 16 de octubre: el SMTP envió el correo de recuperación, pero el enlace regresaba a `http://localhost:3000` porque el Site URL seguía con ese valor. Con la sesión del enlace, la página `/cuenta` de producción cambió la contraseña: la nueva entra y la anterior da `invalid_credentials`.
 
 Si falta, el enlace del correo regresa al inicio en lugar de `/cuenta` y no se puede cambiar la contraseña.
 
