@@ -45,4 +45,7 @@ export const toDayForm = (hours: OpeningHours): DayForm => [1, 2, 3, 4, 5, 6, 0]
   const r = hours.find(h => h.day === day)
   return r ? { day, open: r.open, close: r.close, closed: false } : { day, open: '08:00', close: '17:00', closed: true }
 })
+/** Monday's hours (or «closed») on every day; the owner then adjusts the days that differ. */
+export const copyMondayToAll = (form: DayForm): DayForm => form.map(d => ({ ...d, open: form[0].open, close: form[0].close, closed: form[0].closed }))
+export const COPIED_NOTICE = 'Copiamos el horario del lunes a todos los días. Ajusta los que sean distintos y guarda.'
 export const fromDayForm = (form: DayForm) => openingHoursSchema.safeParse(form.filter(d => !d.closed).map(({ day, open, close }) => ({ day, open: open.trim(), close: close.trim() })))

@@ -3,7 +3,7 @@ import { Switch, Text, View } from 'react-native'
 import { Redirect, router, useLocalSearchParams } from 'expo-router'
 import { useSession } from '../../src/session'
 import { api } from '../../src/api'
-import { DAY_NAMES, fromDayForm, toDayForm, type DayForm } from '../../../shared/contracts/hours'
+import { COPIED_NOTICE, DAY_NAMES, copyMondayToAll, fromDayForm, toDayForm, type DayForm } from '../../../shared/contracts/hours'
 import { Action, Card, Field, Loading, Message, Page, Title, Txt, colors } from '../../src/ui'
 
 export default function Hours() {
@@ -12,6 +12,7 @@ export default function Hours() {
   const [name, setName] = useState('')
   const [form, setForm] = useState<DayForm | null>(null)
   const [error, setError] = useState('')
+  const [notice, setNotice] = useState('')
   const [busy, setBusy] = useState(false)
   const [retry, setRetry] = useState(0)
   const lock = useRef(false)
@@ -48,6 +49,8 @@ export default function Hours() {
           <View style={{ flex: 1 }}><Field label="Abre" accessibilityLabel={`${DAY_NAMES[d.day]}, abre`} value={d.open} onChangeText={open => set(i, { open })} keyboardType="numbers-and-punctuation" maxLength={5} editable={!busy} /></View>
           <View style={{ flex: 1 }}><Field label="Cierra" accessibilityLabel={`${DAY_NAMES[d.day]}, cierra`} value={d.close} onChangeText={close => set(i, { close })} keyboardType="numbers-and-punctuation" maxLength={5} editable={!busy} /></View>
         </View>}
+        {i === 0 ? <Action title="Copiar el lunes a todos los días" secondary disabled={busy} onPress={() => { setForm(rows => rows && copyMondayToAll(rows)); setNotice(COPIED_NOTICE) }} /> : null}
+        {i === 0 ? <Message>{notice}</Message> : null}
       </Card>)}
       <Action title={busy ? 'Guardando…' : 'Guardar horario'} onPress={save} disabled={busy} />
     </>}

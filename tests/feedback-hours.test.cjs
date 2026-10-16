@@ -14,3 +14,12 @@ test('app rating: 1 to 5, optional comment, known platform', () => {
   for (const bad of [{ rating: 0 }, { rating: 6 }, { rating: 3.5 }, { rating: 3, platform: 'ios' }, { rating: 3, comment: 'x'.repeat(1001) }])
     assert.equal(feedbackInputSchema.safeParse({ platform: 'web', ...bad }).success, false, JSON.stringify(bad).slice(0, 40))
 })
+
+const { copyMondayToAll, toDayForm } = require('../shared/contracts/hours.ts')
+test('copy Monday to all days keeps each day and copies hours or closed', () => {
+  const form = toDayForm([{ day: 1, open: '09:00', close: '18:00' }, { day: 0, open: '10:00', close: '14:00' }])
+  const copied = copyMondayToAll(form)
+  assert.deepEqual(copied.map(d => d.day), [1, 2, 3, 4, 5, 6, 0])
+  assert.ok(copied.every(d => d.open === '09:00' && d.close === '18:00' && !d.closed))
+  assert.ok(copyMondayToAll(toDayForm([])).every(d => d.closed))
+})

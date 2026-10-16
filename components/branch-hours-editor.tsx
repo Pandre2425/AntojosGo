@@ -1,6 +1,6 @@
 'use client'
 import { useRef, useState, type FormEvent } from 'react'
-import { DAY_NAMES, fromDayForm, toDayForm } from '@/shared/contracts/hours'
+import { COPIED_NOTICE, DAY_NAMES, copyMondayToAll, fromDayForm, toDayForm } from '@/shared/contracts/hours'
 import type { RestaurantBranch } from '@/shared/contracts/branches'
 import { webApi } from '@/lib/web-api'
 import { Button } from './ui/button'
@@ -9,6 +9,7 @@ import { Input } from './ui/input'
 export default function BranchHoursEditor({ branch, onSaved, onClose }: { branch: RestaurantBranch; onSaved: (branch: RestaurantBranch) => void; onClose: () => void }) {
   const [form, setForm] = useState(() => toDayForm(branch.opening_hours ?? []))
   const [error, setError] = useState('')
+  const [notice, setNotice] = useState('')
   const [busy, setBusy] = useState(false)
   const saving = useRef(false)
   const set = (i: number, values: Partial<(typeof form)[number]>) => setForm(rows => rows.map((r, j) => j === i ? { ...r, ...values } : r))
@@ -31,7 +32,9 @@ export default function BranchHoursEditor({ branch, onSaved, onClose }: { branch
         <label className="flex items-center gap-1 text-sm"><input type="checkbox" checked={!d.closed} onChange={(e) => set(i, { closed: !e.target.checked })} />Abre</label>
         <Input type="time" aria-label={`${DAY_NAMES[d.day]} apertura`} value={d.open} disabled={d.closed} onChange={(e) => set(i, { open: e.target.value })} />
         <Input type="time" aria-label={`${DAY_NAMES[d.day]} cierre`} value={d.close} disabled={d.closed} onChange={(e) => set(i, { close: e.target.value })} />
+        {i === 0 && <Button type="button" variant="link" size="sm" className="col-span-4 justify-self-start px-0" onClick={() => { setForm(copyMondayToAll); setNotice(COPIED_NOTICE) }}>Copiar el lunes a todos los días</Button>}
       </div>)}
+      {notice && <p role="status" className="text-sm text-green-800">{notice}</p>}
       {error && <p role="alert" className="text-red-700">{error}</p>}
       <div className="flex flex-wrap gap-2"><Button type="submit">{busy ? 'Guardando…' : 'Guardar horario'}</Button><Button type="button" variant="outline" onClick={onClose}>Cancelar</Button></div>
     </fieldset>

@@ -47,7 +47,7 @@ AntojosGo ayuda a los comensales de Guatemala (piloto en Quetzaltenango) a encon
 
 ### Calidad y seguridad
 
-- 53 pruebas automáticas (`npm test`) y una batería de seguridad contra producción (`node scripts/security-check.mjs`): 79 de 80 controles superados. Detalle en [SEGURIDAD.md](SEGURIDAD.md).
+- 54 pruebas automáticas (`npm test`) y una batería de seguridad contra producción (`node scripts/security-check.mjs`): 79 de 80 controles superados. Detalle en [SEGURIDAD.md](SEGURIDAD.md).
 - Cada función nueva se verificó en el navegador (Playwright) y en el emulador Android antes de subirla.
 
 ---
@@ -137,10 +137,10 @@ AntojosGo ayuda a los comensales de Guatemala (piloto en Quetzaltenango) a encon
 ### Para el piloto
 
 6. **Publicar la app 0.4.0** (inicio nuevo, pestañas, formulario de platillos, «Cómo llegar», «Ver detalles», campana, recuperación de contraseña, calificar la app) en GitHub Releases y activar el aviso de actualización.
-7. Despublicar los datos de prueba («QA Claude Cocina», «QA Antojos Cocina», «PepianQA»).
+7. ✅ Despublicadas «QA Claude Cocina» y «QA Antojos Cocina» (16 de octubre). Falta decidir «Restaurante prueba1».
 8. Mover «Pablo pizza» a una cuenta con correo real (la actual usa un correo inventado).
 9. Lista «Para que te encuentren» para el restaurante (qué le falta para aparecer en búsquedas).
-10. Copiar el horario del lunes a toda la semana.
+10. ✅ «Copiar el lunes a todos los días» en el horario (web y app).
 11. Pulir la web: inicio y Explorar con el mismo nivel visual que la app; «Ver detalles» del platillo en la web.
 
 ### Decisiones pendientes
@@ -153,7 +153,7 @@ AntojosGo ayuda a los comensales de Guatemala (piloto en Quetzaltenango) a encon
 
 ### Menores
 
-17. Ícono de pestaña de la web (`favicon.ico`).
+17. ✅ Ícono de la web (`app/icon.svg`). La app Android aún usa el ícono genérico de Expo.
 18. Borrar el código heredado (`android/` de Capacitor, `AllCode.txt`, rutas y componentes antiguos sin uso).
 19. Respaldos de la base y ensayo de restauración.
 
