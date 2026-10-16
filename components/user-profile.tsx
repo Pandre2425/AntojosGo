@@ -5,6 +5,7 @@ import type { User as AccountUser } from "@supabase/supabase-js"
 import { getSupabase } from "@/lib/supabase/client"
 import { webApi } from "@/lib/web-api"
 import { Button } from "@/components/ui/button"
+import AppFeedback from "@/components/app-feedback"
 
 /** Diner account: only data that really exists (name and email). */
 export default function UserProfile({ user, onLogin }: { user: AccountUser | null; onLogin: () => void }) {
@@ -38,5 +39,6 @@ export default function UserProfile({ user, onLogin }: { user: AccountUser | nul
       <Button variant="outline" onClick={() => { window.location.href = "/restaurant" }}>Administrar mi restaurante</Button>
       <Button variant="outline" disabled={busy} onClick={signOut}>Cerrar sesión</Button>
     </div>
+    <AppFeedback />
   </div>
 }

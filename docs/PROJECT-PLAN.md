@@ -28,12 +28,14 @@ AntojosGo ayuda a los comensales de Guatemala (piloto en Quetzaltenango) a encon
 | Menú con **«Ver detalles»**: foto grande, tipo de plato, cocina, características, ingredientes, alérgenos | ➖ | ✅ | La web muestra los mismos datos en la lista |
 | Favoritos | ✅ | ✅ | Requiere cuenta |
 | Aviso de nueva versión de la app | — | ✅ | Solo acepta enlaces de los Releases del repositorio |
+| Campana de notificaciones y descarga del APK («Próximamente en Google Play») | ✅ | ✅ | Avisos editables en `public/announcements.json` |
+| **Calificar la app** (1 a 5 estrellas) y comentario opcional de mejora | ✅ | ✅ | En «Mi cuenta» (y en la página del restaurante en la web). Una por cuenta; al volver a enviar se reemplaza |
 
 ### Restaurante
 
 | Función | Web | App | Notas |
 |---|:-:|:-:|---|
-| Registro e inicio de sesión | ✅ | ✅ | Supabase Auth |
+| Registro e inicio de sesión | ✅ | ✅ | Supabase Auth. Confirmación de correo, «¿Olvidaste tu contraseña?» y «Reenviar confirmación» (correo por Gmail SMTP) |
 | Varios negocios por cuenta y varias sedes por negocio | ✅ | ✅ | |
 | Perfil: nombre, descripción, **tipo de negocio libre con sugerencias**, logo y foto del local | ✅ | ✅ | «pizzeria» se guarda como el «Pizzería» existente |
 | Sedes: dirección, ubicación en mapa, teléfono/WhatsApp, horario por día, publicar/despublicar | ✅ | ✅ | No se publica una sede sin ubicación |
@@ -45,7 +47,7 @@ AntojosGo ayuda a los comensales de Guatemala (piloto en Quetzaltenango) a encon
 
 ### Calidad y seguridad
 
-- 51 pruebas automáticas (`npm test`) y una batería de seguridad contra producción (`node scripts/security-check.mjs`): 79 de 80 controles superados. Detalle en [SEGURIDAD.md](SEGURIDAD.md).
+- 53 pruebas automáticas (`npm test`) y una batería de seguridad contra producción (`node scripts/security-check.mjs`): 79 de 80 controles superados. Detalle en [SEGURIDAD.md](SEGURIDAD.md).
 - Cada función nueva se verificó en el navegador (Playwright) y en el emulador Android antes de subirla.
 
 ---
@@ -129,12 +131,12 @@ AntojosGo ayuda a los comensales de Guatemala (piloto en Quetzaltenango) a encon
 1. Supabase → API Keys → **desactivar las claves antiguas (legacy)**: hay secretos viejos en el historial público de GitHub.
 2. Supabase → **cambiar la contraseña de la base de datos**.
 3. Ejecutar `supabase/manual/20261010_move_postgis_to_extensions.sql` en el SQL Editor.
-4. Supabase → Authentication → contraseña mínima de 10 caracteres.
+4. ✅ Contraseña mínima de 10 caracteres en Auth (comprobado el 16 de octubre).
 5. Borrar las claves del proyecto antiguo de Firebase y regenerar el secreto de Cloudinary (o cerrar esas cuentas).
 
 ### Para el piloto
 
-6. **Publicar la app 0.4.0** (inicio nuevo, pestañas, formulario de platillos, «Cómo llegar», «Ver detalles») en GitHub Releases y activar el aviso de actualización.
+6. **Publicar la app 0.4.0** (inicio nuevo, pestañas, formulario de platillos, «Cómo llegar», «Ver detalles», campana, recuperación de contraseña, calificar la app) en GitHub Releases y activar el aviso de actualización.
 7. Despublicar los datos de prueba («QA Claude Cocina», «QA Antojos Cocina», «PepianQA»).
 8. Mover «Pablo pizza» a una cuenta con correo real (la actual usa un correo inventado).
 9. Lista «Para que te encuentren» para el restaurante (qué le falta para aparecer en búsquedas).
@@ -158,6 +160,20 @@ AntojosGo ayuda a los comensales de Guatemala (piloto en Quetzaltenango) a encon
 Pedidos, pagos y repartidores no forman parte del proyecto.
 
 ---
+
+### Ver las calificaciones
+
+En Supabase → SQL Editor:
+
+```sql
+-- Resumen
+select round(avg(rating), 2) as promedio, count(*) as total,
+       count(*) filter (where rating >= 4) as buenas, count(*) filter (where rating <= 2) as malas
+  from app_feedback;
+-- Comentarios, más recientes primero
+select rating, comment, platform, app_version, updated_at from app_feedback
+ where comment is not null order by updated_at desc;
+```
 
 ## 4. Documentos relacionados
 

@@ -8,6 +8,7 @@ import { getSupabase } from '@/lib/supabase/client'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
 import { Label } from './ui/label'
+import AppFeedback from './app-feedback'
 import dynamic from 'next/dynamic'
 import ModuleBoundary, { ModuleLoading } from './module-boundary'
 
@@ -71,6 +72,7 @@ export default function RestaurantAccountHome({ user }: { user: User }) {
       </section>
       <section className="rounded-[24px] border bg-white p-5 space-y-4"><h2 className="text-xl font-semibold">Registrar restaurante</h2><form onSubmit={create} className="space-y-3"><Label htmlFor="business-name">Nombre del restaurante</Label><Input id="business-name" value={name} onChange={(event) => setName(event.target.value)} minLength={2} maxLength={100} required disabled={busy} placeholder="Ej. Antojitos de Guatemala"/><Button type="submit" disabled={busy || loading}>{busy ? 'Guardando…' : 'Guardar restaurante'}</Button></form><p className="text-sm text-muted-foreground">El restaurante permanece privado mientras completas su perfil. Publica cada sede desde «Sedes» cuando tenga su ubicación.</p></section>
       </>}
+      <AppFeedback />
     </div>
   </main>
 }

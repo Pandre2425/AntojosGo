@@ -5,6 +5,7 @@ import type { OpeningHours } from '../shared/contracts/hours'
 import type { AssistantContext } from '../shared/contracts/assistant'
 import type { AssistantResponse } from '../modules/catalog/data/assistant'
 import type { AccountProfile } from '../shared/contracts/accounts'
+import type { Feedback, FeedbackInput } from '../shared/contracts/feedback'
 import type { BranchInput, BranchLocation, RestaurantBranch } from '../shared/contracts/branches'
 import type { Dish, DishInput, DishPatch } from '../shared/contracts/menu'
 import type { BusinessProfile, BusinessProfileInput, OwnedRestaurant } from '../shared/contracts/restaurants'
@@ -95,6 +96,9 @@ export function createApiClient({ baseUrl, getToken, refreshToken }: Options) {
     listFavorites: () => call<{ items: PublicCatalogItem[] }>('GET', '/me/favorites').then(r => r.items),
     addFavorite: (branchId: string) => call<{ ok: true }>('PUT', `/me/favorites/${branchId}`),
     removeFavorite: (branchId: string) => call<{ ok: true }>('DELETE', `/me/favorites/${branchId}`),
+    /** The user's app rating (one per account; saving again replaces it). */
+    myFeedback: () => call<{ item: Feedback | null }>('GET', '/me/feedback').then(r => r.item),
+    saveFeedback: (input: FeedbackInput) => call<Feedback>('PUT', '/me/feedback', input),
     /** Diner assistant turn; send back the returned context with the next message. */
     assistant: (message: string, context?: AssistantContext, location?: { latitude: number; longitude: number }) =>
       call<AssistantResponse>('POST', '/assistant', { message, context, location }, {}, false),
