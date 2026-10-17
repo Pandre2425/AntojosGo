@@ -107,7 +107,7 @@ export default function Discover() {
       <Message>{error}</Message>
       {error ? <Action title="Reintentar" onPress={() => load(query, coords)} disabled={busy} /> : null}
       <View style={{ flexDirection: 'row', gap: spacing.sm }}>
-        <Input accessibilityLabel="Qué se te antoja" value={query} onChangeText={setQuery} placeholder="Ej. pepián, zona 3, café…"
+        <Input accessibilityLabel="Qué se te antoja" value={query} onChangeText={setQuery} placeholder="Ej. pepián, café…"
           editable={!busy} returnKeyType="search" onSubmitEditing={() => load(query, coords)} style={{ flex: 1 }} />
         <VoiceButton onText={t => { setQuery(t); void load(t, coords) }} onError={setGpsNote} />
         <Action title={busy ? '…' : 'Buscar'} onPress={() => load(query, coords)} disabled={busy} style={{ paddingHorizontal: spacing.lg }} />

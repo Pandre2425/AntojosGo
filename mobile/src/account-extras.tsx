@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Linking, Pressable, Text, View } from 'react-native'
 import { api } from './api'
-import { unhideRestaurant } from './hidden'
+import { unhideRestaurant, useHiddenIds } from './hidden'
 import { Card, Message, Txt, colors, spacing, type } from './ui'
 import type { HiddenRestaurant } from '../../lib/api-client'
 
@@ -21,7 +21,9 @@ export function AccessibilityCard() {
 export function HiddenRestaurantsCard() {
   const [items, setItems] = useState<HiddenRestaurant[]>([])
   const [error, setError] = useState('')
-  useEffect(() => { api.listHidden().then(setItems).catch(() => {}) }, [])
+  // Tabs stay mounted: reload the names whenever the shared hidden list changes (hidden from a restaurant page).
+  const key = useHiddenIds().join(',')
+  useEffect(() => { api.listHidden().then(setItems).catch(() => {}) }, [key])
   if (!items.length && !error) return null
   async function show(id: string) {
     setError('')

@@ -145,15 +145,15 @@ AntojosGo ayuda a los comensales de Guatemala (piloto en Quetzaltenango) a encon
 10. ✅ «Copiar el lunes a todos los días» en el horario (web y app).
 11. Pulir la web: inicio y Explorar con el mismo nivel visual que la app; «Ver detalles» del platillo en la web.
 
-### Del documento del producto (PRODUCT-SPEC) que aún falta
+### Del documento del producto (PRODUCT-SPEC): hecho el 18 de octubre
 
-- «Sorpréndeme»: elegir al azar entre las opciones que cumplen los filtros.
-- Restaurantes «no me interesa» guardados en la cuenta (hoy el asistente solo recuerda restricciones durante la conversación).
-- Búsqueda por voz.
-- Iniciar sesión con Google.
-- Filtro por rango de precio (hoy solo se ordena por precio).
-- Revisar las reseñas reportadas (hoy quedan marcadas; falta un panel de administración).
-- Ajustes básicos de accesibilidad (por ejemplo, texto más grande).
+- ✅ «Sorpréndeme» (web y app): elige al azar entre los resultados de la búsqueda y filtros actuales, sin repetir el anterior.
+- ✅ «No me interesa» (web y app): el restaurante desaparece de las búsquedas y del asistente de esa cuenta; se puede mostrar de nuevo en «Mi cuenta». Tabla `hidden_restaurants`, máximo 200.
+- ✅ Búsqueda por voz: en la web con el reconocimiento del navegador (Chrome, Edge, Android); en la app con `expo-speech-recognition` (reconocimiento de Google). Si el dispositivo no lo tiene, el micrófono no aparece.
+- ✅ Filtro de precio (web y app): «Hasta Q25», «Q25 a Q50», «Q50 a Q100», «Más de Q100». Se filtra en la base (`search_catalog_v3`).
+- ✅ Panel de reseñas reportadas en `https://antojos-go.vercel.app/admin`: «Mantener» u «Ocultar» (sale de la lista y del promedio) y «Mostrar de nuevo». Solo administradores (`app_admins`); hoy, la cuenta pabloruiz0123@gmail.com.
+- ✅ Accesibilidad: en la web, «Tamaño del texto» (Normal, Grande, Muy grande) en «Mi perfil»; en la app sigue el tamaño de letra de Android, con un acceso directo a esos ajustes. Ambas respetan «reducir animaciones».
+- ⏳ Iniciar sesión con Google: código listo en web y app; falta crear la credencial y activarla (`docs/GOOGLE-LOGIN.md`). El botón aparece solo cuando esté activado.
 
 ### Decisiones pendientes
 
