@@ -49,7 +49,7 @@ export default function AccountLinkPage() {
 
   return <main className="min-h-dvh bg-background px-4 py-8 flex items-center justify-center">
     <section className="w-full max-w-md rounded-[24px] border bg-white p-6 space-y-5 shadow-sm" aria-live="polite">
-      <div><p className="text-sm font-semibold text-primary">AntojosGo</p>
+      <div><img src="/logo.png" alt="" width={64} height={64} className="shrink-0 rounded-xl mb-3" /><p className="text-sm font-semibold text-primary">AntojosGo</p>
         <h1 className="mt-2 text-2xl font-bold">{title}</h1>
         {text && <p className="mt-2 text-sm text-muted-foreground">{text}</p>}</div>
       {error && <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}

@@ -8,6 +8,7 @@ import { Button } from './ui/button'
 import { Input } from './ui/input'
 import { Label } from './ui/label'
 import { Textarea } from './ui/textarea'
+import FoodLoader from './food-loader'
 
 export default function BusinessProfileEditor({ userId, restaurant, onSaved, onClose }: {
   userId: string; restaurant: OwnedRestaurant; onSaved: (restaurant: OwnedRestaurant) => void; onClose: () => void
@@ -67,7 +68,7 @@ export default function BusinessProfileEditor({ userId, restaurant, onSaved, onC
     <p className="text-sm text-muted-foreground">Presenta tu negocio. El nombre, el tipo, la descripción y las fotos se muestran a los clientes en las sedes publicadas.</p>
     {error && <p role="alert" className="text-red-700">{error}</p>}
     {notice && <p role="status" className="text-green-700">{notice}</p>}
-    {loading ? <p role="status">Cargando perfil…</p> : !ready ? <Button onClick={() => setRetry((v) => v + 1)}>Reintentar carga</Button> :
+    {loading ? <FoodLoader label="Cargando perfil…" /> : !ready ? <Button onClick={() => setRetry((v) => v + 1)}>Reintentar carga</Button> :
       <form onSubmit={save} className="space-y-4">
         <input ref={fileInput} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" aria-hidden tabIndex={-1}
           onChange={(e) => { const file = e.target.files?.[0] ?? null; e.target.value = ''; if (file) void changeImage(fileFor.current, file) }} />

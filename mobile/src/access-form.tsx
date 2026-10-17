@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react'
+import { Image } from 'react-native'
 import { supabase } from './supabase'
 import { useSession } from './session'
 import { Action, Card, Field, Loading, Message, Page, Title } from './ui'
@@ -39,7 +40,7 @@ export function AccessForm() {
     finally { lock.current = false; setBusy(false) }
   }
   const field = (key: keyof typeof form) => (value: string) => setForm(v => ({ ...v, [key]: value }))
-  return <Page tab><Title>Mi cuenta</Title><Message>Para buscar no necesitas cuenta. Inicia sesión para guardar favoritos o administrar tu restaurante.</Message><Card>
+  return <Page tab><Image source={require('./assets/logo.png')} accessibilityIgnoresInvertColors style={{ width: 72, height: 72, borderRadius: 16 }} /><Title>Mi cuenta</Title><Message>Para buscar no necesitas cuenta. Inicia sesión para guardar favoritos o administrar tu restaurante.</Message><Card>
     <Title>{register ? 'Crea tu cuenta' : 'Bienvenido'}</Title>
     {register && <Field label="Tu nombre" value={form.name} onChangeText={field('name')} maxLength={100} editable={!busy} />}
     <Field label="Correo electrónico" value={form.email} onChangeText={field('email')} keyboardType="email-address" autoCapitalize="none" autoCorrect={false} maxLength={254} editable={!busy} />

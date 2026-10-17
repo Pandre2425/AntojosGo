@@ -1,12 +1,12 @@
 import Link from 'next/link'
-import { ChefHat, Search, Store, ArrowRight } from 'lucide-react'
+import { Search, Store, ArrowRight } from 'lucide-react'
 
 export default function WelcomePage() {
   return (
     <main className="min-h-dvh bg-background px-5 py-8 flex items-center justify-center">
       <div className="w-full max-w-lg space-y-8">
         <div className="space-y-3">
-          <ChefHat className="h-12 w-12 text-primary" />
+          <img src="/logo.png" alt="" width={80} height={80} className="rounded-2xl" />
           <p className="font-semibold text-primary">AntojosGo</p>
           <h1 className="text-3xl font-bold tracking-tight">Tu próximo antojo empieza aquí</h1>
           <p className="text-muted-foreground">Descubre dónde comer o haz que más personas conozcan tu restaurante.</p>

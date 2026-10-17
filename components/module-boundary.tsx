@@ -2,6 +2,7 @@
 
 import { Component, type ReactNode } from 'react'
 import { Button } from './ui/button'
+import FoodLoader from './food-loader'
 
 export default class ModuleBoundary extends Component<{ name: string; children: ReactNode; onExit?: () => void }, { failed: boolean }> {
   state = { failed: false }
@@ -18,5 +19,5 @@ export default class ModuleBoundary extends Component<{ name: string; children: 
 }
 
 export function ModuleLoading() {
-  return <p role="status" className="p-5 text-sm text-muted-foreground">Cargando sección…</p>
+  return <FoodLoader label="Cargando sección…" />
 }

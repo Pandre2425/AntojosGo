@@ -14,6 +14,7 @@ import { Label } from './ui/label'
 import { Textarea } from './ui/textarea'
 import TagField from './tag-field'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu'
+import FoodLoader from './food-loader'
 
 const empty = { name: '', price: '', description: '', dish_types: [] as string[], cuisines: [] as string[], features: [] as string[],
   ingredients: [] as string[], hasAllergens: false, allergenLabels: [] as string[], noAllergens: false }
@@ -129,7 +130,7 @@ export default function RestaurantMenu({ restaurantId, restaurantName, onClose }
     {error && <p role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
 
     {loadError ? <div role="alert"><p>{loadError}</p><Button variant="outline" onClick={() => setRetry((v) => v + 1)}>Reintentar</Button></div>
-      : !dishes ? <p role="status">Cargando menú…</p>
+      : !dishes ? <FoodLoader label="Cargando menú…" />
       : dishes.length === 0 ? <p className="rounded-xl border border-dashed p-6 text-center text-muted-foreground">Tu menú está vacío. Agrega tu primer platillo abajo.</p>
       : <>
         {undeclared > 0 && <p className="rounded-lg border border-dashed border-amber-500 bg-amber-50 px-3 py-2 text-sm text-amber-900">

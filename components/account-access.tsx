@@ -69,7 +69,7 @@ export default function AccountAccess({ audience, onBack }: { audience: 'custome
   return <main className="min-h-dvh bg-background px-4 py-8 flex items-center justify-center">
     <section className="w-full max-w-md rounded-[24px] border bg-white p-6 space-y-5 shadow-sm">
       <Button variant="ghost" disabled={busy} onClick={onBack}>← Volver</Button>
-      <div><p className="text-sm font-semibold text-primary">AntojosGo · {audience === 'restaurant' ? 'Restaurantes' : 'Clientes'}</p>
+      <div><img src="/logo.png" alt="" width={64} height={64} className="shrink-0 rounded-xl mb-3" /><p className="text-sm font-semibold text-primary">AntojosGo · {audience === 'restaurant' ? 'Restaurantes' : 'Clientes'}</p>
         <h1 className="mt-2 text-2xl font-bold">{mode === 'register' ? 'Crea tu cuenta' : 'Te damos la bienvenida'}</h1>
         <p className="mt-2 text-sm text-muted-foreground">{audience === 'restaurant' ? 'Crea tu cuenta personal para registrar y administrar tu restaurante.' : 'Tu cuenta personal para descubrir y guardar tus próximos antojos.'}</p></div>
       {!isSupabaseConfigured && <p role="status" className="text-sm">El servicio de cuentas está pendiente de configuración.</p>}

@@ -141,3 +141,20 @@ nav.fixed.bottom-0 {
 
 .mobile-nav [aria-current="page"] { color: var(--primary); background: transparent; }
 .mobile-nav button:not([aria-current="page"]) { color: var(--muted-foreground); }
+
+/* Loading: a shuco assembling itself (components/food-loader.tsx). Each piece falls, bounces and lands in order. */
+@keyframes food-drop-0 { 0%, 0% { transform: translateY(-70px); opacity: 0 } 6% { opacity: 1 } 9% { transform: translateY(0) } 11% { transform: translateY(-5px) } 13%, 82% { transform: translateY(0); opacity: 1 } 92%, 100% { transform: translateY(0); opacity: 0 } }
+.food-piece-0 { animation: food-drop-0 3.2s ease-out infinite both }
+@keyframes food-drop-1 { 0%, 5% { transform: translateY(-70px); opacity: 0 } 11% { opacity: 1 } 14% { transform: translateY(0) } 16% { transform: translateY(-5px) } 18%, 82% { transform: translateY(0); opacity: 1 } 92%, 100% { transform: translateY(0); opacity: 0 } }
+.food-piece-1 { animation: food-drop-1 3.2s ease-out infinite both }
+@keyframes food-drop-2 { 0%, 10% { transform: translateY(-70px); opacity: 0 } 16% { opacity: 1 } 19% { transform: translateY(0) } 21% { transform: translateY(-5px) } 23%, 82% { transform: translateY(0); opacity: 1 } 92%, 100% { transform: translateY(0); opacity: 0 } }
+.food-piece-2 { animation: food-drop-2 3.2s ease-out infinite both }
+@keyframes food-drop-3 { 0%, 15% { transform: translateY(-70px); opacity: 0 } 21% { opacity: 1 } 24% { transform: translateY(0) } 26% { transform: translateY(-5px) } 28%, 82% { transform: translateY(0); opacity: 1 } 92%, 100% { transform: translateY(0); opacity: 0 } }
+.food-piece-3 { animation: food-drop-3 3.2s ease-out infinite both }
+@keyframes food-drop-4 { 0%, 20% { transform: translateY(-70px); opacity: 0 } 26% { opacity: 1 } 29% { transform: translateY(0) } 31% { transform: translateY(-5px) } 33%, 82% { transform: translateY(0); opacity: 1 } 92%, 100% { transform: translateY(0); opacity: 0 } }
+.food-piece-4 { animation: food-drop-4 3.2s ease-out infinite both }
+@keyframes food-drop-5 { 0%, 25% { transform: translateY(-70px); opacity: 0 } 31% { opacity: 1 } 34% { transform: translateY(0) } 36% { transform: translateY(-5px) } 38%, 82% { transform: translateY(0); opacity: 1 } 92%, 100% { transform: translateY(0); opacity: 0 } }
+.food-piece-5 { animation: food-drop-5 3.2s ease-out infinite both }
+@keyframes food-pop { 0%, 38% { transform: scale(1) } 43% { transform: scale(1.07) } 49%, 100% { transform: scale(1) } }
+.food-pop { transform-box: fill-box; transform-origin: center; animation: food-pop 3.2s ease-in-out infinite }
+@media (prefers-reduced-motion: reduce) { .food-pop, [class^='food-piece-'] { animation: none } }

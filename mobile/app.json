@@ -3,14 +3,14 @@
     "name": "AntojosGo",
     "slug": "antojosgo-mobile",
     "scheme": "antojosgo",
-    "version": "0.4.0",
+    "version": "0.4.1",
     "platforms": [
       "android"
     ],
     "userInterfaceStyle": "light",
     "android": {
       "package": "com.antojosgo.mobile",
-      "versionCode": 5,
+      "versionCode": 6,
       "softwareKeyboardLayoutMode": "resize",
       "permissions": [
         "ACCESS_COARSE_LOCATION",
@@ -25,7 +25,11 @@
         "android.permission.WRITE_EXTERNAL_STORAGE",
         "android.permission.RECEIVE_BOOT_COMPLETED",
         "android.permission.FOREGROUND_SERVICE"
-      ]
+      ],
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#FFFFFF"
+      }
     },
     "plugins": [
       "expo-router",
@@ -36,7 +40,17 @@
           "locationWhenInUsePermission": "AntojosGo usa tu ubicación para ordenar sedes cercanas. Si la niegas, puedes buscar por municipio o nombre."
         }
       ],
-      "expo-build-properties"
-    ]
+      "expo-build-properties",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 240,
+          "resizeMode": "contain",
+          "backgroundColor": "#F8F7F2"
+        }
+      ]
+    ],
+    "icon": "./assets/icon.png"
   }
 }

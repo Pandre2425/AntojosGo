@@ -40,8 +40,7 @@ export default function AntojosGoApp() {
       <header className="bg-white shadow-sm border-b sticky top-0 z-50">
         <div className="mobile-content flex items-center justify-between p-4">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center"><ChefHat className="w-6 h-6 text-white" /></div>
-            <div><h1 className="text-xl font-extrabold text-[#173F35]">AntojosGo</h1><p className="text-xs text-muted-foreground">¿Qué se te antoja hoy?</p></div>
+            <div className="flex items-center gap-2"><img src="/logo.png" alt="" width={40} height={40} className="shrink-0 rounded-xl" /><div><h1 className="text-xl font-extrabold text-[#173F35]">AntojosGo</h1><p className="text-xs text-muted-foreground">¿Qué se te antoja hoy?</p></div></div>
           </div>
           <div className="flex items-center gap-1 sm:gap-2"><NotificationsBell /><AppDownloadButton /><Button variant="ghost" size="sm" aria-label="Cambiar modo" onClick={() => { window.location.href = "/welcome" }}><ChefHat className="w-4 h-4 sm:mr-1" /><span className="hidden sm:inline">Cambiar modo</span></Button></div>
         </div>

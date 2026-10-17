@@ -1,6 +1,7 @@
 import React, { type ReactNode } from 'react'
-import { ActivityIndicator, KeyboardAvoidingView, Pressable, ScrollView, StyleSheet, Text, TextInput, View, type StyleProp, type TextInputProps, type TextProps, type ViewStyle } from 'react-native'
+import { KeyboardAvoidingView, Pressable, ScrollView, StyleSheet, Text, TextInput, View, type StyleProp, type TextInputProps, type TextProps, type ViewStyle } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { FoodLoader } from './food-loader'
 
 // Design tokens: the only place for colors, sizes and spacing. Screens use these or the components below.
 export const colors = {
@@ -41,7 +42,7 @@ export function Action({ title, onPress, disabled = false, secondary = false, st
 export function Input(props: TextInputProps) { return <TextInput placeholderTextColor={colors.muted} {...props} style={[styles.input, props.style]} /> }
 export function Field({ label, ...props }: TextInputProps & { label: string }) { return <View style={{ gap: 6 }}><Text style={type.body}>{label}</Text><Input accessibilityLabel={label} {...props} /></View> }
 export function Message({ children }: { children: ReactNode }) { return children ? <Text accessibilityLiveRegion="polite" style={type.body}>{children}</Text> : null }
-export function Loading() { return <ActivityIndicator accessibilityLabel="Cargando" color={colors.green} size="large" /> }
+export function Loading({ label }: { label?: string }) { return <FoodLoader label={label} /> }
 export class ScreenBoundary extends React.Component<{ children: ReactNode }, { failed: boolean }> {
   state = { failed: false }
   static getDerivedStateFromError() { return { failed: true } }

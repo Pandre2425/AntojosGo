@@ -10,6 +10,7 @@ import { directionsUrl, phoneUrl, whatsappUrl } from '@/shared/contracts/branche
 import { ALLERGEN_LABELS, ALLERGENS, DISH_TAGS, DISH_TAG_LABELS, allergenNames, allergenStatus, type Allergen, type DishTag } from '@/shared/contracts/menu'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
+import FoodLoader from './food-loader'
 
 type Coords = { latitude: number; longitude: number }
 const distance = (km?: number) => km == null ? null : km < 1 ? `${Math.round(km * 1000)} m en línea recta` : `${km.toFixed(1)} km en línea recta`
@@ -134,11 +135,11 @@ export function FavoriteBranches({ onLogin }: { onLogin: () => void }) {
     webApi.listFavorites().then((rows) => { if (active) setItems(rows) }).catch((e) => { if (active) setError(e.message) })
     return () => { active = false }
   }, [user?.id, selected, retry])
-  if (sessionLoading) return <p role="status">Cargando…</p>
+  if (sessionLoading) return <FoodLoader label="Cargando…" />
   if (!user) return <div className="space-y-3"><p className="text-sm text-muted-foreground">Inicia sesión para guardar tus restaurantes favoritos y verlos también en la app.</p><Button onClick={onLogin}>Iniciar sesión o crear cuenta</Button></div>
   if (selected) return <BranchDetail id={selected} onBack={() => setSelected(null)} />
   if (error) return <div role="alert"><p>{error}</p><Button variant="outline" onClick={() => setRetry((v) => v + 1)}>Reintentar</Button></div>
-  if (!items) return <p role="status">Cargando favoritos…</p>
+  if (!items) return <FoodLoader label="Cargando favoritos…" />
   return items.length ? <BranchList items={items} onSelect={setSelected} /> : <p className="text-sm text-muted-foreground">Aún no tienes favoritos. Abre una sede y toca «Guardar en favoritos».</p>
 }
 
@@ -177,7 +178,7 @@ export function BranchDetail({ id, onBack }: { id: string; onBack: () => void })
   const b = data?.branch
   return <div className="space-y-4">
     <Button variant="ghost" onClick={onBack}><ArrowLeft className="mr-1 h-4 w-4" />Volver a resultados</Button>
-    {error ? <div role="alert"><p>{error}</p><Button variant="outline" onClick={() => setRetry((v) => v + 1)}>Reintentar</Button></div> : !b ? <p role="status">Cargando sede…</p> : <>
+    {error ? <div role="alert"><p>{error}</p><Button variant="outline" onClick={() => setRetry((v) => v + 1)}>Reintentar</Button></div> : !b ? <FoodLoader label="Cargando sede…" /> : <>
       <section className="overflow-hidden rounded-2xl border bg-white">
         {b.cover_url && <img src={b.cover_url} alt={`Foto de ${b.name}`} className="h-48 w-full object-cover sm:h-64" />}
         <div className="space-y-2 p-5">

@@ -7,7 +7,8 @@ import ModuleBoundary from './module-boundary'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
 import { Label } from './ui/label'
-const BranchMap = dynamic(() => import('./branch-map'), { ssr: false, loading: () => <p role="status">Cargando mapa…</p> })
+import FoodLoader from './food-loader'
+const BranchMap = dynamic(() => import('./branch-map'), { ssr: false, loading: () => <FoodLoader label="Cargando mapa…" /> })
 
 export default function BranchLocationEditor({ branch, onSaved, onClose }: { branch: RestaurantBranch; onSaved: (branch: RestaurantBranch) => void; onClose: () => void }) {
   const initial = branch.latitude !== null && branch.longitude !== null ? { latitude: branch.latitude, longitude: branch.longitude } : null
