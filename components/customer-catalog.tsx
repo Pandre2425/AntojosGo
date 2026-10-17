@@ -11,6 +11,7 @@ import { ALLERGEN_LABELS, ALLERGENS, DISH_TAGS, DISH_TAG_LABELS, allergenNames, 
 import { Button } from './ui/button'
 import { Input } from './ui/input'
 import FoodLoader from './food-loader'
+import { DishReviews, RatingSummary } from './reviews'
 
 type Coords = { latitude: number; longitude: number }
 const distance = (km?: number) => km == null ? null : km < 1 ? `${Math.round(km * 1000)} m en línea recta` : `${km.toFixed(1)} km en línea recta`
@@ -109,6 +110,7 @@ function BranchList({ items, onSelect, restricted = false }: { items: PublicCata
       <Logo url={item.logo_url} name={item.name} />
       <div className="min-w-0 flex-1">
       <p className="font-semibold">{item.name}{item.category && <span className="font-normal text-muted-foreground"> · {item.category}</span>}</p>
+      <RatingSummary rating={item.rating} />
       <p className="text-sm">{item.branch_name} · {item.address}, {item.municipality}</p>
       {item.description && <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{item.description}</p>}
       {item.dish && <p className="mt-1 text-sm"><span className="font-medium">{item.dish.name}</span> <span className="tabular-nums">Q{item.dish.price.toFixed(2)}</span>
@@ -182,7 +184,7 @@ export function BranchDetail({ id, onBack }: { id: string; onBack: () => void })
       <section className="overflow-hidden rounded-2xl border bg-white">
         {b.cover_url && <img src={b.cover_url} alt={`Foto de ${b.name}`} className="h-48 w-full object-cover sm:h-64" />}
         <div className="space-y-2 p-5">
-        <div className="flex items-center gap-3"><Logo url={b.logo_url} name={b.name} size="h-16 w-16" /><h2 className="text-2xl font-bold">{b.name}</h2></div>
+        <div className="flex items-center gap-3"><Logo url={b.logo_url} name={b.name} size="h-16 w-16" /><div><h2 className="text-2xl font-bold">{b.name}</h2><RatingSummary rating={b.rating} /></div></div>
         <FavoriteButton branchId={b.id} />
         <p className="font-medium">{b.branch_name}{b.category ? ` · ${b.category}` : ''}</p>
         <p className="text-sm">{b.address}, {b.municipality}, {b.department}</p>
@@ -197,13 +199,14 @@ export function BranchDetail({ id, onBack }: { id: string; onBack: () => void })
         {data.menu.length === 0 ? <p className="text-sm text-muted-foreground">Este restaurante aún no ha publicado su menú.</p> :
           <ul className="divide-y">{data.menu.map((dish) => <li key={dish.id} className="flex gap-3 py-3">
             {dish.image_url && <img src={dish.image_url} alt={`Foto de ${dish.name}`} loading="lazy" className="h-20 w-20 shrink-0 rounded-xl object-cover" />}
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <p className="font-medium">{dish.name} <span className="whitespace-nowrap">· Q{dish.price.toFixed(2)}</span></p>
               {dish.category && <p className="text-xs text-muted-foreground">{dish.category}</p>}
               {dish.description && <p className="text-sm text-muted-foreground">{dish.description}</p>}
               {dish.ingredients?.length ? <p className="text-sm text-muted-foreground">Ingredientes: {dish.ingredients.join(', ')}</p> : null}
               <DishAllergens allergens={dish.allergens} other={dish.allergens_other} />
               {!dish.is_available && <p className="text-xs font-semibold text-red-700">Agotado por ahora</p>}
+              <DishReviews dishId={dish.id} rating={dish.rating} />
             </div>
           </li>)}</ul>}
       </section>

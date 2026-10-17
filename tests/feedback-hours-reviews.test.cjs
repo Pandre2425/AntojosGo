@@ -23,3 +23,17 @@ test('copy Monday to all days keeps each day and copies hours or closed', () => 
   assert.ok(copied.every(d => d.open === '09:00' && d.close === '18:00' && !d.closed))
   assert.ok(copyMondayToAll(toDayForm([])).every(d => d.closed))
 })
+
+const { starParts, ratingLabel, reviewInputSchema } = require('../shared/contracts/reviews.ts')
+test('review stars: whole stars in, average drawn to the nearest half', () => {
+  assert.deepEqual(starParts(3.6), ['full', 'full', 'full', 'half', 'empty'])
+  assert.deepEqual(starParts(3.74), ['full', 'full', 'full', 'half', 'empty'])
+  assert.deepEqual(starParts(3.75), ['full', 'full', 'full', 'full', 'empty'])
+  assert.deepEqual(starParts(null), ['empty', 'empty', 'empty', 'empty', 'empty'])
+  assert.deepEqual(starParts(9), Array(5).fill('full'))
+  assert.equal(ratingLabel({ rating_avg: 4.25, rating_count: 12 }), '4.3 (12 reseñas)')
+  assert.equal(ratingLabel({ rating_avg: 5, rating_count: 1 }), '5.0 (1 reseña)')
+  assert.equal(ratingLabel({ rating_avg: null, rating_count: 0 }), 'Sin reseñas')
+  assert.equal(reviewInputSchema.safeParse({ rating: 3.5 }).success, false)
+  assert.equal(reviewInputSchema.parse({ rating: 4, comment: ' ' }).comment, null)
+})

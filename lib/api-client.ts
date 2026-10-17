@@ -6,6 +6,7 @@ import type { AssistantContext } from '../shared/contracts/assistant'
 import type { AssistantResponse } from '../modules/catalog/data/assistant'
 import type { AccountProfile } from '../shared/contracts/accounts'
 import type { Feedback, FeedbackInput } from '../shared/contracts/feedback'
+import type { MyReview, OwnerReview, PublicReview, ReviewInput } from '../shared/contracts/reviews'
 import type { BranchInput, BranchLocation, RestaurantBranch } from '../shared/contracts/branches'
 import type { Dish, DishInput, DishPatch } from '../shared/contracts/menu'
 import type { BusinessProfile, BusinessProfileInput, OwnedRestaurant } from '../shared/contracts/restaurants'
@@ -99,6 +100,14 @@ export function createApiClient({ baseUrl, getToken, refreshToken }: Options) {
     /** The user's app rating (one per account; saving again replaces it). */
     myFeedback: () => call<{ item: Feedback | null }>('GET', '/me/feedback').then(r => r.item),
     saveFeedback: (input: FeedbackInput) => call<Feedback>('PUT', '/me/feedback', input),
+    /** Dish reviews: public list, the user's own review, and the owner's panel (reply / report). */
+    dishReviews: (dishId: string, page = 0) => call<{ items: PublicReview[]; hasMore: boolean }>('GET', `/dishes/${dishId}/reviews${qs({ page })}`, undefined, {}, false),
+    myReview: (dishId: string) => call<{ item: MyReview | null }>('GET', `/dishes/${dishId}/review`).then(r => r.item),
+    saveReview: (dishId: string, input: ReviewInput) => call<MyReview>('PUT', `/dishes/${dishId}/review`, input),
+    deleteReview: (dishId: string) => call<{ ok: true }>('DELETE', `/dishes/${dishId}/review`),
+    ownerReviews: (restaurantId: string, page = 0) => call<{ items: OwnerReview[]; hasMore: boolean }>('GET', `/restaurants/${restaurantId}/reviews${qs({ page })}`),
+    replyToReview: (reviewId: string, reply: string) => call<{ ok: true }>('PUT', `/reviews/${reviewId}/reply`, { reply }),
+    reportReview: (reviewId: string, reason: string) => call<{ ok: true }>('POST', `/reviews/${reviewId}/report`, { reason }),
     /** Diner assistant turn; send back the returned context with the next message. */
     assistant: (message: string, context?: AssistantContext, location?: { latitude: number; longitude: number }) =>
       call<AssistantResponse>('POST', '/assistant', { message, context, location }, {}, false),

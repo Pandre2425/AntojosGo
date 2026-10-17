@@ -69,6 +69,7 @@ export default function Business() {
       <Txt variant="subhead">{form.description.length}/2000</Txt>
       <Action title={busy ? 'Guardando…' : 'Guardar perfil'} onPress={save} disabled={busy} /></Card>
     <Action title="Administrar menú" secondary onPress={() => router.push({ pathname: '/menu/[id]', params: { id } })} disabled={busy} />
+    <Action title="Reseñas de mis platillos" secondary onPress={() => router.push({ pathname: '/reviews/[id]', params: { id } })} disabled={busy} />
     <ScreenBoundary><Branches restaurantId={id} /></ScreenBoundary>
   </>}</Page>
 }

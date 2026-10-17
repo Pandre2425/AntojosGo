@@ -20,6 +20,7 @@ test('catalog search delegates filters to the database function', async () => {
   let logos
   const client = { rpc: async (name, args) => {
     if (name === 'get_public_restaurant_images') { logos = args; return { data: [{ id: row.restaurant_id, logo_path: 'r/brand/a.jpg' }], error: null } }
+    if (name === 'get_restaurant_ratings') return { data: [{ restaurant_id: row.restaurant_id, rating_avg: '4.50', rating_count: 2 }], error: null }
     call = { name, args }; return { data: [row], error: null } } }
   const items = await listPublishedCatalog(client, { query: '  pepian ', limit: 500, location: { latitude: 14.8, longitude: -91.5, radiusKm: 2.5 }, tags: ['picante'], without: ['mani'], avoid: ['Cebolla', 'x.*'] })
   assert.equal(call.name, 'search_catalog_v2')
@@ -29,7 +30,7 @@ test('catalog search delegates filters to the database function', async () => {
   assert.equal(call.args.p_radius_m, 2500); assert.equal(call.args.p_limit, 50)
   assert.equal(items.length, 1)
   assert.equal(items[0].dish, null)
-  if (row.restaurant_id) { assert.deepEqual(logos.p_ids, [row.restaurant_id]); assert.equal(items[0].logo_url, 'r/brand/a.jpg') }
+  if (row.restaurant_id) { assert.deepEqual(logos.p_ids, [row.restaurant_id]); assert.equal(items[0].logo_url, 'r/brand/a.jpg'); assert.deepEqual(items[0].rating, { rating_avg: 4.5, rating_count: 2 }) }
 })
 
 test('catalog errors are not reported as empty results', async () => {

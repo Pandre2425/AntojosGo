@@ -3,6 +3,7 @@ import { dbError } from '../../../lib/app-error'
 import { isOpenNow, type OpeningHours } from '../../../shared/contracts/hours'
 import { allergenStatus, type Allergen, type AllergenDeclaration, type DishTag } from '../../../shared/contracts/menu'
 import { avoidRegex, normalize, queryGroups } from '../../../shared/contracts/assistant'
+import { NO_RATING, type Rating } from '../../../shared/contracts/reviews'
 
 export type PublicCatalogItem = {
   id: string
@@ -24,6 +25,8 @@ export type PublicCatalogItem = {
   dish?: { name: string; price: number; allergensDeclared: boolean; contains: Allergen[] } | null
   /** Storage path from the DB; the API replaces it with a public URL. */
   logo_url?: string | null
+  /** Average of the restaurant's dish reviews. */
+  rating?: Rating
 }
 
 /** Row returned by the search_public_catalog / get_public_branch SQL functions (supabase/migrations/20261002090000_public_catalog_v2.sql). */
@@ -83,13 +86,22 @@ export async function listPublishedCatalog(client: SupabaseClient, opts: Catalog
   return withLogos(client, items)
 }
 
-/** One extra query for the logos of the restaurants in the results. */
+/** Two extra queries: logos and ratings of the restaurants in the results (both optional). */
 async function withLogos(client: SupabaseClient, items: PublicCatalogItem[]): Promise<PublicCatalogItem[]> {
   const ids = [...new Set(items.map(i => i.restaurant_id).filter((v): v is string => Boolean(v)))]
   if (!ids.length) return items
-  const { data } = await client.rpc('get_public_restaurant_images', { p_ids: ids })
+  const [{ data }, ratings] = await Promise.all([client.rpc('get_public_restaurant_images', { p_ids: ids }), restaurantRatings(client, ids)])
   const logos = new Map(((data ?? []) as { id: string; logo_path: string | null }[]).map(r => [r.id, r.logo_path]))
-  return items.map(i => ({ ...i, logo_url: (i.restaurant_id && logos.get(i.restaurant_id)) || null }))
+  return items.map(i => ({ ...i, logo_url: (i.restaurant_id && logos.get(i.restaurant_id)) || null, rating: (i.restaurant_id && ratings.get(i.restaurant_id)) || NO_RATING }))
+}
+
+type RatingRow = { rating_avg: number | string; rating_count: number }
+const toRating = (r: RatingRow): Rating => ({ rating_avg: Number(r.rating_avg), rating_count: r.rating_count })
+
+/** Average per restaurant; an empty map when the query fails (ratings never block the catalog). */
+export async function restaurantRatings(client: SupabaseClient, ids: string[]): Promise<Map<string, Rating>> {
+  const { data } = await client.rpc('get_restaurant_ratings', { p_ids: ids })
+  return new Map(((data ?? []) as (RatingRow & { restaurant_id: string })[]).map(r => [r.restaurant_id, toRating(r)]))
 }
 
 export function toCatalogItem(row: SearchRow): PublicCatalogItem {
@@ -107,6 +119,7 @@ export type PublicDish = {
   id: string; name: string; price: number; category: string | null; description: string | null; is_available: boolean
   image_path?: string | null; image_url?: string | null; tags?: DishTag[]; ingredients?: string[]; allergens?: AllergenDeclaration[]
   allergens_other?: string[]; dish_types?: string[]; cuisines?: string[]; features?: string[]
+  rating?: Rating
 }
 
 /** Published dishes of a published branch; empty for drafts or unknown ids. */
@@ -114,7 +127,10 @@ export async function getPublicMenu(client: SupabaseClient, branchId: string): P
   if (!UUID.test(branchId)) return []
   const { data, error } = await client.rpc('get_public_dishes_v3', { p_branch_id: branchId })
   if (error) throw dbError(error, 'No pudimos cargar el menú.')
-  return ((data || []) as PublicDish[]).map(d => ({ ...d, price: Number(d.price) }))
+  const dishes = (data || []) as PublicDish[]
+  const { data: rated } = dishes.length ? await client.rpc('get_dish_ratings', { p_dish_ids: dishes.map(d => d.id) }) : { data: [] }
+  const ratings = new Map(((rated ?? []) as (RatingRow & { dish_id: string })[]).map(r => [r.dish_id, toRating(r)]))
+  return dishes.map(d => ({ ...d, price: Number(d.price), rating: ratings.get(d.id) ?? NO_RATING }))
 }
 
 /** Extra public data of a published branch (hours, …); empty object for drafts or unknown ids. */
@@ -139,5 +155,7 @@ export async function getPublishedBranch(
   const { data, error } = await client.rpc('get_public_branch', { p_id: id })
   if (error) throw dbError(error, 'No pudimos cargar la sede. Revisa la conexión e intenta de nuevo.')
   const row = ((data || []) as PublicBranchRow[])[0]
-  return row ? mapPublishedBranch(row) : null
+  if (!row) return null
+  const ratings = await restaurantRatings(client, [row.restaurant_id])
+  return { ...mapPublishedBranch(row), rating: ratings.get(row.restaurant_id) ?? NO_RATING }
 }

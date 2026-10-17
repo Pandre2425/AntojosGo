@@ -12,6 +12,7 @@ import { describeHours, isOpenNow } from '../../../shared/contracts/hours'
 import { directionsUrl, geoUrl, phoneUrl, whatsappUrl } from '../../../shared/contracts/branches'
 import { DISH_DETAIL_GROUPS, allergenNames, allergenStatus, dishDetails } from '../../../shared/contracts/menu'
 import { Action, Loading, Message, Page, Txt, colors, radius, spacing, type } from '../../src/ui'
+import { DishReviews, RatingLine, Stars } from '../../src/reviews'
 
 type Branch = PublicCatalogItem & PublicBranchExtras
 const money = (v: number) => `Q${v.toFixed(2)}`
@@ -66,6 +67,7 @@ function BranchHeader({ b }: { b: Branch }) {
       <View style={{ flex: 1, gap: 2 }}>
         <Txt variant="title" accessibilityRole="header" style={{ fontSize: 26 }}>{b.name}</Txt>
         <Txt variant="subhead">{[b.category, b.branch_name].filter(Boolean).join(' · ')}</Txt>
+        <RatingLine rating={b.rating} />
       </View>
     </View>
     <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: spacing.sm }}>
@@ -131,6 +133,7 @@ function DishRow({ dish, onDetails }: { dish: PublicDish; onDetails: () => void 
         <Text style={{ color: colors.orange, fontWeight: '700', fontSize: 16, fontVariant: ['tabular-nums'] }}>{money(dish.price)}</Text>
       </View>
       {summary ? <Txt variant="subhead" numberOfLines={1}>{summary}</Txt> : null}
+      {dish.rating?.rating_count ? <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}><Stars value={dish.rating.rating_avg} size={14} /><Text style={{ color: colors.muted, fontSize: 13 }}>({dish.rating.rating_count})</Text></View> : null}
       {!dish.is_available ? <Pill text="Agotado por ahora" color={colors.muted} /> : null}
       <Text style={{ color: colors.green, fontWeight: '600', marginTop: 'auto' }}>Ver detalles ›</Text>
     </View>
@@ -166,6 +169,7 @@ function DishSheet({ dish, onClose }: { dish: PublicDish | null; onClose: () => 
             : <Txt style={{ color: colors.green }}>Sin alérgenos comunes, según el restaurante.</Txt>}
         </Section>
         <Txt variant="subhead">La información la registra el restaurante. Si tu alergia es grave, confírmala antes de pedir.</Txt>
+        <DishReviews dishId={dish.id} rating={dish.rating} />
         <Action title="Cerrar" secondary onPress={onClose} />
       </ScrollView>
     </View>

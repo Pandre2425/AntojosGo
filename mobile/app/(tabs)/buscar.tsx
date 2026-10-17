@@ -12,6 +12,7 @@ import type { PublicCatalogItem } from '../../../modules/catalog/data/public-cat
 import { Action, Card, Chip, Input, Loading, Message, Page, ScreenBoundary, Title, Txt, colors, spacing } from '../../src/ui'
 import { Text } from 'react-native'
 import { ALLERGEN_LABELS, ALLERGENS, DISH_TAGS, DISH_TAG_LABELS, type Allergen, type DishTag } from '../../../shared/contracts/menu'
+import { RatingLine } from '../../src/reviews'
 
 type Filters = { category: string; openNow: boolean; tags: DishTag[]; without: Allergen[] }
 const noFilters: Filters = { category: '', openNow: false, tags: [], without: [] }
@@ -142,7 +143,7 @@ export default function Discover() {
         <Card key={item.id}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
             {item.logo_url ? <Image source={{ uri: item.logo_url }} accessibilityIgnoresInvertColors style={{ width: 56, height: 56, borderRadius: 28 }} /> : null}
-            <View style={{ flex: 1 }}><Title>{item.name}</Title>{item.category ? <Txt variant="subhead">{item.category}</Txt> : null}</View>
+            <View style={{ flex: 1 }}><Title>{item.name}</Title>{item.category ? <Txt variant="subhead">{item.category}</Txt> : null}<RatingLine rating={item.rating} /></View>
           </View>
           <Message>{item.branch_name} · {item.address}, {item.municipality}</Message>
           {item.description ? <Message>{item.description}</Message> : <Message>Sin información de descripción.</Message>}
