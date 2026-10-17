@@ -47,7 +47,7 @@ AntojosGo ayuda a los comensales de Guatemala (piloto en Quetzaltenango) a encon
 
 ### Calidad y seguridad
 
-- 54 pruebas automáticas (`npm test`) y una batería de seguridad contra producción (`node scripts/security-check.mjs`): 79 de 80 controles superados. Detalle en [SEGURIDAD.md](SEGURIDAD.md).
+- 54 pruebas automáticas (`npm test`) y una batería de seguridad contra producción (`node scripts/security-check.mjs`): 80 de 80 controles superados. Detalle en [SEGURIDAD.md](SEGURIDAD.md).
 - Cada función nueva se verificó en el navegador (Playwright) y en el emulador Android antes de subirla.
 
 ---
@@ -130,13 +130,13 @@ AntojosGo ayuda a los comensales de Guatemala (piloto en Quetzaltenango) a encon
 
 1. Supabase → API Keys → **desactivar las claves antiguas (legacy)**: hay secretos viejos en el historial público de GitHub.
 2. Supabase → **cambiar la contraseña de la base de datos**.
-3. Ejecutar `supabase/manual/20261010_move_postgis_to_extensions.sql` en el SQL Editor.
+3. ✅ PostGIS movido a `extensions` y GraphQL apagado (17 de octubre). Batería de seguridad: 80/80.
 4. ✅ Contraseña mínima de 10 caracteres en Auth (comprobado el 16 de octubre).
-5. Borrar las claves del proyecto antiguo de Firebase y regenerar el secreto de Cloudinary (o cerrar esas cuentas).
+5. ✅ Claves de Firebase y Cloudinary borradas (17 de octubre).
 
 ### Para el piloto
 
-6. **Publicar la app 0.4.0** (inicio nuevo, pestañas, formulario de platillos, «Cómo llegar», «Ver detalles», campana, recuperación de contraseña, calificar la app) en GitHub Releases y activar el aviso de actualización.
+6. **Publicar la app 0.4.1** (logo e ícono, animación de carga, inicio nuevo, pestañas, formulario de platillos, «Cómo llegar», «Ver detalles», campana, recuperación de contraseña, calificar la app): subirla a Drive y, para el aviso automático, a GitHub Releases.
 7. ✅ Despublicadas «QA Claude Cocina» y «QA Antojos Cocina» (16 de octubre). Falta decidir «Restaurante prueba1».
 8. Mover «Pablo pizza» a una cuenta con correo real (la actual usa un correo inventado).
 9. Lista «Para que te encuentren» para el restaurante (qué le falta para aparecer en búsquedas).
@@ -153,7 +153,7 @@ AntojosGo ayuda a los comensales de Guatemala (piloto en Quetzaltenango) a encon
 
 ### Menores
 
-17. ✅ Ícono de la web (`app/icon.svg`). La app Android aún usa el ícono genérico de Expo.
+17. ✅ Logo de AntojosGo en la web (favicon, encabezado, inicio de sesión) y en la app (ícono, pantalla de arranque). Animación de carga: un shuco que se arma pieza por pieza.
 18. Borrar el código heredado (`android/` de Capacitor, `AllCode.txt`, rutas y componentes antiguos sin uso).
 19. Respaldos de la base y ensayo de restauración.
 

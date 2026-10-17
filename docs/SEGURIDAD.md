@@ -43,7 +43,7 @@ Leyenda: ✅ cumple y se probó · 🔧 falló y se corrigió · ⚠️ pendient
 | D5 | Funciones antiguas sin uso, cerradas al público | 🔧 | `assistant_search`, `search_public_catalog`, `get_public_dishes`, `get_public_menu` → ahora 401 |
 | D6 | GraphQL no expone tablas a visitantes | ✅ | |
 | D7 | Almacenamiento: nadie lista archivos; solo el dueño escribe en su carpeta | ✅ | |
-| D8 | `spatial_ref_sys` (PostGIS) no modificable por visitantes | ⚠️ **falla** | Un visitante puede escribir en esa tabla (podría romper las distancias). `REVOKE` no basta porque la tabla es de `supabase_admin`. Solución: script manual `supabase/manual/20261010_move_postgis_to_extensions.sql` |
+| D8 | `spatial_ref_sys` (PostGIS) no modificable por visitantes | ✅ | PostGIS movido a `extensions` el 17 de octubre (script manual `supabase/manual/20261010_move_postgis_to_extensions.sql`). GraphQL (`pg_graphql`) apagado: la app no lo usa |
 | D9 | Claves antiguas (legacy JWT) desactivadas | ⚠️ **crítico** | Siguen activas. Ver §4 |
 | D10 | Contraseñas: mínimo 10 caracteres también en el servidor; protección contra contraseñas filtradas | ⚠️ | La app exige 10, pero Supabase acepta 6 si se le llama directo. La protección contra filtradas requiere plan Pro |
 | D11 | El inicio de sesión no revela si un correo está registrado | ✅ | Mismo error para correo existente e inexistente |
@@ -75,8 +75,8 @@ La clave `anon` antigua del proyecto actual es de septiembre de 2025, así que e
 
 1. **Supabase → Project Settings → API Keys → Legacy API Keys → Disable.** La web y la app usan solo las claves nuevas; no se rompe nada.
 2. **Supabase → Project Settings → Database → Reset database password** (por `DATABASE_URL`).
-3. **Google Cloud / Firebase (proyecto antiguo):** borrar la cuenta de servicio cuya clave privada se filtró y las API keys antiguas, o eliminar el proyecto si ya no se usa.
-4. **Cloudinary:** regenerar el API secret o cerrar la cuenta si no se usa.
+3. ✅ (17 de octubre) **Google Cloud / Firebase (proyecto antiguo):** borrar la cuenta de servicio cuya clave privada se filtró y las API keys antiguas, o eliminar el proyecto si ya no se usa.
+4. ✅ (17 de octubre) **Cloudinary:** regenerar el API secret o cerrar la cuenta si no se usa.
 5. Opcional: reescribir el historial (`git filter-repo`) o hacer privado el repositorio. No sustituye a los pasos 1–4: lo publicado debe darse por comprometido.
 
 ## 5. Riesgos aceptados y pendientes
@@ -84,5 +84,5 @@ La clave `anon` antigua del proyecto actual es de septiembre de 2025, así que e
 - ➖ **Dependencias con avisos** (web: `postcss`/`nanoid` dentro de Next.js; app: `shell-quote`, `node-forge`, `braces`, `source-map-js`, `uuid`, `decode-uri-component`). Todas salvo la última son herramientas de compilación o de desarrollo que no se ejecutan en el servidor ni en el teléfono. `decode-uri-component` solo permitiría congelar la propia app con un enlace malformado. Revisar al actualizar Expo/Next.
 - ➖ **CSP con `'unsafe-inline'` en scripts**, porque Next.js inyecta scripts en línea. Mejorable con nonces si se requiere.
 - ⚠️ **Límite de peticiones (W18):** necesita un servicio compartido (por ejemplo Upstash Redis gratuito o reglas del firewall de Vercel). Recomendado antes de activar Gemini con facturación.
-- ⚠️ **PostGIS en `public` (D8):** ejecutar el script manual.
+- ✅ **PostGIS (D8):** resuelto el 17 de octubre.
 - ⚠️ Respaldos y ensayo de restauración (`docs/EXECUTION-PLAN.md` §4.6).
