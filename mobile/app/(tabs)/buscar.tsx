@@ -13,9 +13,12 @@ import { Action, Card, Chip, Input, Loading, Message, Page, ScreenBoundary, Titl
 import { Text } from 'react-native'
 import { ALLERGEN_LABELS, ALLERGENS, DISH_TAGS, DISH_TAG_LABELS, type Allergen, type DishTag } from '../../../shared/contracts/menu'
 import { RatingLine } from '../../src/reviews'
+import { VoiceButton } from '../../src/voice-button'
+import { hiddenIds, refreshHidden, useHiddenIds } from '../../src/hidden'
+import { PRICE_RANGES, pickSurprise } from '../../../shared/contracts/catalog-query'
 
-type Filters = { category: string; openNow: boolean; tags: DishTag[]; without: Allergen[] }
-const noFilters: Filters = { category: '', openNow: false, tags: [], without: [] }
+type Filters = { category: string; openNow: boolean; tags: DishTag[]; without: Allergen[]; price: number | null }
+const noFilters: Filters = { category: '', openNow: false, tags: [], without: [], price: null }
 const toggle = <T,>(list: T[], v: T) => list.includes(v) ? list.filter(x => x !== v) : [...list, v]
 
 // Uncontrolled map: the camera moves only when results or the user location change, never on unrelated re-renders.
@@ -29,7 +32,9 @@ function regionFor(items: PublicCatalogItem[], coords: UserCoords | null) {
 }
 
 export default function Discover() {
-  const { ready } = useSession()
+  const { ready, session } = useSession()
+  const hidden = useHiddenIds()
+  const lastSurprise = useRef<string | null>(null)
   const [query, setQuery] = useState('')
   const [items, setItems] = useState<PublicCatalogItem[]>([])
   const [coords, setCoords] = useState<UserCoords | null>(null)
@@ -45,7 +50,7 @@ export default function Discover() {
   const filtersRef = useRef<Filters>(noFilters)
   const [types, setTypes] = useState<string[]>([])
   useEffect(() => { api.listBusinessTypes().then(setTypes).catch(() => {}) }, [])
-  const activeCount = (filters.category ? 1 : 0) + (filters.openNow ? 1 : 0) + filters.tags.length + filters.without.length
+  const activeCount = (filters.category ? 1 : 0) + (filters.openNow ? 1 : 0) + (filters.price !== null ? 1 : 0) + filters.tags.length + filters.without.length
 
   const load = useCallback(async (text: string, location: UserCoords | null) => {
     const current = ++request.current
@@ -59,7 +64,8 @@ export default function Discover() {
     setError('')
     try {
       const f = filtersRef.current
-      const base = { q: text, limit: 40, category: f.category || undefined, tags: f.tags, without: f.without, openNow: f.openNow }
+      const range = f.price === null ? null : PRICE_RANGES[f.price] as { min?: number; max?: number }
+      const base = { q: text, limit: 40, category: f.category || undefined, tags: f.tags, without: f.without, openNow: f.openNow, minPrice: range?.min, maxPrice: range?.max, hide: hiddenIds() }
       const result = await api.searchCatalog(location ? { ...base, lat: location.latitude, lng: location.longitude, radiusMeters: 50000 } : base)
       if (active.current && current === request.current) setItems(result.items)
     } catch (e) {
@@ -77,11 +83,22 @@ export default function Discover() {
   }, [load])
 
   useEffect(() => { map.current?.animateToRegion(regionFor(items, coords)) }, [items, coords])
+  // «No me interesa» list: load it per account, and search again when it changes.
+  useEffect(() => { refreshHidden(Boolean(session)).catch(() => {}) }, [session?.user.id])
+  const hiddenKey = hidden.join(',')
+  const firstHidden = useRef(true)
+  useEffect(() => { if (firstHidden.current) { firstHidden.current = false; return } void load(query, coords) }, [hiddenKey]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!ready) return <Page tab><Loading /></Page>
 
   const mapRegion = regionFor(items, coords)
   const apply = (next: Filters) => { filtersRef.current = next; setFilters(next); void load(query, coords) }
+  function surprise() {
+    const pick = pickSurprise(items, lastSurprise.current)
+    if (!pick) { setGpsNote('No hay opciones con esta búsqueda y estos filtros. Quita algún filtro y vuelve a intentar.'); return }
+    lastSurprise.current = pick.id
+    router.push({ pathname: '/sede/[id]', params: { id: pick.id, sorpresa: pick.dish ? `${pick.dish.name} (Q${pick.dish.price.toFixed(2)})` : '1' } })
+  }
 
   return (
     <Page tab>
@@ -92,6 +109,7 @@ export default function Discover() {
       <View style={{ flexDirection: 'row', gap: spacing.sm }}>
         <Input accessibilityLabel="Qué se te antoja" value={query} onChangeText={setQuery} placeholder="Ej. pepián, zona 3, café…"
           editable={!busy} returnKeyType="search" onSubmitEditing={() => load(query, coords)} style={{ flex: 1 }} />
+        <VoiceButton onText={t => { setQuery(t); void load(t, coords) }} onError={setGpsNote} />
         <Action title={busy ? '…' : 'Buscar'} onPress={() => load(query, coords)} disabled={busy} style={{ paddingHorizontal: spacing.lg }} />
       </View>
       <View style={{ flexDirection: 'row', gap: spacing.sm }}>
@@ -110,8 +128,11 @@ export default function Discover() {
       }} disabled={busy} /></View>
         <View style={{ flex: 1 }}><Action title={`Filtros${activeCount ? ` (${activeCount})` : ''}`} secondary={!activeCount} onPress={() => setShowFilters(v => !v)} disabled={busy} /></View>
       </View>
+      <Action title="🎲 Sorpréndeme" onPress={surprise} disabled={busy || loading} />
       {showFilters ? <Card>
         <Chip label="Abierto ahora" on={filters.openNow} onPress={() => apply({ ...filters, openNow: !filters.openNow })} disabled={busy} />
+        <Txt variant="label">Precio</Txt>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>{PRICE_RANGES.map((r, i) => <Chip key={r.label} label={r.label} on={filters.price === i} disabled={busy} onPress={() => apply({ ...filters, price: filters.price === i ? null : i })} />)}</View>
         <Txt variant="label">Quiero</Txt>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>{DISH_TAGS.map(t => <Chip key={t} label={DISH_TAG_LABELS[t]} on={filters.tags.includes(t)} disabled={busy} onPress={() => apply({ ...filters, tags: toggle(filters.tags, t) })} />)}</View>
         <Txt variant="label">Sin</Txt>

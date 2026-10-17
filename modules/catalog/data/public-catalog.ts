@@ -52,6 +52,10 @@ export type CatalogFilters = {
   avoid?: string[]
   openNow?: boolean
   sort?: 'relevance' | 'price'
+  minPrice?: number
+  maxPrice?: number
+  /** Restaurant ids the diner marked «No me interesa». */
+  hide?: string[]
 }
 
 type SearchRow = {
@@ -68,7 +72,7 @@ type SearchRow = {
 export async function listPublishedCatalog(client: SupabaseClient, opts: CatalogFilters = {}): Promise<PublicCatalogItem[]> {
   const groups = [...queryGroups(opts.query ?? ''), ...(opts.tags ?? []).map(tag => ({ re: '', tags: [tag] }))].slice(0, 6)
   const avoid = (opts.avoid ?? []).map(normalize).filter(w => /^[a-z0-9]{3,30}$/.test(w)).slice(0, 5)
-  const { data, error } = await client.rpc('search_catalog_v2', {
+  const { data, error } = await client.rpc('search_catalog_v3', {
     p_groups: groups,
     p_lat: opts.location?.latitude ?? null,
     p_lng: opts.location?.longitude ?? null,
@@ -78,6 +82,9 @@ export async function listPublishedCatalog(client: SupabaseClient, opts: Catalog
     p_category: opts.category ?? null,
     p_without: opts.without ?? [],
     p_avoid: avoidRegex(avoid),
+    p_min_price: opts.minPrice ?? null,
+    p_max_price: opts.maxPrice ?? null,
+    p_exclude_restaurants: (opts.hide ?? []).slice(0, 100),
   })
   if (error) throw Object.assign(dbError(error, 'No pudimos cargar el catálogo. Revisa la conexión e intenta de nuevo.'), { cause: error })
   let items = ((data || []) as SearchRow[]).map(toCatalogItem)

@@ -26,7 +26,7 @@ const money = (v: number) => `Q${v.toFixed(2)}`
 
 /** One assistant turn: rules first, AI only when the rules don't understand, the database always decides. */
 export async function runAssistant(db: SupabaseClient, input: z.input<typeof assistantRequestSchema>, ai: Interpreter): Promise<AssistantResponse> {
-  const { message, context: previous, location } = assistantRequestSchema.parse(input)
+  const { message, context: previous, location, hide } = assistantRequestSchema.parse(input)
   let { context, action } = interpret(message, previous)
   let source: AssistantResponse['source'] = 'rules'
 
@@ -53,11 +53,11 @@ export async function runAssistant(db: SupabaseClient, input: z.input<typeof ass
   }
   const exclude = action === 'more' ? context.shown : []
   const search = async (ctx: AssistantContext) => {
-    const { data, error } = await db.rpc('search_catalog_v2', {
+    const { data, error } = await db.rpc('search_catalog_v3', {
       p_groups: searchGroups(ctx),
       p_lat: location?.latitude ?? null, p_lng: location?.longitude ?? null,
       p_radius_m: ctx.near ? 3000 : 50000, p_limit: 30, p_exclude: exclude,
-      p_require_all: false, p_without: ctx.without, p_avoid: avoidRegex(ctx.avoid),
+      p_require_all: false, p_without: ctx.without, p_avoid: avoidRegex(ctx.avoid), p_exclude_restaurants: hide,
     })
     if (error) throw dbError(error, 'No pudimos buscar en este momento. Intenta de nuevo.')
     return (data ?? []) as Row[]

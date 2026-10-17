@@ -48,3 +48,11 @@ export function authErrorMessage(error: { code?: string; message?: string; statu
       return 'No pudimos completar la operación. Intenta nuevamente; si continúa, comunica el error a soporte.'
   }
 }
+
+/** True when Google sign-in is enabled in Supabase Auth (public settings), so the button never leads to an error page. */
+export async function isGoogleEnabled(supabaseUrl: string, publicKey: string): Promise<boolean> {
+  try {
+    const r = await fetch(`${supabaseUrl.replace(/\/+$/, '')}/auth/v1/settings`, { headers: { apikey: publicKey } })
+    return r.ok && (await r.json())?.external?.google === true
+  } catch { return false }
+}

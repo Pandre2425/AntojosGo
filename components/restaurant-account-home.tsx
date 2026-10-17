@@ -3,6 +3,7 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import type { User } from '@supabase/supabase-js'
 import { webApi } from '@/lib/web-api'
+import { metadataName } from '@/shared/contracts/names'
 import type { OwnedRestaurant } from '@/shared/contracts/restaurants'
 import { getSupabase } from '@/lib/supabase/client'
 import { Button } from './ui/button'
@@ -36,7 +37,7 @@ export default function RestaurantAccountHome({ user }: { user: User }) {
     let active = true
     setLoading(true); setError('')
     // Personal profile and restaurant list fail independently.
-    webApi.ensureProfile(user.user_metadata.display_name || 'Mi cuenta')
+    webApi.ensureProfile(metadataName(user.user_metadata) || 'Mi cuenta')
       .then((profile) => { if (active) setDisplayName(profile.display_name) })
       .catch(() => { if (active) setDisplayName('Mi cuenta') })
     webApi.listRestaurants().then((rows) => { if (active) setRestaurants(rows) })

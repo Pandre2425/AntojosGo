@@ -7,6 +7,8 @@ import { requestUserLocation, type UserCoords } from '../../src/location'
 import { emptyContext, type AssistantContext } from '../../../shared/contracts/assistant'
 import type { AssistantItem } from '../../../modules/catalog/data/assistant'
 import { Input, colors, radius, spacing, type } from '../../src/ui'
+import { VoiceButton } from '../../src/voice-button'
+import { hiddenIds } from '../../src/hidden'
 
 type Turn = { id: number; from: 'user' | 'bot'; text: string; items?: AssistantItem[] }
 const SUGGESTIONS = ['Algo picante', 'Quiero desayunar cerca', 'Un postre frío', 'Comida típica barata']
@@ -28,12 +30,12 @@ export default function Assistant() {
     if (!clean || busy) return
     setText(''); setBusy(true); add({ from: 'user', text: clean })
     try {
-      let result = await api.assistant(clean, context.current, location.current ?? undefined)
+      let result = await api.assistant(clean, context.current, location.current ?? undefined, hiddenIds())
       if (result.needsLocation) {
         add({ from: 'bot', text: 'Buscando tu ubicación…' })
         location.current = await requestUserLocation()
         result = location.current
-          ? await api.assistant(clean, context.current, location.current)
+          ? await api.assistant(clean, context.current, location.current, hiddenIds())
           : { ...result, reply: 'No pude obtener tu ubicación. Busco en toda la zona si quitas «cerca», o revisa el permiso de ubicación.' }
       }
       context.current = result.context
@@ -72,6 +74,7 @@ export default function Assistant() {
         <Input accessibilityLabel="Escribe qué se te antoja" placeholder="Ej. algo picante cerca" value={text} onChangeText={setText} maxLength={300}
           editable={!busy} returnKeyType="send" onSubmitEditing={() => send(text)}
           style={{ flex: 1 }} />
+        <VoiceButton onText={t => void send(t)} onError={m => add({ from: 'bot', text: m })} />
         <Pressable accessibilityRole="button" accessibilityLabel="Enviar" onPress={() => send(text)} disabled={busy || !text.trim()}
           style={({ pressed }) => ({ backgroundColor: colors.orange, borderRadius: radius.sm, paddingHorizontal: spacing.lg, justifyContent: 'center', minHeight: 48, opacity: busy || !text.trim() ? 0.5 : pressed ? 0.8 : 1 })}>
           <Text style={[type.label, { color: colors.white }]}>Enviar</Text>

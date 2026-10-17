@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { Image, Linking, Modal, Pressable, ScrollView, Text, View } from 'react-native'
 import MapView, { Marker } from 'react-native-maps'
-import { useLocalSearchParams } from 'expo-router'
+import { router, useLocalSearchParams } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useSession } from '../../src/session'
 import { api } from '../../src/api'
@@ -13,12 +13,13 @@ import { directionsUrl, geoUrl, phoneUrl, whatsappUrl } from '../../../shared/co
 import { DISH_DETAIL_GROUPS, allergenNames, allergenStatus, dishDetails } from '../../../shared/contracts/menu'
 import { Action, Loading, Message, Page, Txt, colors, radius, spacing, type } from '../../src/ui'
 import { DishReviews, RatingLine, Stars } from '../../src/reviews'
+import { hideRestaurant } from '../../src/hidden'
 
 type Branch = PublicCatalogItem & PublicBranchExtras
 const money = (v: number) => `Q${v.toFixed(2)}`
 
 export default function SedeDetail() {
-  const { id } = useLocalSearchParams<{ id: string }>()
+  const { id, sorpresa } = useLocalSearchParams<{ id: string; sorpresa?: string }>()
   const [data, setData] = useState<{ branch: Branch; menu: PublicDish[] } | null>(null)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
@@ -40,11 +41,15 @@ export default function SedeDetail() {
   if (!data) return <Page><Message>{error}</Message><Action title="Reintentar" onPress={() => setRetry(v => v + 1)} /></Page>
   const b = data.branch
   return <Page>
+    {sorpresa ? <View accessibilityLiveRegion="polite" style={{ padding: spacing.md, borderRadius: radius.lg, backgroundColor: colors.orangeSoft, gap: 2 }}>
+      <Txt variant="label">🎲 ¡Sorpresa!</Txt><Txt>{sorpresa === '1' ? `Te proponemos ${b.name}.` : `Te proponemos ${b.name}: ${sorpresa}.`}</Txt>
+    </View> : null}
     <BranchHeader b={b} />
     <Directions b={b} />
     <ContactRow b={b} />
     {b.description ? <Txt>{b.description}</Txt> : null}
     <HoursInfo hours={b.opening_hours ?? []} />
+    <NotInterested restaurantId={b.restaurant_id} />
 
     <View style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', paddingTop: spacing.sm }}>
       <Txt variant="title" accessibilityRole="header" style={{ fontSize: 24 }}>Menú</Txt>
@@ -205,4 +210,23 @@ function FavoriteToggle({ branchId }: { branchId: string }) {
     finally { setBusy(false) }
   }
   return <Action title={busy ? '…' : saved ? 'Guardado ✓' : 'Guardar'} secondary onPress={toggle} disabled={busy} />
+}
+
+/** «No me interesa»: hides this restaurant from the diner's searches and assistant (undo in «Mi cuenta»). */
+function NotInterested({ restaurantId }: { restaurantId?: string }) {
+  const { session } = useSession()
+  const [busy, setBusy] = useState(false)
+  const [message, setMessage] = useState('')
+  if (!session || !restaurantId) return null
+  async function hide() {
+    setBusy(true); setMessage('')
+    try { await hideRestaurant(restaurantId!); setMessage('Listo: no volverá a aparecer en tus búsquedas. Puedes mostrarlo de nuevo en «Mi cuenta».'); setTimeout(() => router.back(), 1500) }
+    catch (e) { setMessage(e instanceof Error ? e.message : 'No pudimos ocultarlo.'); setBusy(false) }
+  }
+  return <View style={{ gap: spacing.xs }}>
+    <Pressable accessibilityRole="button" onPress={() => void hide()} disabled={busy} style={{ alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center' }}>
+      <Text style={[type.body, { color: colors.muted, textDecorationLine: 'underline' }]}>{busy ? 'Ocultando…' : '🙈 No me interesa este restaurante'}</Text>
+    </Pressable>
+    {message ? <Txt accessibilityLiveRegion="polite">{message}</Txt> : null}
+  </View>
 }

@@ -3,14 +3,14 @@
     "name": "AntojosGo",
     "slug": "antojosgo-mobile",
     "scheme": "antojosgo",
-    "version": "0.5.0",
+    "version": "0.6.0",
     "platforms": [
       "android"
     ],
     "userInterfaceStyle": "light",
     "android": {
       "package": "com.antojosgo.mobile",
-      "versionCode": 7,
+      "versionCode": 8,
       "softwareKeyboardLayoutMode": "resize",
       "permissions": [
         "ACCESS_COARSE_LOCATION",
@@ -18,7 +18,6 @@
       ],
       "blockedPermissions": [
         "android.permission.CAMERA",
-        "android.permission.RECORD_AUDIO",
         "android.permission.SYSTEM_ALERT_WINDOW",
         "android.permission.USE_BIOMETRIC",
         "android.permission.USE_FINGERPRINT",
@@ -49,7 +48,18 @@
           "resizeMode": "contain",
           "backgroundColor": "#F8F7F2"
         }
-      ]
+      ],
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "AntojosGo usa el micrófono solo mientras buscas por voz.",
+          "speechRecognitionPermission": "AntojosGo convierte tu voz en texto para buscar.",
+          "androidSpeechServicePackages": [
+            "com.google.android.googlequicksearchbox"
+          ]
+        }
+      ],
+      "expo-web-browser"
     ],
     "icon": "./assets/icon.png"
   }

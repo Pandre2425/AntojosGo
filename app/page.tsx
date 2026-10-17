@@ -11,6 +11,7 @@ import { AppDownloadButton } from "@/components/app-download"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Search, Compass, Heart, User, ChefHat, MessageCircle } from "lucide-react"
+import { metadataName } from "@/shared/contracts/names"
 const CustomerCatalog = dynamic(() => import("@/components/customer-catalog"), { loading: ModuleLoading })
 const FavoriteBranches = dynamic(() => import("@/components/customer-catalog").then((m) => m.FavoriteBranches), { loading: ModuleLoading })
 const CustomerAssistant = dynamic(() => import("@/components/customer-assistant"), { loading: ModuleLoading })
@@ -48,7 +49,7 @@ export default function AntojosGoApp() {
 
       <main className="mobile-content p-5 space-y-6">
         <ModuleBoundary key={activeTab} name="esta sección">
-          {activeTab === "home" && <MobileDiscover name={typeof user?.user_metadata?.display_name === "string" ? user.user_metadata.display_name : undefined} onSearch={(query) => { setInitialQuery(query); setActiveTab(query ? "assistant" : "search") }} />}
+          {activeTab === "home" && <MobileDiscover name={metadataName(user?.user_metadata)} onSearch={(query) => { setInitialQuery(query); setActiveTab(query ? "assistant" : "search") }} />}
           {activeTab === "assistant" && <CustomerAssistant initialMessage={initialQuery} />}
           {activeTab === "search" && <CustomerCatalog initialQuery={initialQuery} />}
           {activeTab === "favorites" && <FavoriteBranches onLogin={() => setShowAuth(true)} />}

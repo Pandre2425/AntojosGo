@@ -7,6 +7,8 @@ import type { AssistantResponse } from '../modules/catalog/data/assistant'
 import type { AccountProfile } from '../shared/contracts/accounts'
 import type { Feedback, FeedbackInput } from '../shared/contracts/feedback'
 import type { MyReview, OwnerReview, PublicReview, ReviewInput } from '../shared/contracts/reviews'
+import type { ReportedReview } from '../modules/admin/data/moderation'
+export type HiddenRestaurant = { restaurant_id: string; name: string; hidden_at: string }
 import type { BranchInput, BranchLocation, RestaurantBranch } from '../shared/contracts/branches'
 import type { Dish, DishInput, DishPatch } from '../shared/contracts/menu'
 import type { BusinessProfile, BusinessProfileInput, OwnedRestaurant } from '../shared/contracts/restaurants'
@@ -97,6 +99,10 @@ export function createApiClient({ baseUrl, getToken, refreshToken }: Options) {
     listFavorites: () => call<{ items: PublicCatalogItem[] }>('GET', '/me/favorites').then(r => r.items),
     addFavorite: (branchId: string) => call<{ ok: true }>('PUT', `/me/favorites/${branchId}`),
     removeFavorite: (branchId: string) => call<{ ok: true }>('DELETE', `/me/favorites/${branchId}`),
+    /** «No me interesa»: restaurants hidden from this diner's searches and assistant. */
+    listHidden: () => call<{ items: HiddenRestaurant[] }>('GET', '/me/hidden').then(r => r.items),
+    hideRestaurant: (restaurantId: string) => call<{ ok: true }>('PUT', `/me/hidden/${restaurantId}`),
+    unhideRestaurant: (restaurantId: string) => call<{ ok: true }>('DELETE', `/me/hidden/${restaurantId}`),
     /** The user's app rating (one per account; saving again replaces it). */
     myFeedback: () => call<{ item: Feedback | null }>('GET', '/me/feedback').then(r => r.item),
     saveFeedback: (input: FeedbackInput) => call<Feedback>('PUT', '/me/feedback', input),
@@ -109,12 +115,16 @@ export function createApiClient({ baseUrl, getToken, refreshToken }: Options) {
     ownerReviews: (restaurantId: string, page = 0) => call<{ items: OwnerReview[]; hasMore: boolean }>('GET', `/restaurants/${restaurantId}/reviews${qs({ page })}`),
     replyToReview: (reviewId: string, reply: string) => call<{ ok: true }>('PUT', `/reviews/${reviewId}/reply`, { reply }),
     reportReview: (reviewId: string, reason: string) => call<{ ok: true }>('POST', `/reviews/${reviewId}/report`, { reason }),
+    /** AntojosGo administrators: reported reviews. */
+    reportedReviews: () => call<{ items: ReportedReview[] }>('GET', '/admin/reviews').then(r => r.items),
+    moderateReview: (reviewId: string, action: 'keep' | 'hide' | 'unhide') => call<{ ok: true }>('POST', `/admin/reviews/${reviewId}`, { action }),
     /** Diner assistant turn; send back the returned context with the next message. */
-    assistant: (message: string, context?: AssistantContext, location?: { latitude: number; longitude: number }) =>
-      call<AssistantResponse>('POST', '/assistant', { message, context, location }, {}, false),
+    assistant: (message: string, context?: AssistantContext, location?: { latitude: number; longitude: number }, hide?: readonly string[]) =>
+      call<AssistantResponse>('POST', '/assistant', { message, context, location, hide }, {}, false),
     searchCatalog: (params: {
       q?: string; lat?: number; lng?: number; radiusMeters?: number; limit?: number
       category?: string; tags?: readonly string[]; without?: readonly string[]; avoid?: readonly string[]; openNow?: boolean; sort?: 'relevance' | 'price'
+      minPrice?: number; maxPrice?: number; hide?: readonly string[]
     }) =>
       call<{ items: PublicCatalogItem[]; count: number }>('GET', `/catalog/search${qs(params)}`, undefined, {}, false),
     getPublicBranch: (id: string) => call<{ branch: PublicCatalogItem & PublicBranchExtras; menu: PublicDish[] }>('GET', `/branches/${id}/public`, undefined, {}, false),

@@ -7,6 +7,7 @@ import { HOME_OPTIONS, type HomeOption } from '@/shared/contracts/home'
 import type { MapBranch } from './branches-overview-map'
 import { Button } from './ui/button'
 import { AppDownloadBanner } from './app-download'
+import VoiceButton from './voice-button'
 
 const BranchDetail = dynamic(() => import('./customer-catalog').then(m => m.BranchDetail))
 const BranchesOverviewMap = dynamic(() => import('./branches-overview-map'), { ssr: false, loading: () => <div className="h-80 animate-pulse rounded-2xl bg-stone-200" /> })
@@ -33,6 +34,7 @@ export default function MobileDiscover({ name, onSearch }: { name?: string; onSe
         <label htmlFor="craving" className="sr-only">¿Qué estás buscando?</label>
         <input id="craving" className="min-h-12 min-w-0 flex-1 rounded-2xl bg-white px-4 text-[#263D35] outline-none focus-visible:ring-2 focus-visible:ring-[#EFAE6E]"
           placeholder="Algo calientito, una pizza cerca…" value={query} onChange={(e) => setQuery(e.target.value)} maxLength={200} />
+        <VoiceButton className="h-12 w-12 rounded-2xl border-0" onText={(t) => onSearch(t)} />
         <button type="submit" disabled={!query.trim()} className="flex min-h-12 items-center gap-2 rounded-2xl bg-primary px-4 font-semibold disabled:opacity-60">
           <Sparkles className="h-5 w-5" /><span className="hidden sm:inline">Preguntar</span><span className="sr-only sm:hidden">Preguntar</span></button>
       </form>

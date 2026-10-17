@@ -4,8 +4,11 @@ import { useEffect, useState } from "react"
 import type { User as AccountUser } from "@supabase/supabase-js"
 import { getSupabase } from "@/lib/supabase/client"
 import { webApi } from "@/lib/web-api"
+import { metadataName } from "@/shared/contracts/names"
 import { Button } from "@/components/ui/button"
 import AppFeedback from "@/components/app-feedback"
+import TextSizeControl from "@/components/text-size-control"
+import type { HiddenRestaurant } from "@/lib/api-client"
 
 /** Diner account: only data that really exists (name and email). */
 export default function UserProfile({ user, onLogin }: { user: AccountUser | null; onLogin: () => void }) {
@@ -15,7 +18,7 @@ export default function UserProfile({ user, onLogin }: { user: AccountUser | nul
   useEffect(() => {
     let active = true
     setAccountName(""); setAccountError("")
-    if (user) webApi.ensureProfile(user.user_metadata.display_name || "Mi cuenta")
+    if (user) webApi.ensureProfile(metadataName(user.user_metadata) || "Mi cuenta")
       .then((profile) => { if (active) setAccountName(profile.display_name) })
       .catch((error) => { if (active) setAccountError(error.message) })
     return () => { active = false }
@@ -31,6 +34,7 @@ export default function UserProfile({ user, onLogin }: { user: AccountUser | nul
   if (!user) return <div className="space-y-3">
     <p className="text-sm text-muted-foreground">No necesitas cuenta para buscar restaurantes. Crea una si también administras un negocio.</p>
     <Button onClick={onLogin}>Iniciar sesión o crear cuenta</Button>
+    <TextSizeControl />
   </div>
   return <div className="space-y-4">
     {accountError && <p role="alert" className="text-sm text-red-700">{accountError}</p>}
@@ -39,6 +43,28 @@ export default function UserProfile({ user, onLogin }: { user: AccountUser | nul
       <Button variant="outline" onClick={() => { window.location.href = "/restaurant" }}>Administrar mi restaurante</Button>
       <Button variant="outline" disabled={busy} onClick={signOut}>Cerrar sesión</Button>
     </div>
+    <HiddenRestaurants />
+    <TextSizeControl />
     <AppFeedback />
   </div>
+}
+
+/** «No me interesa»: restaurants left out of this diner's searches and assistant; each can be shown again. */
+function HiddenRestaurants() {
+  const [items, setItems] = useState<HiddenRestaurant[] | null>(null)
+  const [error, setError] = useState("")
+  useEffect(() => { webApi.listHidden().then(setItems).catch((e) => setError(e.message)) }, [])
+  if (!items?.length && !error) return null
+  async function show(id: string) {
+    setError("")
+    try { await webApi.unhideRestaurant(id); setItems((rows) => rows && rows.filter((r) => r.restaurant_id !== id)) }
+    catch (e) { setError(e instanceof Error ? e.message : "No pudimos mostrarlo de nuevo.") }
+  }
+  return <section className="space-y-2 rounded-2xl border bg-white p-4">
+    <h2 className="text-sm font-semibold text-[#173F35]">Restaurantes que no te interesan</h2>
+    <p className="text-xs text-stone-600">No aparecen en tus búsquedas ni en el asistente.</p>
+    {error && <p role="alert" className="text-sm text-red-700">{error}</p>}
+    <ul className="divide-y">{items?.map((r) => <li key={r.restaurant_id} className="flex items-center justify-between gap-2 py-2 text-sm">
+      <span>{r.name}</span><Button size="sm" variant="outline" onClick={() => show(r.restaurant_id)}>Mostrar de nuevo</Button></li>)}</ul>
+  </section>
 }

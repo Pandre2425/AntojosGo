@@ -5,6 +5,7 @@ import { router } from 'expo-router'
 import { api } from '../../src/api'
 import { mapsEnabled } from '../../src/maps'
 import { NotificationsBell } from '../../src/notifications'
+import { VoiceButton } from '../../src/voice-button'
 import { Action, Input, Page, ScreenBoundary, Title, Txt, colors, radius, spacing } from '../../src/ui'
 import { HOME_OPTIONS, type HomeOption } from '../../../shared/contracts/home'
 import type { PublicCatalogItem } from '../../../modules/catalog/data/public-catalog'
@@ -41,6 +42,7 @@ export default function Home() {
     <View style={{ flexDirection: 'row', gap: spacing.sm }}>
       <Input accessibilityLabel="¿Qué estás buscando?" placeholder="Algo calientito, una pizza…" value={query} onChangeText={setQuery}
         maxLength={200} returnKeyType="search" onSubmitEditing={submit} style={{ flex: 1 }} />
+      <VoiceButton onText={t => ask(t)} />
       <Action title="Preguntar" onPress={submit} disabled={!query.trim()} style={{ paddingHorizontal: spacing.lg }} />
     </View>
 

@@ -7,6 +7,8 @@ import type { AssistantItem } from '@/modules/catalog/data/assistant'
 import { BranchDetail } from './customer-catalog'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
+import VoiceButton from './voice-button'
+import { useAccountSession } from '@/hooks/use-account-session'
 
 type Turn = { id: number; from: 'user' | 'bot'; text: string; items?: AssistantItem[] }
 type Coords = { latitude: number; longitude: number }
@@ -25,6 +27,10 @@ export default function CustomerAssistant({ initialMessage = '' }: { initialMess
   const [selected, setSelected] = useState<string | null>(null)
   const context = useRef<AssistantContext>(emptyContext())
   const location = useRef<Coords | null>(null)
+  // «No me interesa» restaurants of the signed-in diner are left out of the answers.
+  const hidden = useRef<string[]>([])
+  const { user } = useAccountSession()
+  useEffect(() => { hidden.current = []; if (user) webApi.listHidden().then(r => { hidden.current = r.map(x => x.restaurant_id) }).catch(() => {}) }, [user?.id])
   const nextId = useRef(1)
   const end = useRef<HTMLDivElement>(null)
   useEffect(() => { end.current?.scrollIntoView({ behavior: 'smooth', block: 'end' }) }, [turns, busy])
@@ -37,10 +43,10 @@ export default function CustomerAssistant({ initialMessage = '' }: { initialMess
     if (!clean || busy) return
     setText(''); setBusy(true); add({ from: 'user', text: clean })
     try {
-      let result = await webApi.assistant(clean, context.current, location.current ?? undefined)
+      let result = await webApi.assistant(clean, context.current, location.current ?? undefined, hidden.current)
       if (result.needsLocation) {
         location.current = await locate()
-        result = location.current ? await webApi.assistant(clean, context.current, location.current)
+        result = location.current ? await webApi.assistant(clean, context.current, location.current, hidden.current)
           : { ...result, reply: 'No pude obtener tu ubicación. Revisa el permiso del navegador o pide lo mismo sin «cerca».' }
       }
       context.current = result.context
@@ -68,6 +74,7 @@ export default function CustomerAssistant({ initialMessage = '' }: { initialMess
     </div>
     <form onSubmit={submit} className="sticky bottom-20 flex gap-2 bg-background py-2">
       <Input aria-label="Escribe qué se te antoja" placeholder="Ej. algo picante cerca" value={text} maxLength={300} disabled={busy} onChange={(e) => setText(e.target.value)} />
+      <VoiceButton onText={(t) => void send(t)} onError={(m) => add({ from: 'bot', text: m })} />
       <Button type="submit" disabled={busy || !text.trim()}><Send className="h-4 w-4" /><span className="sr-only">Enviar</span></Button>
     </form>
   </div>

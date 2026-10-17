@@ -98,6 +98,8 @@ export const assistantRequestSchema = z.object({
   message: z.string().trim().min(1, 'Escribe qué se te antoja.').max(300),
   context: assistantContextSchema.default({}),
   location: z.object({ latitude: z.number().finite().min(-90).max(90), longitude: z.number().finite().min(-180).max(180) }).optional(),
+  /** Restaurants the diner marked «No me interesa». */
+  hide: z.array(z.string().uuid()).max(100).default([]),
 })
 
 export type AssistantAction = 'search' | 'more' | 'menu' | 'hello' | 'thanks' | 'unknown'

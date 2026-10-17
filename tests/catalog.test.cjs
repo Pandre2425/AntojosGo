@@ -23,7 +23,7 @@ test('catalog search delegates filters to the database function', async () => {
     if (name === 'get_restaurant_ratings') return { data: [{ restaurant_id: row.restaurant_id, rating_avg: '4.50', rating_count: 2 }], error: null }
     call = { name, args }; return { data: [row], error: null } } }
   const items = await listPublishedCatalog(client, { query: '  pepian ', limit: 500, location: { latitude: 14.8, longitude: -91.5, radiusKm: 2.5 }, tags: ['picante'], without: ['mani'], avoid: ['Cebolla', 'x.*'] })
-  assert.equal(call.name, 'search_catalog_v2')
+  assert.equal(call.name, 'search_catalog_v3')
   assert.deepEqual(call.args.p_groups, [{ re: '\\m(pepian)', tags: [] }, { re: '', tags: ['picante'] }])
   assert.equal(call.args.p_require_all, true); assert.deepEqual(call.args.p_without, ['mani'])
   assert.equal(call.args.p_avoid, '\\m(cebolla)') // unsafe "x.*" dropped, text sanitized
@@ -48,4 +48,26 @@ test('public menu converts prices and skips malformed ids', async () => {
 test('branch detail rejects malformed ids without querying', async () => {
   const client = { rpc: async () => { throw new Error('should not query') } }
   assert.equal(await getPublishedBranch(client, 'not-a-uuid'), null)
+})
+
+test('price range and «No me interesa» reach the search function', async () => {
+  let args
+  const client = { rpc: async (name, a) => { if (name === 'search_catalog_v3') args = a; return { data: [], error: null } } }
+  const id = '11111111-1111-4111-8111-111111111111'
+  await listPublishedCatalog(client, { minPrice: 10, maxPrice: 50, hide: [id] })
+  assert.equal(args.p_min_price, 10); assert.equal(args.p_max_price, 50); assert.deepEqual(args.p_exclude_restaurants, [id])
+  const { catalogQuerySchema } = require('../shared/contracts/catalog-query.ts')
+  assert.equal(catalogQuerySchema.safeParse({ minPrice: '60', maxPrice: '20' }).success, false)
+  assert.equal(catalogQuerySchema.safeParse({ hide: 'no-es-uuid' }).success, false)
+  const parsed = catalogQuerySchema.parse({ minPrice: '', maxPrice: '35', hide: id })
+  assert.equal(parsed.minPrice, undefined); assert.equal(parsed.maxPrice, 35); assert.deepEqual(parsed.hide, [id])
+})
+
+test('Sorpréndeme picks among the results and avoids repeating the last one', () => {
+  const { pickSurprise, PRICE_RANGES } = require('../shared/contracts/catalog-query.ts')
+  const items = [{ id: 'a' }, { id: 'b' }, { id: 'c' }]
+  assert.equal(pickSurprise([], null), null)
+  assert.equal(pickSurprise([{ id: 'a' }], 'a').id, 'a') // only option: repeat rather than nothing
+  for (const r of [0, 0.5, 0.99]) assert.notEqual(pickSurprise(items, 'b', () => r).id, 'b')
+  assert.ok(PRICE_RANGES.every(p => (p.min ?? 0) < (p.max ?? Infinity)))
 })

@@ -1,10 +1,12 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Image } from 'react-native'
 import { supabase } from './supabase'
 import { useSession } from './session'
 import { Action, Card, Field, Loading, Message, Page, Title } from './ui'
 import { ServerSettings } from './server-settings'
 import { getServerUrl } from './server'
+import { googleAvailable, signInWithGoogle } from './google-auth'
+import { AccessibilityCard } from './account-extras'
 import { accountEmailSent, accountLink, authErrorMessage, loginSchema, registrationSchema, sendAccountEmail } from '../../lib/auth-validation'
 /** Sign in / sign up. The account tab shows it when there is no session. */
 export function AccessForm() {
@@ -14,6 +16,8 @@ export function AccessForm() {
   const [message, setMessage] = useState('')
   const [busy, setBusy] = useState(false)
   const [unconfirmed, setUnconfirmed] = useState(false)
+  const [google, setGoogle] = useState(false)
+  useEffect(() => { void googleAvailable().then(setGoogle) }, [])
   const lock = useRef(false)
   if (!ready) return <Page><Loading /></Page>
   async function submit() {
@@ -39,9 +43,16 @@ export function AccessForm() {
     } catch { setMessage('No pudimos conectar. Revisa la conexión e intenta nuevamente.') }
     finally { lock.current = false; setBusy(false) }
   }
+  async function google_() {
+    if (lock.current) return
+    lock.current = true; setBusy(true); setMessage('')
+    try { const error = await signInWithGoogle(); if (error) setMessage(error) }
+    finally { lock.current = false; setBusy(false) }
+  }
   const field = (key: keyof typeof form) => (value: string) => setForm(v => ({ ...v, [key]: value }))
   return <Page tab><Image source={require('./assets/logo.png')} accessibilityIgnoresInvertColors style={{ width: 72, height: 72, borderRadius: 16 }} /><Title>Mi cuenta</Title><Message>Para buscar no necesitas cuenta. Inicia sesión para guardar favoritos o administrar tu restaurante.</Message><Card>
     <Title>{register ? 'Crea tu cuenta' : 'Bienvenido'}</Title>
+    {google ? <><Action title="Continuar con Google" secondary onPress={() => void google_()} disabled={busy} /><Message>o con tu correo:</Message></> : null}
     {register && <Field label="Tu nombre" value={form.name} onChangeText={field('name')} maxLength={100} editable={!busy} />}
     <Field label="Correo electrónico" value={form.email} onChangeText={field('email')} keyboardType="email-address" autoCapitalize="none" autoCorrect={false} maxLength={254} editable={!busy} />
     <Field label="Contraseña" value={form.password} onChangeText={field('password')} secureTextEntry autoCapitalize="none" maxLength={128} editable={!busy} />
@@ -51,5 +62,5 @@ export function AccessForm() {
     {!register && <Action title="¿Olvidaste tu contraseña?" secondary onPress={() => emailLink('reset')} disabled={busy} />}
     {unconfirmed && <Action title="Reenviar confirmación" secondary onPress={() => emailLink('resend')} disabled={busy} />}
     <Action title={register ? 'Ya tengo cuenta' : 'Crear una cuenta'} secondary onPress={() => { setRegister(!register); setMessage('') }} disabled={busy} />
-  </Card><ServerSettings /></Page>
+  </Card><AccessibilityCard /><ServerSettings /></Page>
 }

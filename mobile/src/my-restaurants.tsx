@@ -5,7 +5,8 @@ import { supabase } from './supabase'
 import { Action, Card, Field, Loading, Message, Page, Title, Txt } from './ui'
 import { api } from './api'
 import { AppFeedback } from './app-feedback'
-import { displayNameSchema } from '../../shared/contracts/names'
+import { AccessibilityCard, HiddenRestaurantsCard } from './account-extras'
+import { displayNameSchema, metadataName } from '../../shared/contracts/names'
 import type { OwnedRestaurant } from '../../shared/contracts/restaurants'
 /** Signed-in account tab: the user's restaurants and sign-out. */
 export function MyRestaurants() {
@@ -21,8 +22,8 @@ export function MyRestaurants() {
     if (!session) return
     let active = true; setLoading(true); setError('')
     api.listRestaurants().then(data => { if (active) setRows(data) }).catch(e => { if (active) setError(e.message) }).finally(() => { if (active) setLoading(false) })
-    const displayName = session.user.user_metadata?.display_name
-    if (displayNameSchema.safeParse(displayName).success) api.ensureProfile(displayName).catch(() => { if (active) setError('Tu sesión está activa, pero no pudimos completar el perfil. Puedes reintentar.') })
+    const displayName = metadataName(session.user.user_metadata)
+    if (displayName && displayNameSchema.safeParse(displayName).success) api.ensureProfile(displayName).catch(() => { if (active) setError('Tu sesión está activa, pero no pudimos completar el perfil. Puedes reintentar.') })
     return () => { active = false }
   }, [session?.user.id, retry])
   if (!ready) return <Page><Loading /></Page>
@@ -40,6 +41,8 @@ export function MyRestaurants() {
     <Message>{error}</Message>{error && <Action title="Reintentar" onPress={() => setRetry(v => v + 1)} disabled={busy} />}
     {loading ? <Loading /> : rows.length ? rows.map(row => <Card key={row.id}><Title>{row.name}</Title><Action title="Administrar negocio y sedes" onPress={() => router.push({ pathname: '/business/[id]', params: { id: row.id } })} disabled={busy} /></Card>) : <Message>Aún no tienes restaurantes registrados.</Message>}
     <Card><Field label="Nombre del nuevo restaurante" value={name} onChangeText={setName} maxLength={100} editable={!busy} /><Action title={busy ? 'Guardando…' : 'Registrar restaurante'} onPress={create} disabled={busy} /></Card>
+    <HiddenRestaurantsCard />
+    <AccessibilityCard />
     <AppFeedback />
     <Action title="Cerrar sesión" secondary disabled={busy} onPress={async () => { if (lock.current) return; lock.current = true; setBusy(true); try { const result = await supabase!.auth.signOut(); if (result.error) setError('No pudimos cerrar sesión. Reintenta.') } catch { setError('No pudimos cerrar sesión.') } finally { lock.current = false; setBusy(false) } }} />
   </Page>

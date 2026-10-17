@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
-import { ArrowLeft, Heart, MapPin, Search, SlidersHorizontal } from 'lucide-react'
+import { ArrowLeft, Dices, EyeOff, Heart, MapPin, Search, SlidersHorizontal } from 'lucide-react'
 import { useAccountSession } from '@/hooks/use-account-session'
 import { webApi } from '@/lib/web-api'
 import { ApiError } from '@/lib/api-client'
@@ -12,6 +12,8 @@ import { Button } from './ui/button'
 import { Input } from './ui/input'
 import FoodLoader from './food-loader'
 import { DishReviews, RatingSummary } from './reviews'
+import VoiceButton from './voice-button'
+import { PRICE_RANGES, pickSurprise } from '@/shared/contracts/catalog-query'
 
 type Coords = { latitude: number; longitude: number }
 const distance = (km?: number) => km == null ? null : km < 1 ? `${Math.round(km * 1000)} m en línea recta` : `${km.toFixed(1)} km en línea recta`
@@ -29,14 +31,25 @@ export default function CustomerCatalog({ initialQuery = '' }: { initialQuery?: 
   const [showFilters, setShowFilters] = useState(false)
   const [types, setTypes] = useState<string[]>([])
   useEffect(() => { webApi.listBusinessTypes().then(setTypes).catch(() => {}) }, [])
+  const { user } = useAccountSession()
+  const [hidden, setHidden] = useState<string[]>([])
+  const [surprise, setSurprise] = useState<PublicCatalogItem | null>(null)
+  // «No me interesa»: the signed-in diner's hidden restaurants never appear in results.
+  useEffect(() => {
+    if (!user) { setHidden([]); return }
+    let active = true
+    webApi.listHidden().then(rows => { if (active) { const ids = rows.map(r => r.restaurant_id); setHidden(ids); void load(query.trim(), coords, filters, ids) } }).catch(() => {})
+    return () => { active = false }
+  }, [user?.id])
   const request = useRef(0)
-  const activeCount = (filters.category ? 1 : 0) + (filters.openNow ? 1 : 0) + filters.tags.length + filters.without.length
+  const activeCount = (filters.category ? 1 : 0) + (filters.openNow ? 1 : 0) + (filters.price !== null ? 1 : 0) + filters.tags.length + filters.without.length
 
-  async function load(text: string, location: Coords | null, f: Filters = filters) {
+  async function load(text: string, location: Coords | null, f: Filters = filters, hide: string[] = hidden) {
     const current = ++request.current
     setLoading(true); setError('')
     try {
-      const base = { q: text, limit: 40, category: f.category || undefined, tags: f.tags, without: f.without, openNow: f.openNow }
+      const range = f.price === null ? null : PRICE_RANGES[f.price] as { min?: number; max?: number }
+      const base = { q: text, limit: 40, category: f.category || undefined, tags: f.tags, without: f.without, openNow: f.openNow, minPrice: range?.min, maxPrice: range?.max, hide }
       const result = await webApi.searchCatalog(location ? { ...base, lat: location.latitude, lng: location.longitude, radiusMeters: 50000 } : base)
       if (current === request.current) setItems(result.items)
     } catch (e) {
@@ -58,16 +71,31 @@ export default function CustomerCatalog({ initialQuery = '' }: { initialQuery?: 
     )
   }
 
-  if (selected) return <BranchDetail id={selected} onBack={() => setSelected(null)} />
+  function surpriseMe() {
+    const pick = pickSurprise(items, surprise?.id)
+    if (!pick) { setNote('No hay opciones con esta búsqueda y estos filtros. Quita algún filtro y vuelve a intentar.'); return }
+    setSurprise(pick); setSelected(pick.id)
+  }
+  function hideRestaurant(restaurantId: string) {
+    const next = [...hidden, restaurantId]
+    setHidden(next); setSelected(null); setSurprise(null)
+    setNote('Listo: no volverá a aparecer en tus búsquedas. Puedes mostrarlo de nuevo en «Mi cuenta».')
+    void load(query.trim(), coords, filters, next)
+  }
+
+  if (selected) return <BranchDetail id={selected} onBack={() => { setSelected(null); setSurprise(null) }} onHide={user ? hideRestaurant : undefined}
+    surprise={surprise?.id === selected ? surprise : null} onSurpriseAgain={surprise ? surpriseMe : undefined} />
   return <div className="space-y-4">
     <form onSubmit={submit} className="flex gap-2" role="search">
       <Input aria-label="Qué se te antoja" placeholder="Ej. pepián, café, Quetzaltenango…" value={query} maxLength={200} onChange={(e) => setQuery(e.target.value)} />
+      <VoiceButton onText={(t) => { setQuery(t); setNote(''); void load(t, coords) }} onError={setNote} />
       <Button type="submit" disabled={loading}><Search className="h-4 w-4" /><span className="sr-only sm:not-sr-only sm:ml-1">Buscar</span></Button>
     </form>
     <div className="flex flex-wrap gap-2">
       <Button variant="outline" onClick={locate} disabled={loading}><MapPin className="mr-1 h-4 w-4" />Usar mi ubicación</Button>
       <Button variant={activeCount ? 'default' : 'outline'} aria-expanded={showFilters} aria-controls="diner-filters" onClick={() => setShowFilters((v) => !v)}>
         <SlidersHorizontal className="mr-1 h-4 w-4" />Filtros{activeCount ? ` (${activeCount})` : ''}</Button>
+      <Button variant="outline" onClick={surpriseMe} disabled={loading} className="border-[#BD481F] text-[#9a3a18]"><Dices className="mr-1 h-4 w-4" />Sorpréndeme</Button>
     </div>
     {showFilters && <div id="diner-filters" className="space-y-3 rounded-2xl border bg-white p-4">
       <div className="flex flex-wrap items-center gap-2">
@@ -76,6 +104,8 @@ export default function CustomerCatalog({ initialQuery = '' }: { initialQuery?: 
           <select className="h-9 rounded-md border bg-white px-2 text-sm" value={filters.category} onChange={(e) => applyFilters({ ...filters, category: e.target.value })}>
             <option value="">Todos</option>{types.map((c) => <option key={c} value={c}>{c}</option>)}</select></label>
       </div>
+      <fieldset className="flex flex-wrap items-center gap-2"><legend className="sr-only">Precio</legend><span className="text-sm text-stone-600">Precio</span>
+        {PRICE_RANGES.map((r, i) => <FilterChip key={r.label} on={filters.price === i} onClick={() => applyFilters({ ...filters, price: filters.price === i ? null : i })}>{r.label}</FilterChip>)}</fieldset>
       <fieldset className="flex flex-wrap items-center gap-2"><legend className="sr-only">Etiquetas</legend><span className="text-sm text-stone-600">Quiero</span>
         {DISH_TAGS.map((t) => <FilterChip key={t} on={filters.tags.includes(t)} onClick={() => applyFilters({ ...filters, tags: toggle(filters.tags, t) })}>{DISH_TAG_LABELS[t]}</FilterChip>)}</fieldset>
       <fieldset className="flex flex-wrap items-center gap-2"><legend className="sr-only">Alérgenos a evitar</legend><span className="text-sm text-stone-600">Sin</span>
@@ -90,8 +120,8 @@ export default function CustomerCatalog({ initialQuery = '' }: { initialQuery?: 
   </div>
 }
 
-type Filters = { category: string; openNow: boolean; tags: DishTag[]; without: Allergen[] }
-const noFilters: Filters = { category: '', openNow: false, tags: [], without: [] }
+type Filters = { category: string; openNow: boolean; tags: DishTag[]; without: Allergen[]; price: number | null }
+const noFilters: Filters = { category: '', openNow: false, tags: [], without: [], price: null }
 
 function FilterChip({ on, onClick, children, tone = 'green' }: { on: boolean; onClick: () => void; children: ReactNode; tone?: 'green' | 'red' }) {
   const active = tone === 'red' ? 'border-[#BD481F] bg-[#BD481F] text-white' : 'border-[#173F35] bg-[#173F35] text-white'
@@ -166,7 +196,11 @@ function FavoriteButton({ branchId }: { branchId: string }) {
   return <div><Button variant="outline" aria-pressed={saved} disabled={busy} onClick={toggle}><Heart className={`mr-1 h-4 w-4 ${saved ? 'fill-primary text-primary' : ''}`} />{saved ? 'En favoritos' : 'Guardar en favoritos'}</Button>{error && <p role="alert" className="text-sm text-red-700">{error}</p>}</div>
 }
 
-export function BranchDetail({ id, onBack }: { id: string; onBack: () => void }) {
+export function BranchDetail({ id, onBack, onHide, surprise, onSurpriseAgain }: {
+  id: string; onBack: () => void; onHide?: (restaurantId: string) => void; surprise?: PublicCatalogItem | null; onSurpriseAgain?: () => void
+}) {
+  const [hiding, setHiding] = useState(false)
+  const [hideError, setHideError] = useState('')
   const [data, setData] = useState<{ branch: PublicCatalogItem & PublicBranchExtras; menu: PublicDish[] } | null>(null)
   const [error, setError] = useState('')
   const [retry, setRetry] = useState(0)
@@ -180,12 +214,20 @@ export function BranchDetail({ id, onBack }: { id: string; onBack: () => void })
   const b = data?.branch
   return <div className="space-y-4">
     <Button variant="ghost" onClick={onBack}><ArrowLeft className="mr-1 h-4 w-4" />Volver a resultados</Button>
+    {surprise && <div role="status" className="flex flex-wrap items-center gap-2 rounded-2xl border border-[#BD481F]/40 bg-[#BD481F]/5 p-3 text-sm">
+      <Dices className="h-5 w-5 text-[#BD481F]" /><span className="flex-1"><b>¡Sorpresa!</b> Te proponemos {surprise.name}{surprise.dish ? `: ${surprise.dish.name} (Q${surprise.dish.price.toFixed(2)})` : ''}.</span>
+      {onSurpriseAgain && <Button size="sm" variant="outline" onClick={onSurpriseAgain}>Otra opción</Button>}</div>}
     {error ? <div role="alert"><p>{error}</p><Button variant="outline" onClick={() => setRetry((v) => v + 1)}>Reintentar</Button></div> : !b ? <FoodLoader label="Cargando sede…" /> : <>
       <section className="overflow-hidden rounded-2xl border bg-white">
         {b.cover_url && <img src={b.cover_url} alt={`Foto de ${b.name}`} className="h-48 w-full object-cover sm:h-64" />}
         <div className="space-y-2 p-5">
         <div className="flex items-center gap-3"><Logo url={b.logo_url} name={b.name} size="h-16 w-16" /><div><h2 className="text-2xl font-bold">{b.name}</h2><RatingSummary rating={b.rating} /></div></div>
-        <FavoriteButton branchId={b.id} />
+        <div className="flex flex-wrap gap-2"><FavoriteButton branchId={b.id} />
+          {onHide && b.restaurant_id && <Button variant="ghost" disabled={hiding} onClick={async () => {
+            setHiding(true); setHideError('')
+            try { await webApi.hideRestaurant(b.restaurant_id!); onHide(b.restaurant_id!) } catch (e) { setHideError(e instanceof Error ? e.message : 'No pudimos ocultarlo.') } finally { setHiding(false) }
+          }}><EyeOff className="mr-1 h-4 w-4" />No me interesa</Button>}</div>
+        {hideError && <p role="alert" className="text-sm text-red-700">{hideError}</p>}
         <p className="font-medium">{b.branch_name}{b.category ? ` · ${b.category}` : ''}</p>
         <p className="text-sm">{b.address}, {b.municipality}, {b.department}</p>
         <p className="text-sm text-muted-foreground">{b.description || 'Sin descripción.'}</p>
