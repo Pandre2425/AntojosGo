@@ -27,6 +27,7 @@ AntojosGo ayuda a los comensales de Guatemala (piloto en Quetzaltenango) a encon
 | **Cómo llegar** (Google Maps con la ruta; «abrir en otra app» para Waze) | ✅ | ✅ | |
 | Menú con **«Ver detalles»**: foto grande, tipo de plato, cocina, características, ingredientes, alérgenos | ➖ | ✅ | La web muestra los mismos datos en la lista |
 | Favoritos | ✅ | ✅ | Requiere cuenta |
+| **Reseñas de platillos**: 1 a 5 estrellas enteras y comentario opcional; promedio con medias estrellas (★★★½ 3.5) en el platillo, el restaurante y los resultados | ✅ | ✅ | Anónimas; una por cuenta y platillo, editable; requiere cuenta confirmada. El restaurante muestra el promedio de todos sus platillos |
 | Aviso de nueva versión de la app | — | ✅ | Solo acepta enlaces de los Releases del repositorio |
 | Campana de notificaciones y descarga del APK («Próximamente en Google Play») | ✅ | ✅ | Avisos editables en `public/announcements.json` |
 | **Calificar la app** (1 a 5 estrellas) y comentario opcional de mejora | ✅ | ✅ | En «Mi cuenta» (y en la página del restaurante en la web). Una por cuenta; al volver a enviar se reemplaza |
@@ -44,6 +45,7 @@ AntojosGo ayuda a los comensales de Guatemala (piloto en Quetzaltenango) a encon
 | Detalles separados: **tipo de plato, cocina, características, ingredientes**, cada uno con opciones rápidas y espacio para escribir los propios (primero se escribe, después se eligen) | ✅ | ✅ | Ej.: «Colombiana», «Bandeja paisa» |
 | **Alérgenos**: interruptor «contiene alérgenos», lista común + alérgenos escritos por el restaurante (ej. mostaza) | ✅ | ✅ | Sin declarar nunca se muestra como «seguro» |
 | Mostrar/ocultar, marcar agotado, eliminar platillos | ✅ | ✅ | Al eliminar se borra también su foto |
+| **Reseñas**: ver todas, responder públicamente y reportar | ✅ | ✅ | No puede borrar ni ocultar reseñas; tampoco reseñar sus propios platillos |
 
 ### Calidad y seguridad
 
@@ -136,12 +138,22 @@ AntojosGo ayuda a los comensales de Guatemala (piloto en Quetzaltenango) a encon
 
 ### Para el piloto
 
-6. **Publicar la app 0.4.1** (logo e ícono, animación de carga, inicio nuevo, pestañas, formulario de platillos, «Cómo llegar», «Ver detalles», campana, recuperación de contraseña, calificar la app): subirla a Drive y, para el aviso automático, a GitHub Releases.
+6. **Publicar la app 0.5.0** (reseñas, logo e ícono, animación de carga, inicio nuevo, pestañas, formulario de platillos, «Cómo llegar», «Ver detalles», campana, recuperación de contraseña, calificar la app): subirla a Drive y, para el aviso automático, a GitHub Releases.
 7. ✅ Despublicadas «QA Claude Cocina» y «QA Antojos Cocina» (16 de octubre). Falta decidir «Restaurante prueba1».
 8. Mover «Pablo pizza» a una cuenta con correo real (la actual usa un correo inventado).
 9. Lista «Para que te encuentren» para el restaurante (qué le falta para aparecer en búsquedas).
 10. ✅ «Copiar el lunes a todos los días» en el horario (web y app).
 11. Pulir la web: inicio y Explorar con el mismo nivel visual que la app; «Ver detalles» del platillo en la web.
+
+### Del documento del producto (PRODUCT-SPEC) que aún falta
+
+- «Sorpréndeme»: elegir al azar entre las opciones que cumplen los filtros.
+- Restaurantes «no me interesa» guardados en la cuenta (hoy el asistente solo recuerda restricciones durante la conversación).
+- Búsqueda por voz.
+- Iniciar sesión con Google.
+- Filtro por rango de precio (hoy solo se ordena por precio).
+- Revisar las reseñas reportadas (hoy quedan marcadas; falta un panel de administración).
+- Ajustes básicos de accesibilidad (por ejemplo, texto más grande).
 
 ### Decisiones pendientes
 

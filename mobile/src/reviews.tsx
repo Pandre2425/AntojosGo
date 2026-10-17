@@ -45,7 +45,7 @@ export function DishReviews({ dishId, rating }: { dishId: string; rating?: Ratin
   const [reload, setReload] = useState(0)
   useEffect(() => {
     let active = true; setError('')
-    api.dishReviews(dishId, page).then(r => { if (active) { setItems(prev => page && prev ? [...prev, ...r.items] : r.items); setHasMore(r.hasMore) } })
+    api.dishReviews(dishId, page, reload ? Date.now() : 0).then(r => { if (active) { setItems(prev => page && prev ? [...prev, ...r.items] : r.items); setHasMore(r.hasMore) } })
       .catch(e => { if (active) setError(e instanceof Error ? e.message : 'No pudimos cargar las reseñas.') })
     return () => { active = false }
   }, [dishId, page, reload])

@@ -44,7 +44,7 @@ export function DishReviews({ dishId, rating }: { dishId: string; rating?: Ratin
   useEffect(() => {
     if (!open) return
     let active = true; setError('')
-    webApi.dishReviews(dishId, page).then(r => { if (active) { setItems(prev => page && prev ? [...prev, ...r.items] : r.items); setHasMore(r.hasMore) } })
+    webApi.dishReviews(dishId, page, reload ? Date.now() : 0).then(r => { if (active) { setItems(prev => page && prev ? [...prev, ...r.items] : r.items); setHasMore(r.hasMore) } })
       .catch(e => { if (active) setError(e.message) })
     return () => { active = false }
   }, [open, dishId, page, reload])

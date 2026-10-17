@@ -101,7 +101,8 @@ export function createApiClient({ baseUrl, getToken, refreshToken }: Options) {
     myFeedback: () => call<{ item: Feedback | null }>('GET', '/me/feedback').then(r => r.item),
     saveFeedback: (input: FeedbackInput) => call<Feedback>('PUT', '/me/feedback', input),
     /** Dish reviews: public list, the user's own review, and the owner's panel (reply / report). */
-    dishReviews: (dishId: string, page = 0) => call<{ items: PublicReview[]; hasMore: boolean }>('GET', `/dishes/${dishId}/reviews${qs({ page })}`, undefined, {}, false),
+    /** `fresh` skips the 30 s CDN cache (right after the user saved their own review). */
+    dishReviews: (dishId: string, page = 0, fresh = 0) => call<{ items: PublicReview[]; hasMore: boolean }>('GET', `/dishes/${dishId}/reviews${qs({ page, v: fresh || undefined })}`, undefined, {}, false),
     myReview: (dishId: string) => call<{ item: MyReview | null }>('GET', `/dishes/${dishId}/review`).then(r => r.item),
     saveReview: (dishId: string, input: ReviewInput) => call<MyReview>('PUT', `/dishes/${dishId}/review`, input),
     deleteReview: (dishId: string) => call<{ ok: true }>('DELETE', `/dishes/${dishId}/review`),
