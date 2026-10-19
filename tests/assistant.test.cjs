@@ -134,3 +134,12 @@ test('the search label follows the reader language', () => {
   try { assert.equal(contextLabel(ctx), 'something spicy and desserts without peanuts or cebolla') } finally { setLanguageSource(() => 'es') }
   assert.equal(t('Buscar', undefined, 'en'), 'Search')
 })
+
+test('Explorar: English food words also search the Spanish menu terms', () => {
+  const { queryGroups } = require('../shared/contracts/assistant.ts')
+  assert.deepEqual(queryGroups('pepian', false), [{ re: '\\m(pepian)', tags: [] }])
+  const [seafood] = queryGroups('seafood', true)
+  assert.match(seafood.re, /marisc/); assert.match(seafood.re, /camaron/)
+  const [spicy] = queryGroups('spicy', true)
+  assert.deepEqual(spicy.tags, ['picante'])
+})

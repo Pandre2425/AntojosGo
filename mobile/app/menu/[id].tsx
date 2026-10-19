@@ -113,7 +113,7 @@ export default function Menu() {
             {dish.image_url ? <Image source={{ uri: dish.image_url }} accessibilityLabel={t('Foto de {name}', { name: dish.name })} style={{ width: 72, height: 72, borderRadius: 12 }} /> : null}
             <View style={{ flex: 1, gap: 2 }}>
               <Txt variant="headline">{dish.name}</Txt>
-              <Txt>{money(dish.price)}{dish.category ? `  ${dish.category}` : ''}</Txt>
+              <Txt>{money(dish.price)}{dish.category ? `  ${dish.category.split(', ').map(c => t(c)).join(', ')}` : ''}</Txt>
               <Text style={{ color: st === 'hidden' ? colors.muted : EDGE[st], fontWeight: '600' }}>{t(STATUS_TEXT[st])}</Text>
             </View>
           </View>

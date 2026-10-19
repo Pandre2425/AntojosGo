@@ -14,14 +14,14 @@ import { DISH_DETAIL_GROUPS, allergenNames, allergenStatus, dishDetails } from '
 import { Action, Loading, Message, Page, Txt, colors, radius, spacing, type } from '../../src/ui'
 import { DishReviews, RatingLine, Stars } from '../../src/reviews'
 import { hideRestaurant } from '../../src/hidden'
-import { t } from '../../../shared/i18n'
+import { t, contentNote } from '../../../shared/i18n'
 
 type Branch = PublicCatalogItem & PublicBranchExtras
 const money = (v: number) => `Q${v.toFixed(2)}`
 
 export default function SedeDetail() {
   const { id, sorpresa } = useLocalSearchParams<{ id: string; sorpresa?: string }>()
-  const [data, setData] = useState<{ branch: Branch; menu: PublicDish[] } | null>(null)
+  const [data, setData] = useState<{ branch: Branch; menu: PublicDish[]; translated?: boolean } | null>(null)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
   const [retry, setRetry] = useState(0)
@@ -56,6 +56,7 @@ export default function SedeDetail() {
       <Txt variant="title" accessibilityRole="header" style={{ fontSize: 24 }}>{t('Menú')}</Txt>
       {data.menu.length ? <Txt variant="subhead">{data.menu.length === 1 ? t('1 platillo') : t('{n} platillos', { n: data.menu.length })}</Txt> : null}
     </View>
+    {contentNote(data.translated) ? <Txt variant="subhead">{contentNote(data.translated)}</Txt> : null}
     {data.menu.length === 0 ? <Txt variant="subhead">{t('Este restaurante aún no ha publicado su menú.')}</Txt>
       : data.menu.map(d => <DishRow key={d.id} dish={d} onDetails={() => setDish(d)} />)}
     <DishSheet dish={dish} onClose={() => setDish(null)} />
@@ -126,7 +127,7 @@ function HoursInfo({ hours }: { hours: NonNullable<PublicBranchExtras['opening_h
 
 function DishRow({ dish, onDetails }: { dish: PublicDish; onDetails: () => void }) {
   const details = dishDetails(dish)
-  const summary = [...details.dish_types, ...details.cuisines].slice(0, 3).join(' · ')
+  const summary = [...details.dish_types, ...details.cuisines].slice(0, 3).map(c => t(c)).join(' · ')
   return <Pressable accessibilityRole="button" accessibilityLabel={t('{name}, {price}. Ver detalles', { name: dish.name, price: money(dish.price) })} onPress={onDetails}
     style={({ pressed }) => ({ flexDirection: 'row', gap: spacing.md, padding: spacing.md, borderRadius: radius.lg, backgroundColor: pressed ? colors.cream : colors.white,
       borderWidth: 1, borderColor: pressed ? colors.green : colors.white, opacity: dish.is_available ? 1 : 0.7 })}>

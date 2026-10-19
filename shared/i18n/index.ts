@@ -28,3 +28,7 @@ export const locale = (lang: Lang = source()) => (lang === 'en' ? 'en-US' : 'es-
 
 /** Marks a Spanish text defined outside a function (lists, maps) for translation; translate it where it's shown with t(). */
 export const msg = (text: string) => text
+
+/** Note shown under restaurant-written content when the reader uses English (null in Spanish). */
+export const contentNote = (translated?: boolean): string | null =>
+  source() === 'en' ? (translated ? t('Traducción automática del español') : t('Original en español')) : null

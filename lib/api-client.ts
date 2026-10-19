@@ -111,7 +111,7 @@ export function createApiClient({ baseUrl, getToken, refreshToken }: Options) {
     saveFeedback: (input: FeedbackInput) => call<Feedback>('PUT', '/me/feedback', input),
     /** Dish reviews: public list, the user's own review, and the owner's panel (reply / report). */
     /** `fresh` skips the 30 s CDN cache (right after the user saved their own review). */
-    dishReviews: (dishId: string, page = 0, fresh = 0) => call<{ items: PublicReview[]; hasMore: boolean }>('GET', `/dishes/${dishId}/reviews${qs({ page, v: fresh || undefined })}`, undefined, {}, false),
+    dishReviews: (dishId: string, page = 0, fresh = 0) => call<{ items: PublicReview[]; hasMore: boolean; translated?: boolean }>('GET', `/dishes/${dishId}/reviews${qs({ page, v: fresh || undefined })}`, undefined, {}, false),
     myReview: (dishId: string) => call<{ item: MyReview | null }>('GET', `/dishes/${dishId}/review`).then(r => r.item),
     saveReview: (dishId: string, input: ReviewInput) => call<MyReview>('PUT', `/dishes/${dishId}/review`, input),
     deleteReview: (dishId: string) => call<{ ok: true }>('DELETE', `/dishes/${dishId}/review`),
@@ -129,8 +129,8 @@ export function createApiClient({ baseUrl, getToken, refreshToken }: Options) {
       category?: string; tags?: readonly string[]; without?: readonly string[]; avoid?: readonly string[]; openNow?: boolean; sort?: 'relevance' | 'price'
       minPrice?: number; maxPrice?: number; hide?: readonly string[]
     }) =>
-      call<{ items: PublicCatalogItem[]; count: number }>('GET', `/catalog/search${qs(params)}`, undefined, {}, false),
-    getPublicBranch: (id: string) => call<{ branch: PublicCatalogItem & PublicBranchExtras; menu: PublicDish[] }>('GET', `/branches/${id}/public`, undefined, {}, false),
+      call<{ items: PublicCatalogItem[]; count: number; translated?: boolean }>('GET', `/catalog/search${qs(params)}`, undefined, {}, false),
+    getPublicBranch: (id: string) => call<{ branch: PublicCatalogItem & PublicBranchExtras; menu: PublicDish[]; translated?: boolean }>('GET', `/branches/${id}/public`, undefined, {}, false),
   }
 }
 

@@ -22,7 +22,7 @@ const aiResultSchema = z.object({
 export type AiInterpretation = z.infer<typeof aiResultSchema>
 
 const instruction = `Eres el intérprete de búsqueda de AntojosGo, una app de restaurantes registrados en Guatemala.
-Convierte el mensaje del usuario en filtros de búsqueda. No inventes restaurantes ni platillos.
+Convierte el mensaje del usuario (en español o en inglés) en filtros de búsqueda. No inventes restaurantes ni platillos.
 - concepts: categorías de antojo, solo de esta lista: ${CONCEPT_KEYS.join(', ')}.
 - words: hasta 4 palabras clave de comida o platillos concretos que no encajen en concepts (en español, minúsculas, sin acentos).
 - near: true si quiere algo cerca. openNow: true si quiere ir ya o pregunta qué está abierto. cheap: true si busca algo barato.

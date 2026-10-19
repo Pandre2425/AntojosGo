@@ -8,9 +8,9 @@ import AccountAccess from '@/components/account-access'
 import FoodLoader from '@/components/food-loader'
 import { Stars } from '@/components/reviews'
 import { Button } from '@/components/ui/button'
-import { t } from '@/shared/i18n'
+import { t, locale } from '@/shared/i18n'
 
-const when = (iso: string) => new Date(iso).toLocaleString('es-GT', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+const when = (iso: string) => new Date(iso).toLocaleString(locale(), { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
 
 /** AntojosGo administrators: decide on reviews reported by restaurants (keep or hide). */
 export default function AdminPage() {

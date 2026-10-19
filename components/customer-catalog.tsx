@@ -14,7 +14,7 @@ import FoodLoader from './food-loader'
 import { DishReviews, RatingSummary } from './reviews'
 import VoiceButton from './voice-button'
 import { PRICE_RANGES, pickSurprise } from '@/shared/contracts/catalog-query'
-import { t } from '@/shared/i18n'
+import { t, contentNote } from '@/shared/i18n'
 
 type Coords = { latitude: number; longitude: number }
 const distance = (km?: number) => km == null ? null : km < 1 ? t('{m} m en línea recta', { m: Math.round(km * 1000) }) : t('{km} km en línea recta', { km: km.toFixed(1) })
@@ -101,7 +101,7 @@ export default function CustomerCatalog({ initialQuery = '' }: { initialQuery?: 
     {showFilters && <div id="diner-filters" className="space-y-3 rounded-2xl border bg-white p-4">
       <div className="flex flex-wrap items-center gap-2">
         <FilterChip on={filters.openNow} onClick={() => applyFilters({ ...filters, openNow: !filters.openNow })}>{t('Abierto ahora')}</FilterChip>
-        <label className="flex items-center gap-2 text-sm">Tipo de negocio
+        <label className="flex items-center gap-2 text-sm">{t('Tipo de negocio')}
           <select className="h-9 rounded-md border bg-white px-2 text-sm" value={filters.category} onChange={(e) => applyFilters({ ...filters, category: e.target.value })}>
             <option value="">{t('Todos')}</option>{types.map((c) => <option key={c} value={c}>{c}</option>)}</select></label>
       </div>
@@ -202,7 +202,7 @@ export function BranchDetail({ id, onBack, onHide, surprise, onSurpriseAgain }: 
 }) {
   const [hiding, setHiding] = useState(false)
   const [hideError, setHideError] = useState('')
-  const [data, setData] = useState<{ branch: PublicCatalogItem & PublicBranchExtras; menu: PublicDish[] } | null>(null)
+  const [data, setData] = useState<{ branch: PublicCatalogItem & PublicBranchExtras; menu: PublicDish[]; translated?: boolean } | null>(null)
   const [error, setError] = useState('')
   const [retry, setRetry] = useState(0)
   useEffect(() => {
@@ -239,12 +239,13 @@ export function BranchDetail({ id, onBack, onHide, surprise, onSurpriseAgain }: 
       </section>
       <section className="rounded-2xl border bg-white p-5 space-y-3">
         <h3 className="text-lg font-semibold">{t('Menú')}</h3>
+        {contentNote(data.translated) && <p className="text-xs text-muted-foreground">{contentNote(data.translated)}</p>}
         {data.menu.length === 0 ? <p className="text-sm text-muted-foreground">{t('Este restaurante aún no ha publicado su menú.')}</p> :
           <ul className="divide-y">{data.menu.map((dish) => <li key={dish.id} className="flex gap-3 py-3">
             {dish.image_url && <img src={dish.image_url} alt={t('Foto de {name}', { name: dish.name })} loading="lazy" className="h-20 w-20 shrink-0 rounded-xl object-cover" />}
             <div className="min-w-0 flex-1">
               <p className="font-medium">{dish.name} <span className="whitespace-nowrap">· Q{dish.price.toFixed(2)}</span></p>
-              {dish.category && <p className="text-xs text-muted-foreground">{dish.category}</p>}
+              {dish.category && <p className="text-xs text-muted-foreground">{dish.category.split(', ').map(c => t(c)).join(', ')}</p>}
               {dish.description && <p className="text-sm text-muted-foreground">{dish.description}</p>}
               {dish.ingredients?.length ? <p className="text-sm text-muted-foreground">{t('Ingredientes:')} {dish.ingredients.join(', ')}</p> : null}
               <DishAllergens allergens={dish.allergens} other={dish.allergens_other} />

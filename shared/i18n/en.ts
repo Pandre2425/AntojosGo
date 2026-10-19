@@ -852,4 +852,9 @@ export const en: Record<string, string> = {
   "🎲 Sorpréndeme": "🎲 Surprise me",
   "🎲 ¡Sorpresa!": "🎲 Surprise!",
   "🙈 No me interesa este restaurante": "🙈 Not interested in this restaurant",
+  "Traducción automática del español": "Automatically translated from Spanish",
+  "Original en español": "Original in Spanish",
+  "Confirmo que no contiene ninguno de los alérgenos comunes (maní, nueces, lácteos, huevo, gluten, mariscos, pescado, soya, ajonjolí).": "I confirm it contains none of the common allergens (peanuts, tree nuts, dairy, egg, gluten, shellfish, fish, soy, sesame).",
+  "Descubrir": "Discover",
+  "Explorar": "Explore",
 }

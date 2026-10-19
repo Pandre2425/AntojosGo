@@ -20,10 +20,10 @@ const UserProfile = dynamic(() => import("@/components/user-profile"), { loading
 
 type Tab = "home" | "assistant" | "search" | "favorites" | "profile"
 const tabs: { id: Tab; label: string; icon: typeof Compass }[] = [
-  { id: "home", label: "Descubrir", icon: Compass },
+  { id: "home", label: msg("Descubrir"), icon: Compass },
   { id: "assistant", label: msg("Para ti"), icon: MessageCircle },
-  { id: "search", label: "Explorar", icon: Search },
-  { id: "favorites", label: "Favoritos", icon: Heart },
+  { id: "search", label: msg("Explorar"), icon: Search },
+  { id: "favorites", label: msg("Favoritos"), icon: Heart },
   { id: "profile", label: msg("Mi perfil"), icon: User },
 ]
 

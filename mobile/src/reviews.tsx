@@ -5,7 +5,7 @@ import { useSession } from './session'
 import { Action, Field, Txt, colors, radius, spacing } from './ui'
 import { ratingLabel, starParts, type MyReview, type PublicReview, type Rating } from '../../shared/contracts/reviews'
 import { RATING_LABELS } from '../../shared/contracts/feedback'
-import { t } from '../../shared/i18n'
+import { t, contentNote, locale } from '../../shared/i18n'
 
 /** Average drawn to the nearest half star (a half is the left half of a filled star over an empty one). */
 export function Stars({ value, size = 16 }: { value: number | null; size?: number }) {
@@ -35,18 +35,19 @@ export function StarInput({ value, onChange, disabled }: { value: number; onChan
   </View>
 }
 
-const when = (iso: string) => new Date(iso).toLocaleDateString('es-GT', { day: 'numeric', month: 'short', year: 'numeric' })
+const when = (iso: string) => new Date(iso).toLocaleDateString(locale(), { day: 'numeric', month: 'short', year: 'numeric' })
 
 /** «Reseñas» inside the dish sheet: the user's own review and the public list (anonymous). */
 export function DishReviews({ dishId, rating }: { dishId: string; rating?: Rating }) {
   const [items, setItems] = useState<PublicReview[] | null>(null)
+  const [translated, setTranslated] = useState(false)
   const [page, setPage] = useState(0)
   const [hasMore, setHasMore] = useState(false)
   const [error, setError] = useState('')
   const [reload, setReload] = useState(0)
   useEffect(() => {
     let active = true; setError('')
-    api.dishReviews(dishId, page, reload ? Date.now() : 0).then(r => { if (active) { setItems(prev => page && prev ? [...prev, ...r.items] : r.items); setHasMore(r.hasMore) } })
+    api.dishReviews(dishId, page, reload ? Date.now() : 0).then(r => { if (active) { setItems(prev => page && prev ? [...prev, ...r.items] : r.items); setTranslated(Boolean(r.translated)); setHasMore(r.hasMore) } })
       .catch(e => { if (active) setError(e instanceof Error ? e.message : t('No pudimos cargar las reseñas.')) })
     return () => { active = false }
   }, [dishId, page, reload])
@@ -55,6 +56,7 @@ export function DishReviews({ dishId, rating }: { dishId: string; rating?: Ratin
       <Txt variant="label" accessibilityRole="header">{t('Reseñas')}</Txt>
       <RatingLine rating={rating} />
     </View>
+    {items?.length && contentNote(translated) ? <Txt variant="subhead">{contentNote(translated)}</Txt> : null}
     <MyReviewForm dishId={dishId} onSaved={() => { setPage(0); setReload(v => v + 1) }} />
     {error ? <Txt style={{ color: colors.danger }}>{error}</Txt>
       : !items ? <Txt variant="subhead">{t('Cargando reseñas…')}</Txt>

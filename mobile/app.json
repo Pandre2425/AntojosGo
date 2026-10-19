@@ -3,14 +3,14 @@
     "name": "AntojosGo",
     "slug": "antojosgo-mobile",
     "scheme": "antojosgo",
-    "version": "0.6.0",
+    "version": "0.7.0",
     "platforms": [
       "android"
     ],
     "userInterfaceStyle": "light",
     "android": {
       "package": "com.antojosgo.mobile",
-      "versionCode": 8,
+      "versionCode": 9,
       "softwareKeyboardLayoutMode": "resize",
       "permissions": [
         "ACCESS_COARSE_LOCATION",

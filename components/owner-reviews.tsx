@@ -6,9 +6,9 @@ import type { OwnerReview } from '@/shared/contracts/reviews'
 import { Stars } from './reviews'
 import FoodLoader from './food-loader'
 import { Button } from './ui/button'
-import { t } from '@/shared/i18n'
+import { t, locale } from '@/shared/i18n'
 
-const when = (iso: string) => new Date(iso).toLocaleDateString('es-GT', { day: 'numeric', month: 'short', year: 'numeric' })
+const when = (iso: string) => new Date(iso).toLocaleDateString(locale(), { day: 'numeric', month: 'short', year: 'numeric' })
 
 /** Owner panel: every review of the restaurant's dishes; public reply and report (no delete). */
 export default function OwnerReviews({ restaurantId, restaurantName, onClose }: { restaurantId: string; restaurantName: string; onClose: () => void }) {

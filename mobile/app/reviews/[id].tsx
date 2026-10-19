@@ -6,9 +6,9 @@ import { api } from '../../src/api'
 import { Stars } from '../../src/reviews'
 import { Action, Card, Field, Loading, Message, Page, Title, Txt, colors, spacing } from '../../src/ui'
 import type { OwnerReview } from '../../../shared/contracts/reviews'
-import { t } from '../../../shared/i18n'
+import { t, locale } from '../../../shared/i18n'
 
-const when = (iso: string) => new Date(iso).toLocaleDateString('es-GT', { day: 'numeric', month: 'short', year: 'numeric' })
+const when = (iso: string) => new Date(iso).toLocaleDateString(locale(), { day: 'numeric', month: 'short', year: 'numeric' })
 
 /** Owner: reviews of the restaurant's dishes; public reply and report (no delete). */
 export default function OwnerReviews() {

@@ -179,7 +179,7 @@ export default function RestaurantMenu({ restaurantId, restaurantName, onClose }
                 {dish.description && <p className="line-clamp-2 text-sm text-stone-600">{dish.description}</p>}
                 {dish.ingredients?.length ? <p className="text-sm text-stone-600"><span className="text-stone-500">{t('Ingredientes:')}</span> {dish.ingredients.join(', ')}</p> : null}
                 <div className="flex flex-wrap gap-1.5">
-                  {Object.values(dishDetails(dish)).flat().map((c) => <span key={c} className="rounded-full bg-stone-100 px-2 py-0.5 text-xs text-stone-700">{c}</span>)}
+                  {Object.values(dishDetails(dish)).flat().map((c) => <span key={c} className="rounded-full bg-stone-100 px-2 py-0.5 text-xs text-stone-700">{t(c)}</span>)}
                   {!al.declared ? <span className="rounded-full border border-dashed border-amber-500 px-2 py-0.5 text-xs text-amber-900">{t('Alérgenos sin declarar')}</span>
                     : al.contains.length || al.other.length ? allergenNames(dish.allergens, dish.allergens_other).map((a) => <span key={a} className="rounded-full border border-[#BD481F] px-2 py-0.5 text-xs text-[#9a3a18]">{t('Contiene {allergen}', { allergen: t(a).toLowerCase() })}</span>)
                     : <span className="rounded-full border border-[#173F35]/40 px-2 py-0.5 text-xs text-[#173F35]">{t('Sin alérgenos comunes')}</span>}
@@ -249,14 +249,14 @@ export default function RestaurantMenu({ restaurantId, restaurantName, onClose }
           className="flex items-center gap-3 text-sm font-medium focus-visible:outline-2 focus-visible:outline-[#173F35]">
           <span className={`relative h-6 w-11 rounded-full transition-colors ${form.hasAllergens ? 'bg-[#BD481F]' : 'bg-stone-300'}`}>
             <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${form.hasAllergens ? 'left-[22px]' : 'left-0.5'}`} /></span>
-          Contiene alérgenos</button>
+          {t('Contiene alérgenos')}</button>
         {form.hasAllergens
           ? <TagField id="dish-allergens" legend={t('¿Qué alérgenos contiene?')} placeholder={t('¿Otro? Escríbelo: Ej. mostaza')} tone="red" disabled={busy}
               options={ALLERGENS.map((a) => ALLERGEN_LABELS[a])} value={form.allergenLabels} onChange={(allergenLabels) => setForm((v) => ({ ...v, allergenLabels }))}
               validate={(text, cur) => labelProblem(text, cur, t('un alérgeno'), 19)} />
           : <label className="flex items-start gap-2 text-sm">
               <input type="checkbox" className="mt-1" disabled={busy} checked={form.noAllergens} onChange={(e) => setForm((v) => ({ ...v, noAllergens: e.target.checked }))} />
-              <span>Confirmo que no contiene ninguno de los alérgenos comunes (maní, nueces, lácteos, huevo, gluten, mariscos, pescado, soya, ajonjolí).
+              <span>{t('Confirmo que no contiene ninguno de los alérgenos comunes (maní, nueces, lácteos, huevo, gluten, mariscos, pescado, soya, ajonjolí).')}
                 <span className="block text-xs text-muted-foreground">{t('Si no lo confirmas, los clientes verán «alérgenos sin declarar».')}</span></span></label>}
       </fieldset>
 

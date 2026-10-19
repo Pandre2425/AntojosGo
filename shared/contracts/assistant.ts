@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { ALLERGEN_LABELS, ALLERGENS, type Allergen, type DishTag } from './menu'
-import { t, msg } from '../i18n'
+import { currentLang, t, msg } from '../i18n'
 
 /**
  * Diner assistant, rules first: a dictionary of cravings plus intents (near, open now, cheap,
@@ -175,9 +175,14 @@ export function searchGroups(ctx: AssistantContext): { re: string; tags: string[
 export const avoidRegex = (words: string[]) => words.length ? `\\m(${words.map(normalize).filter(Boolean).join('|')})` : ''
 
 /** Explorar text box -> one search group per meaningful word (all must match). */
-export function queryGroups(q: string): { re: string; tags: string[] }[] {
+// Menus are written in Spanish: in English a food word («seafood», «spicy») also matches its Spanish terms and tags.
+export function queryGroups(q: string, english = currentLang() === 'en'): { re: string; tags: string[] }[] {
   const words = normalize(q).split(' ').filter(w => w.length >= 2 && w.length <= 30 && !STOPWORDS.has(w))
-  return words.slice(0, 4).map(w => ({ re: `\\m(${w})`, tags: [] }))
+  return words.slice(0, 4).map(w => {
+    const concepts = english ? detectConcepts(w) : []
+    const terms = [...new Set([w, ...concepts.flatMap(k => CONCEPTS[k].terms.map(normalize))])]
+    return { re: `\\m(${terms.join('|')})`, tags: [...new Set(concepts.flatMap(k => (CONCEPTS[k] as Concept).tags ?? []))] }
+  })
 }
 
 const joinList = (items: string[]) => items.length <= 1 ? items.join('') : `${items.slice(0, -1).join(', ')}${t(' ni ')}${items[items.length - 1]}`

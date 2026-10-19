@@ -7,7 +7,7 @@ import { useAccountSession } from '@/hooks/use-account-session'
 import { ratingLabel, starParts, type MyReview, type PublicReview, type Rating } from '@/shared/contracts/reviews'
 import { RATING_LABELS } from '@/shared/contracts/feedback'
 import { Button } from './ui/button'
-import { t } from '@/shared/i18n'
+import { t, contentNote, locale } from '@/shared/i18n'
 
 /** Average drawn to the nearest half star; the exact number goes in the label. */
 export function Stars({ value, className = 'h-4 w-4' }: { value: number | null; className?: string }) {
@@ -32,12 +32,13 @@ export function StarInput({ value, onChange, disabled }: { value: number; onChan
   </div>
 }
 
-const when = (iso: string) => new Date(iso).toLocaleDateString('es-GT', { day: 'numeric', month: 'short', year: 'numeric' })
+const when = (iso: string) => new Date(iso).toLocaleDateString(locale(), { day: 'numeric', month: 'short', year: 'numeric' })
 
 /** «Reseñas» of a dish, opened on demand: public list, more pages, and the signed-in diner's own review. */
 export function DishReviews({ dishId, rating }: { dishId: string; rating?: Rating }) {
   const [open, setOpen] = useState(false)
   const [items, setItems] = useState<PublicReview[] | null>(null)
+  const [translated, setTranslated] = useState(false)
   const [page, setPage] = useState(0)
   const [hasMore, setHasMore] = useState(false)
   const [error, setError] = useState('')
@@ -45,7 +46,7 @@ export function DishReviews({ dishId, rating }: { dishId: string; rating?: Ratin
   useEffect(() => {
     if (!open) return
     let active = true; setError('')
-    webApi.dishReviews(dishId, page, reload ? Date.now() : 0).then(r => { if (active) { setItems(prev => page && prev ? [...prev, ...r.items] : r.items); setHasMore(r.hasMore) } })
+    webApi.dishReviews(dishId, page, reload ? Date.now() : 0).then(r => { if (active) { setItems(prev => page && prev ? [...prev, ...r.items] : r.items); setTranslated(Boolean(r.translated)); setHasMore(r.hasMore) } })
       .catch(e => { if (active) setError(e.message) })
     return () => { active = false }
   }, [open, dishId, page, reload])
@@ -59,6 +60,8 @@ export function DishReviews({ dishId, rating }: { dishId: string; rating?: Ratin
       <MyReviewForm dishId={dishId} onSaved={() => { setPage(0); setReload(v => v + 1) }} />
       {error ? <p role="alert" className="text-sm text-red-700">{error}</p> : !items ? <p role="status" className="text-sm text-stone-500">{t('Cargando reseñas…')}</p>
         : items.length === 0 ? <p className="text-sm text-stone-600">{t('Todavía nadie ha reseñado este platillo.')}</p>
+        : contentNote(translated) && <p className="text-xs text-stone-500">{contentNote(translated)}</p>}
+      {!items || error ? null : items.length === 0 ? null
         : <ul className="space-y-3">{items.map((r, i) => <li key={`${r.updated_at}-${i}`} className="rounded-lg bg-white p-3 text-sm">
           <p className="flex items-center gap-2"><Stars value={r.rating} /><span className="text-xs text-stone-500">{t('Comensal ·')} {when(r.updated_at)}</span></p>
           {r.comment && <p className="mt-1 whitespace-pre-line text-stone-800">{r.comment}</p>}
