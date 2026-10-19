@@ -6,6 +6,7 @@ import { authErrorMessage, newPasswordSchema } from '@/lib/auth-validation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { t } from '@/shared/i18n'
 
 // Read before the Supabase client consumes the link's #access_token (it clears the hash after a network round trip).
 const linkHash = new URLSearchParams(typeof window === 'undefined' ? '' : window.location.hash.slice(1))
@@ -40,26 +41,26 @@ export default function AccountLinkPage() {
   }
 
   const [title, text] = {
-    loading: ['Un momento…', ''],
-    confirmed: ['Correo confirmado', 'Tu cuenta está lista. Ya puedes iniciar sesión en la app o en la web.'],
-    reset: ['Crea tu contraseña nueva', 'Usa al menos 10 caracteres. Puedes usar una frase fácil de recordar.'],
-    done: ['Contraseña actualizada', 'Ya puedes iniciar sesión con tu contraseña nueva en la app o en la web.'],
-    invalid: ['El enlace no es válido', 'Venció o ya se usó. Pide otro desde «¿Olvidaste tu contraseña?» o «Reenviar confirmación» al iniciar sesión.'],
+    loading: [t('Un momento…'), ''],
+    confirmed: [t('Correo confirmado'), t('Tu cuenta está lista. Ya puedes iniciar sesión en la app o en la web.')],
+    reset: [t('Crea tu contraseña nueva'), t('Usa al menos 10 caracteres. Puedes usar una frase fácil de recordar.')],
+    done: [t('Contraseña actualizada'), t('Ya puedes iniciar sesión con tu contraseña nueva en la app o en la web.')],
+    invalid: [t('El enlace no es válido'), t('Venció o ya se usó. Pide otro desde «¿Olvidaste tu contraseña?» o «Reenviar confirmación» al iniciar sesión.')],
   }[state]
 
   return <main className="min-h-dvh bg-background px-4 py-8 flex items-center justify-center">
     <section className="w-full max-w-md rounded-[24px] border bg-white p-6 space-y-5 shadow-sm" aria-live="polite">
-      <div><img src="/logo.png" alt="" width={64} height={64} className="shrink-0 rounded-xl mb-3" /><p className="text-sm font-semibold text-primary">AntojosGo</p>
+      <div><img src="/logo.png" alt="" width={64} height={64} className="shrink-0 rounded-xl mb-3" /><p className="text-sm font-semibold text-primary">{t('AntojosGo')}</p>
         <h1 className="mt-2 text-2xl font-bold">{title}</h1>
         {text && <p className="mt-2 text-sm text-muted-foreground">{text}</p>}</div>
       {error && <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
       {state === 'reset' && <form onSubmit={save} className="space-y-4">
-        <div className="space-y-1"><Label htmlFor="new-password">Contraseña nueva</Label><Input id="new-password" type={show ? 'text' : 'password'} autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} maxLength={128} required disabled={busy} /></div>
-        <div className="space-y-1"><Label htmlFor="new-password-confirm">Confirmar contraseña</Label><Input id="new-password-confirm" type={show ? 'text' : 'password'} autoComplete="new-password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} maxLength={128} required disabled={busy} /></div>
-        <Button type="button" variant="ghost" size="sm" aria-pressed={show} onClick={() => setShow(!show)}>{show ? 'Ocultar contraseña' : 'Mostrar contraseña'}</Button>
-        <Button className="w-full" type="submit" disabled={busy}>{busy ? 'Guardando…' : 'Guardar contraseña'}</Button>
+        <div className="space-y-1"><Label htmlFor="new-password">{t('Contraseña nueva')}</Label><Input id="new-password" type={show ? 'text' : 'password'} autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} maxLength={128} required disabled={busy} /></div>
+        <div className="space-y-1"><Label htmlFor="new-password-confirm">{t('Confirmar contraseña')}</Label><Input id="new-password-confirm" type={show ? 'text' : 'password'} autoComplete="new-password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} maxLength={128} required disabled={busy} /></div>
+        <Button type="button" variant="ghost" size="sm" aria-pressed={show} onClick={() => setShow(!show)}>{show ? t('Ocultar contraseña') : t('Mostrar contraseña')}</Button>
+        <Button className="w-full" type="submit" disabled={busy}>{busy ? t('Guardando…') : t('Guardar contraseña')}</Button>
       </form>}
-      {state !== 'loading' && state !== 'reset' && <a href="/" className="block rounded-lg bg-[#BD481F] px-4 py-2 text-center text-sm font-semibold text-white hover:bg-[#9a3a18]">Ir a AntojosGo</a>}
+      {state !== 'loading' && state !== 'reset' && <a href="/" className="block rounded-lg bg-[#BD481F] px-4 py-2 text-center text-sm font-semibold text-white hover:bg-[#9a3a18]">{t('Ir a AntojosGo')}</a>}
     </section>
   </main>
 }

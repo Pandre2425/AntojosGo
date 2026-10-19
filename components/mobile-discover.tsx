@@ -8,6 +8,7 @@ import type { MapBranch } from './branches-overview-map'
 import { Button } from './ui/button'
 import { AppDownloadBanner } from './app-download'
 import VoiceButton from './voice-button'
+import { t } from '@/shared/i18n'
 
 const BranchDetail = dynamic(() => import('./customer-catalog').then(m => m.BranchDetail))
 const BranchesOverviewMap = dynamic(() => import('./branches-overview-map'), { ssr: false, loading: () => <div className="h-80 animate-pulse rounded-2xl bg-stone-200" /> })
@@ -27,23 +28,23 @@ export default function MobileDiscover({ name, onSearch }: { name?: string; onSe
 
   return <div className="space-y-8">
     <section className="rounded-[28px] bg-[#173F35] p-6 text-white">
-      {name && <p className="text-sm text-white/80">Hola, {name}</p>}
-      <h1 className="text-3xl font-extrabold tracking-tight">¿Qué estás buscando?</h1>
-      <p className="mt-2 text-sm text-white/85">Escríbelo como se lo dirías a un amigo. El asistente te dice dónde encontrarlo.</p>
+      {name && <p className="text-sm text-white/80">{t('Hola,')} {name}</p>}
+      <h1 className="text-3xl font-extrabold tracking-tight">{t('¿Qué estás buscando?')}</h1>
+      <p className="mt-2 text-sm text-white/85">{t('Escríbelo como se lo dirías a un amigo. El asistente te dice dónde encontrarlo.')}</p>
       <form onSubmit={submit} className="mt-5 flex gap-2">
-        <label htmlFor="craving" className="sr-only">¿Qué estás buscando?</label>
+        <label htmlFor="craving" className="sr-only">{t('¿Qué estás buscando?')}</label>
         <input id="craving" className="min-h-12 min-w-0 flex-1 rounded-2xl bg-white px-4 text-[#263D35] outline-none focus-visible:ring-2 focus-visible:ring-[#EFAE6E]"
-          placeholder="Algo calientito, una pizza cerca…" value={query} onChange={(e) => setQuery(e.target.value)} maxLength={200} />
-        <VoiceButton className="h-12 w-12 rounded-2xl border-0" onText={(t) => onSearch(t)} />
+          placeholder={t('Algo calientito, una pizza cerca…')} value={query} onChange={(e) => setQuery(e.target.value)} maxLength={200} />
+        <VoiceButton className="h-12 w-12 rounded-2xl border-0" onText={(text) => onSearch(text)} />
         <button type="submit" disabled={!query.trim()} className="flex min-h-12 items-center gap-2 rounded-2xl bg-primary px-4 font-semibold disabled:opacity-60">
-          <Sparkles className="h-5 w-5" /><span className="hidden sm:inline">Preguntar</span><span className="sr-only sm:hidden">Preguntar</span></button>
+          <Sparkles className="h-5 w-5" /><span className="hidden sm:inline">{t('Preguntar')}</span><span className="sr-only sm:hidden">{t('Preguntar')}</span></button>
       </form>
     </section>
 
     <AppDownloadBanner />
 
     <section aria-labelledby="popular-title" className="space-y-3">
-      <h2 id="popular-title" className="text-lg font-semibold">Lo más buscado</h2>
+      <h2 id="popular-title" className="text-lg font-semibold">{t('Lo más buscado')}</h2>
       <ul className="grid grid-cols-4 gap-2 sm:grid-cols-8">
         {options.map(o => <li key={o.concept}>
           <button type="button" onClick={() => onSearch(o.query)}
@@ -57,13 +58,13 @@ export default function MobileDiscover({ name, onSearch }: { name?: string; onSe
 
     <section aria-labelledby="map-title" className="space-y-3">
       <div className="flex items-baseline justify-between gap-2">
-        <h2 id="map-title" className="text-lg font-semibold">Restaurantes en el mapa</h2>
-        {branches && <p className="text-sm text-muted-foreground">{branches.length === 1 ? '1 sede' : `${branches.length} sedes`}</p>}
+        <h2 id="map-title" className="text-lg font-semibold">{t('Restaurantes en el mapa')}</h2>
+        {branches && <p className="text-sm text-muted-foreground">{branches.length === 1 ? t('1 sede') : t('{n} sedes', { n: branches.length })}</p>}
       </div>
       {branches === null ? <div className="h-80 animate-pulse rounded-2xl bg-stone-200" /> : branches.length
         ? <BranchesOverviewMap branches={branches} onOpen={setSelected} />
-        : <p className="text-sm text-muted-foreground">Aún no hay sedes publicadas.</p>}
-      <Button variant="outline" className="w-full" onClick={() => onSearch('')}>Ver la lista con filtros</Button>
+        : <p className="text-sm text-muted-foreground">{t('Aún no hay sedes publicadas.')}</p>}
+      <Button variant="outline" className="w-full" onClick={() => onSearch('')}>{t('Ver la lista con filtros')}</Button>
     </section>
   </div>
 }

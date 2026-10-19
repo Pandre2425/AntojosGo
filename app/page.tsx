@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Search, Compass, Heart, User, ChefHat, MessageCircle } from "lucide-react"
 import { metadataName } from "@/shared/contracts/names"
+import { t, msg } from '@/shared/i18n'
 const CustomerCatalog = dynamic(() => import("@/components/customer-catalog"), { loading: ModuleLoading })
 const FavoriteBranches = dynamic(() => import("@/components/customer-catalog").then((m) => m.FavoriteBranches), { loading: ModuleLoading })
 const CustomerAssistant = dynamic(() => import("@/components/customer-assistant"), { loading: ModuleLoading })
@@ -20,10 +21,10 @@ const UserProfile = dynamic(() => import("@/components/user-profile"), { loading
 type Tab = "home" | "assistant" | "search" | "favorites" | "profile"
 const tabs: { id: Tab; label: string; icon: typeof Compass }[] = [
   { id: "home", label: "Descubrir", icon: Compass },
-  { id: "assistant", label: "Para ti", icon: MessageCircle },
+  { id: "assistant", label: msg("Para ti"), icon: MessageCircle },
   { id: "search", label: "Explorar", icon: Search },
   { id: "favorites", label: "Favoritos", icon: Heart },
-  { id: "profile", label: "Mi perfil", icon: User },
+  { id: "profile", label: msg("Mi perfil"), icon: User },
 ]
 
 export default function AntojosGoApp() {
@@ -41,28 +42,28 @@ export default function AntojosGoApp() {
       <header className="bg-white shadow-sm border-b sticky top-0 z-50">
         <div className="mobile-content flex items-center justify-between p-4">
           <div className="flex items-center space-x-3">
-            <div className="flex items-center gap-2"><img src="/logo.png" alt="" width={40} height={40} className="shrink-0 rounded-xl" /><div><h1 className="text-xl font-extrabold text-[#173F35]">AntojosGo</h1><p className="text-xs text-muted-foreground">¿Qué se te antoja hoy?</p></div></div>
+            <div className="flex items-center gap-2"><img src="/logo.png" alt="" width={40} height={40} className="shrink-0 rounded-xl" /><div><h1 className="text-xl font-extrabold text-[#173F35]">{t('AntojosGo')}</h1><p className="text-xs text-muted-foreground">{t('¿Qué se te antoja hoy?')}</p></div></div>
           </div>
-          <div className="flex items-center gap-1 sm:gap-2"><NotificationsBell /><AppDownloadButton /><Button variant="ghost" size="sm" aria-label="Cambiar modo" onClick={() => { window.location.href = "/welcome" }}><ChefHat className="w-4 h-4 sm:mr-1" /><span className="hidden sm:inline">Cambiar modo</span></Button></div>
+          <div className="flex items-center gap-1 sm:gap-2"><NotificationsBell /><AppDownloadButton /><Button variant="ghost" size="sm" aria-label={t('Cambiar modo')} onClick={() => { window.location.href = "/welcome" }}><ChefHat className="w-4 h-4 sm:mr-1" /><span className="hidden sm:inline">{t('Cambiar modo')}</span></Button></div>
         </div>
       </header>
 
       <main className="mobile-content p-5 space-y-6">
-        <ModuleBoundary key={activeTab} name="esta sección">
+        <ModuleBoundary key={activeTab} name={msg('esta sección')}>
           {activeTab === "home" && <MobileDiscover name={metadataName(user?.user_metadata)} onSearch={(query) => { setInitialQuery(query); setActiveTab(query ? "assistant" : "search") }} />}
           {activeTab === "assistant" && <CustomerAssistant initialMessage={initialQuery} />}
           {activeTab === "search" && <CustomerCatalog initialQuery={initialQuery} />}
           {activeTab === "favorites" && <FavoriteBranches onLogin={() => setShowAuth(true)} />}
           {activeTab === "profile" && (
             <Card className="border-primary/20">
-              <CardHeader className="pb-2"><CardTitle className="text-lg flex items-center gap-2"><User className="w-5 h-5 text-primary" />Mi perfil</CardTitle></CardHeader>
+              <CardHeader className="pb-2"><CardTitle className="text-lg flex items-center gap-2"><User className="w-5 h-5 text-primary" />{t('Mi perfil')}</CardTitle></CardHeader>
               <CardContent><UserProfile user={user} onLogin={() => setShowAuth(true)} /></CardContent>
             </Card>
           )}
         </ModuleBoundary>
       </main>
 
-      <nav aria-label="Navegación principal" className="mobile-nav fixed bottom-0 left-0 right-0 z-50 bg-white border-t">
+      <nav aria-label={t('Navegación principal')} className="mobile-nav fixed bottom-0 left-0 right-0 z-50 bg-white border-t">
         <div className="mobile-content flex items-center justify-around py-2">
           {tabs.map(({ id, label, icon: Icon }) => (
             <Button key={id} variant="ghost" aria-current={activeTab === id ? "page" : undefined} className={`flex-col gap-1 h-auto px-2 py-2 ${activeTab === id ? "text-primary" : "text-muted-foreground"}`} onClick={() => setActiveTab(id)}>

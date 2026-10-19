@@ -5,6 +5,7 @@ import type { RestaurantBranch } from '@/shared/contracts/branches'
 import { webApi } from '@/lib/web-api'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
+import { t } from '@/shared/i18n'
 
 export default function BranchHoursEditor({ branch, onSaved, onClose }: { branch: RestaurantBranch; onSaved: (branch: RestaurantBranch) => void; onClose: () => void }) {
   const [form, setForm] = useState(() => toDayForm(branch.opening_hours ?? []))
@@ -20,23 +21,23 @@ export default function BranchHoursEditor({ branch, onSaved, onClose }: { branch
     if (!parsed.success) { setError(parsed.error.issues[0].message); return }
     saving.current = true; setBusy(true); setError('')
     try { onSaved(await webApi.saveHours(branch.id, parsed.data)) }
-    catch (err) { setError(err instanceof Error ? err.message : 'No pudimos guardar el horario.') }
+    catch (err) { setError(err instanceof Error ? err.message : t('No pudimos guardar el horario.')) }
     finally { saving.current = false; setBusy(false) }
   }
   return <form onSubmit={submit} className="space-y-3 border-t pt-4">
-    <h4 className="font-semibold">Horario de {branch.name}</h4>
-    <p className="text-sm text-muted-foreground">Si cierras después de medianoche, pon la hora de cierre menor que la de apertura (ej. 18:00 a 02:00).</p>
+    <h4 className="font-semibold">{t('Horario de')} {branch.name}</h4>
+    <p className="text-sm text-muted-foreground">{t('Si cierras después de medianoche, pon la hora de cierre menor que la de apertura (ej. 18:00 a 02:00).')}</p>
     <fieldset disabled={busy} className="space-y-2">
       {form.map((d, i) => <div key={d.day} className="grid grid-cols-[6.5rem_auto_1fr_1fr] items-center gap-2">
         <span className="text-sm font-medium">{DAY_NAMES[d.day]}</span>
-        <label className="flex items-center gap-1 text-sm"><input type="checkbox" checked={!d.closed} onChange={(e) => set(i, { closed: !e.target.checked })} />Abre</label>
+        <label className="flex items-center gap-1 text-sm"><input type="checkbox" checked={!d.closed} onChange={(e) => set(i, { closed: !e.target.checked })} />{t('Abre')}</label>
         <Input type="time" aria-label={`${DAY_NAMES[d.day]} apertura`} value={d.open} disabled={d.closed} onChange={(e) => set(i, { open: e.target.value })} />
         <Input type="time" aria-label={`${DAY_NAMES[d.day]} cierre`} value={d.close} disabled={d.closed} onChange={(e) => set(i, { close: e.target.value })} />
-        {i === 0 && <Button type="button" variant="link" size="sm" className="col-span-4 justify-self-start px-0" onClick={() => { setForm(copyMondayToAll); setNotice(COPIED_NOTICE) }}>Copiar el lunes a todos los días</Button>}
+        {i === 0 && <Button type="button" variant="link" size="sm" className="col-span-4 justify-self-start px-0" onClick={() => { setForm(copyMondayToAll); setNotice(COPIED_NOTICE) }}>{t('Copiar el lunes a todos los días')}</Button>}
       </div>)}
       {notice && <p role="status" className="text-sm text-green-800">{notice}</p>}
       {error && <p role="alert" className="text-red-700">{error}</p>}
-      <div className="flex flex-wrap gap-2"><Button type="submit">{busy ? 'Guardando…' : 'Guardar horario'}</Button><Button type="button" variant="outline" onClick={onClose}>Cancelar</Button></div>
+      <div className="flex flex-wrap gap-2"><Button type="submit">{busy ? t('Guardando…') : t('Guardar horario')}</Button><Button type="button" variant="outline" onClick={onClose}>{t('Cancelar')}</Button></div>
     </fieldset>
   </form>
 }

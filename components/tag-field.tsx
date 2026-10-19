@@ -3,6 +3,7 @@ import { useState, type ReactNode } from 'react'
 import { X } from 'lucide-react'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
+import { t } from '@/shared/i18n'
 
 /** Tag picker: type-your-own field first, then the chosen tags (removable), then quick-pick options. */
 export default function TagField({ id, legend, hint, placeholder, options = [], value, onChange, validate, disabled, tone = 'green', children }: {
@@ -23,7 +24,7 @@ export default function TagField({ id, legend, hint, placeholder, options = [], 
   function toggle(o: string) {
     if (has(o)) { onChange(value.filter((x) => x.toLowerCase() !== o.toLowerCase())); setProblem(''); return }
     const p = validate(o, value)
-    setProblem(p === 'Ya está en la lista.' ? '' : p)
+    setProblem(p === t('Ya está en la lista.') ? '' : p)
     if (!p) onChange([...value, o])
   }
   return <fieldset className="space-y-2.5 rounded-xl border p-3">
@@ -33,7 +34,7 @@ export default function TagField({ id, legend, hint, placeholder, options = [], 
     <div className="flex gap-2">
       <Input id={id} aria-label={legend} placeholder={placeholder} value={text} maxLength={40} disabled={disabled}
         onChange={(e) => { setText(e.target.value); setProblem('') }} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); add() } }} />
-      <Button type="button" variant="outline" disabled={disabled || !text.trim()} onClick={add}>Agregar</Button>
+      <Button type="button" variant="outline" disabled={disabled || !text.trim()} onClick={add}>{t('Agregar')}</Button>
     </div>
     {problem && <p role="alert" className="text-sm text-[#9a3a18]">{problem}</p>}
     {custom.length > 0 && <ul aria-label={`${legend} agregados`} className="flex flex-wrap gap-2">{custom.map((c) => <li key={c}>

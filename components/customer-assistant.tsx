@@ -9,10 +9,11 @@ import { Button } from './ui/button'
 import { Input } from './ui/input'
 import VoiceButton from './voice-button'
 import { useAccountSession } from '@/hooks/use-account-session'
+import { t, msg } from '@/shared/i18n'
 
 type Turn = { id: number; from: 'user' | 'bot'; text: string; items?: AssistantItem[] }
 type Coords = { latitude: number; longitude: number }
-const SUGGESTIONS = ['Algo picante', 'Quiero desayunar cerca', 'Un postre frío', 'Comida típica barata']
+const SUGGESTIONS = [msg('Algo picante'), msg('Quiero desayunar cerca'), msg('Un postre frío'), msg('Comida típica barata')]
 
 const locate = () => new Promise<Coords | null>((resolve) => {
   if (!navigator.geolocation) return resolve(null)
@@ -21,7 +22,7 @@ const locate = () => new Promise<Coords | null>((resolve) => {
 
 /** Diner assistant ("Para ti"): rules first, AI fallback on the server. The conversation lives only in this page. */
 export default function CustomerAssistant({ initialMessage = '' }: { initialMessage?: string }) {
-  const [turns, setTurns] = useState<Turn[]>([{ id: 0, from: 'bot', text: '¡Hola! Cuéntame qué se te antoja y te digo dónde encontrarlo.' }])
+  const [turns, setTurns] = useState<Turn[]>([{ id: 0, from: 'bot', text: t('¡Hola! Cuéntame qué se te antoja y te digo dónde encontrarlo.') }])
   const [text, setText] = useState('')
   const [busy, setBusy] = useState(false)
   const [selected, setSelected] = useState<string | null>(null)
@@ -37,7 +38,7 @@ export default function CustomerAssistant({ initialMessage = '' }: { initialMess
   const started = useRef(false)
   useEffect(() => { if (initialMessage && !started.current) { started.current = true; void send(initialMessage) } }, [initialMessage]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const add = (turn: Omit<Turn, 'id'>) => setTurns((t) => [...t, { ...turn, id: nextId.current++ }])
+  const add = (turn: Omit<Turn, 'id'>) => setTurns((turns) => [...turns, { ...turn, id: nextId.current++ }])
   async function send(message: string) {
     const clean = message.trim()
     if (!clean || busy) return
@@ -47,12 +48,12 @@ export default function CustomerAssistant({ initialMessage = '' }: { initialMess
       if (result.needsLocation) {
         location.current = await locate()
         result = location.current ? await webApi.assistant(clean, context.current, location.current, hidden.current)
-          : { ...result, reply: 'No pude obtener tu ubicación. Revisa el permiso del navegador o pide lo mismo sin «cerca».' }
+          : { ...result, reply: t('No pude obtener tu ubicación. Revisa el permiso del navegador o pide lo mismo sin «cerca».') }
       }
       context.current = result.context
       add({ from: 'bot', text: result.reply, items: result.items })
     } catch (e) {
-      add({ from: 'bot', text: e instanceof Error ? e.message : 'No pude responder. Intenta de nuevo.' })
+      add({ from: 'bot', text: e instanceof Error ? e.message : t('No pude responder. Intenta de nuevo.') })
     } finally { setBusy(false) }
   }
   function submit(event: FormEvent) { event.preventDefault(); void send(text) }
@@ -65,17 +66,17 @@ export default function CustomerAssistant({ initialMessage = '' }: { initialMess
         {turn.items?.map((item) => <button key={item.id} type="button" onClick={() => setSelected(item.id)} className="w-[88%] rounded-xl border bg-white p-3 text-left hover:border-primary focus-visible:outline-2 focus-visible:outline-primary">
           <span className="block font-semibold">{item.name}</span>
           <span className="block text-sm">{item.dish ? `${item.dish.name} · Q${item.dish.price.toFixed(2)}` : item.branch_name}</span>
-          <span className="mt-1 block text-sm font-semibold text-primary">Ver sede ›</span>
+          <span className="mt-1 block text-sm font-semibold text-primary">{t('Ver sede ›')}</span>
         </button>)}
       </div>)}
       {turns.length === 1 && <div className="flex flex-wrap gap-2">{SUGGESTIONS.map((s) => <Button key={s} variant="outline" size="sm" disabled={busy} onClick={() => send(s)}>{s}</Button>)}</div>}
-      {busy && <p role="status" className="text-sm italic text-muted-foreground">Buscando…</p>}
+      {busy && <p role="status" className="text-sm italic text-muted-foreground">{t('Buscando…')}</p>}
       <div ref={end} />
     </div>
     <form onSubmit={submit} className="sticky bottom-20 flex gap-2 bg-background py-2">
-      <Input aria-label="Escribe qué se te antoja" placeholder="Ej. algo picante cerca" value={text} maxLength={300} disabled={busy} onChange={(e) => setText(e.target.value)} />
-      <VoiceButton onText={(t) => void send(t)} onError={(m) => add({ from: 'bot', text: m })} />
-      <Button type="submit" disabled={busy || !text.trim()}><Send className="h-4 w-4" /><span className="sr-only">Enviar</span></Button>
+      <Input aria-label={t('Escribe qué se te antoja')} placeholder={t('Ej. algo picante cerca')} value={text} maxLength={300} disabled={busy} onChange={(e) => setText(e.target.value)} />
+      <VoiceButton onText={(text) => void send(text)} onError={(m) => add({ from: 'bot', text: m })} />
+      <Button type="submit" disabled={busy || !text.trim()}><Send className="h-4 w-4" /><span className="sr-only">{t('Enviar')}</span></Button>
     </form>
   </div>
 }

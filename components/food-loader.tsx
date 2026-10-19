@@ -1,3 +1,4 @@
+import { t } from '@/shared/i18n'
 // Loading state: the logo's shuco assembles itself piece by piece (keyframes in app/globals.css).
 // With reduced motion the finished shuco is shown still.
 const PIECES = [
@@ -19,7 +20,7 @@ const PIECES = [
     <path d="M44 28l10 7 10-8 10 7 10-8 10 7" stroke="#F4B400" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" fill="none" /></>,
 ]
 
-export default function FoodLoader({ label = 'Cargando…', size = 128, className = '' }: { label?: string; size?: number; className?: string }) {
+export default function FoodLoader({ label = t('Cargando…'), size = 128, className = '' }: { label?: string; size?: number; className?: string }) {
   return <div role="status" className={`flex flex-col items-center justify-center gap-2 py-6 ${className}`}>
     <svg viewBox="0 0 160 110" width={size} height={Math.round(size * 110 / 160)} aria-hidden="true" className="overflow-visible">
       <ellipse cx="80" cy="102" rx="54" ry="6" fill="#173F35" opacity=".12" />

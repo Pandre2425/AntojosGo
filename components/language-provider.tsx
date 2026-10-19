@@ -1,7 +1,7 @@
 'use client'
 
 import { createContext, Fragment, useContext, useEffect, useState, type ReactNode } from 'react'
-import { LANGS, LANG_KEY, pickLang, setLanguageSource, type Lang } from '@/shared/i18n'
+import { LANGS, LANG_KEY, pickLang, setLanguageSource, t, type Lang } from '@/shared/i18n'
 
 // Browser language on the first visit (English if it's set to English), then the reader's choice, remembered here.
 // Changing it remounts the page so every t() call renders again in the new language.
@@ -27,7 +27,7 @@ export default function LanguageProvider({ children }: { children: ReactNode }) 
 /** «Idioma / Language» switch. */
 export function LanguageSelector({ className = '' }: { className?: string }) {
   const { lang, setLang } = useLanguage()
-  return <div role="group" aria-label="Idioma / Language" className={`inline-flex rounded-full border bg-white p-0.5 ${className}`}>
+  return <div role="group" aria-label={t('Idioma / Language')} className={`inline-flex rounded-full border bg-white p-0.5 ${className}`}>
     {LANGS.map(l => <button key={l.id} type="button" aria-pressed={lang === l.id} lang={l.id} onClick={() => setLang(l.id)}
       className={`rounded-full px-3 py-1 text-sm focus-visible:outline-2 focus-visible:outline-[#173F35] ${lang === l.id ? 'bg-[#173F35] text-white' : 'text-stone-700'}`}>{l.label}</button>)}
   </div>

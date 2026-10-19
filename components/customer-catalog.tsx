@@ -14,9 +14,10 @@ import FoodLoader from './food-loader'
 import { DishReviews, RatingSummary } from './reviews'
 import VoiceButton from './voice-button'
 import { PRICE_RANGES, pickSurprise } from '@/shared/contracts/catalog-query'
+import { t } from '@/shared/i18n'
 
 type Coords = { latitude: number; longitude: number }
-const distance = (km?: number) => km == null ? null : km < 1 ? `${Math.round(km * 1000)} m en línea recta` : `${km.toFixed(1)} km en línea recta`
+const distance = (km?: number) => km == null ? null : km < 1 ? t('{m} m en línea recta', { m: Math.round(km * 1000) }) : t('{km} km en línea recta', { km: km.toFixed(1) })
 
 /** Diner search and branch detail, both through /api/v1 (same data the mobile app shows). */
 export default function CustomerCatalog({ initialQuery = '' }: { initialQuery?: string }) {
@@ -53,7 +54,7 @@ export default function CustomerCatalog({ initialQuery = '' }: { initialQuery?: 
       const result = await webApi.searchCatalog(location ? { ...base, lat: location.latitude, lng: location.longitude, radiusMeters: 50000 } : base)
       if (current === request.current) setItems(result.items)
     } catch (e) {
-      if (current === request.current) { setItems([]); setError(e instanceof Error ? e.message : 'No pudimos cargar los restaurantes.') }
+      if (current === request.current) { setItems([]); setError(e instanceof Error ? e.message : t('No pudimos cargar los restaurantes.')) }
     } finally { if (current === request.current) setLoading(false) }
   }
   useEffect(() => { void load(initialQuery, null) }, [initialQuery])
@@ -62,24 +63,24 @@ export default function CustomerCatalog({ initialQuery = '' }: { initialQuery?: 
   function applyFilters(next: Filters) { setFilters(next); void load(query.trim(), coords, next) }
   const toggle = <T,>(list: T[], v: T) => list.includes(v) ? list.filter((x) => x !== v) : [...list, v]
   function locate() {
-    if (!navigator.geolocation) { setNote('Tu navegador no permite obtener la ubicación. Busca por nombre o municipio.'); return }
-    setNote('Buscando tu ubicación…')
+    if (!navigator.geolocation) { setNote(t('Tu navegador no permite obtener la ubicación. Busca por nombre o municipio.')); return }
+    setNote(t('Buscando tu ubicación…'))
     navigator.geolocation.getCurrentPosition(
-      (p) => { const c = { latitude: p.coords.latitude, longitude: p.coords.longitude }; setCoords(c); setNote('Resultados ordenados por cercanía.'); void load(query.trim(), c) },
-      () => setNote('No pudimos obtener tu ubicación. Puedes buscar por nombre o municipio.'),
+      (p) => { const c = { latitude: p.coords.latitude, longitude: p.coords.longitude }; setCoords(c); setNote(t('Resultados ordenados por cercanía.')); void load(query.trim(), c) },
+      () => setNote(t('No pudimos obtener tu ubicación. Puedes buscar por nombre o municipio.')),
       { timeout: 15000, maximumAge: 120000 },
     )
   }
 
   function surpriseMe() {
     const pick = pickSurprise(items, surprise?.id)
-    if (!pick) { setNote('No hay opciones con esta búsqueda y estos filtros. Quita algún filtro y vuelve a intentar.'); return }
+    if (!pick) { setNote(t('No hay opciones con esta búsqueda y estos filtros. Quita algún filtro y vuelve a intentar.')); return }
     setSurprise(pick); setSelected(pick.id)
   }
   function hideRestaurant(restaurantId: string) {
     const next = [...hidden, restaurantId]
     setHidden(next); setSelected(null); setSurprise(null)
-    setNote('Listo: no volverá a aparecer en tus búsquedas. Puedes mostrarlo de nuevo en «Mi cuenta».')
+    setNote(t('Listo: no volverá a aparecer en tus búsquedas. Puedes mostrarlo de nuevo en «Mi cuenta».'))
     void load(query.trim(), coords, filters, next)
   }
 
@@ -87,35 +88,35 @@ export default function CustomerCatalog({ initialQuery = '' }: { initialQuery?: 
     surprise={surprise?.id === selected ? surprise : null} onSurpriseAgain={surprise ? surpriseMe : undefined} />
   return <div className="space-y-4">
     <form onSubmit={submit} className="flex gap-2" role="search">
-      <Input aria-label="Qué se te antoja" placeholder="Ej. pepián, café, Quetzaltenango…" value={query} maxLength={200} onChange={(e) => setQuery(e.target.value)} />
-      <VoiceButton onText={(t) => { setQuery(t); setNote(''); void load(t, coords) }} onError={setNote} />
-      <Button type="submit" disabled={loading}><Search className="h-4 w-4" /><span className="sr-only sm:not-sr-only sm:ml-1">Buscar</span></Button>
+      <Input aria-label={t('Qué se te antoja')} placeholder={t('Ej. pepián, café, Quetzaltenango…')} value={query} maxLength={200} onChange={(e) => setQuery(e.target.value)} />
+      <VoiceButton onText={(text) => { setQuery(text); setNote(''); void load(text, coords) }} onError={setNote} />
+      <Button type="submit" disabled={loading}><Search className="h-4 w-4" /><span className="sr-only sm:not-sr-only sm:ml-1">{t('Buscar')}</span></Button>
     </form>
     <div className="flex flex-wrap gap-2">
-      <Button variant="outline" onClick={locate} disabled={loading}><MapPin className="mr-1 h-4 w-4" />Usar mi ubicación</Button>
+      <Button variant="outline" onClick={locate} disabled={loading}><MapPin className="mr-1 h-4 w-4" />{t('Usar mi ubicación')}</Button>
       <Button variant={activeCount ? 'default' : 'outline'} aria-expanded={showFilters} aria-controls="diner-filters" onClick={() => setShowFilters((v) => !v)}>
-        <SlidersHorizontal className="mr-1 h-4 w-4" />Filtros{activeCount ? ` (${activeCount})` : ''}</Button>
-      <Button variant="outline" onClick={surpriseMe} disabled={loading} className="border-[#BD481F] text-[#9a3a18]"><Dices className="mr-1 h-4 w-4" />Sorpréndeme</Button>
+        <SlidersHorizontal className="mr-1 h-4 w-4" />{t('Filtros')}{activeCount ? ` (${activeCount})` : ''}</Button>
+      <Button variant="outline" onClick={surpriseMe} disabled={loading} className="border-[#BD481F] text-[#9a3a18]"><Dices className="mr-1 h-4 w-4" />{t('Sorpréndeme')}</Button>
     </div>
     {showFilters && <div id="diner-filters" className="space-y-3 rounded-2xl border bg-white p-4">
       <div className="flex flex-wrap items-center gap-2">
-        <FilterChip on={filters.openNow} onClick={() => applyFilters({ ...filters, openNow: !filters.openNow })}>Abierto ahora</FilterChip>
+        <FilterChip on={filters.openNow} onClick={() => applyFilters({ ...filters, openNow: !filters.openNow })}>{t('Abierto ahora')}</FilterChip>
         <label className="flex items-center gap-2 text-sm">Tipo de negocio
           <select className="h-9 rounded-md border bg-white px-2 text-sm" value={filters.category} onChange={(e) => applyFilters({ ...filters, category: e.target.value })}>
-            <option value="">Todos</option>{types.map((c) => <option key={c} value={c}>{c}</option>)}</select></label>
+            <option value="">{t('Todos')}</option>{types.map((c) => <option key={c} value={c}>{c}</option>)}</select></label>
       </div>
-      <fieldset className="flex flex-wrap items-center gap-2"><legend className="sr-only">Precio</legend><span className="text-sm text-stone-600">Precio</span>
+      <fieldset className="flex flex-wrap items-center gap-2"><legend className="sr-only">{t('Precio')}</legend><span className="text-sm text-stone-600">{t('Precio')}</span>
         {PRICE_RANGES.map((r, i) => <FilterChip key={r.label} on={filters.price === i} onClick={() => applyFilters({ ...filters, price: filters.price === i ? null : i })}>{r.label}</FilterChip>)}</fieldset>
-      <fieldset className="flex flex-wrap items-center gap-2"><legend className="sr-only">Etiquetas</legend><span className="text-sm text-stone-600">Quiero</span>
-        {DISH_TAGS.map((t) => <FilterChip key={t} on={filters.tags.includes(t)} onClick={() => applyFilters({ ...filters, tags: toggle(filters.tags, t) })}>{DISH_TAG_LABELS[t]}</FilterChip>)}</fieldset>
-      <fieldset className="flex flex-wrap items-center gap-2"><legend className="sr-only">Alérgenos a evitar</legend><span className="text-sm text-stone-600">Sin</span>
+      <fieldset className="flex flex-wrap items-center gap-2"><legend className="sr-only">{t('Etiquetas')}</legend><span className="text-sm text-stone-600">{t('Quiero')}</span>
+        {DISH_TAGS.map((tag) => <FilterChip key={tag} on={filters.tags.includes(tag)} onClick={() => applyFilters({ ...filters, tags: toggle(filters.tags, tag) })}>{t(DISH_TAG_LABELS[tag])}</FilterChip>)}</fieldset>
+      <fieldset className="flex flex-wrap items-center gap-2"><legend className="sr-only">{t('Alérgenos a evitar')}</legend><span className="text-sm text-stone-600">{t('Sin')}</span>
         {ALLERGENS.map((a) => <FilterChip key={a} tone="red" on={filters.without.includes(a)} onClick={() => applyFilters({ ...filters, without: toggle(filters.without, a) })}>{ALLERGEN_LABELS[a]}</FilterChip>)}</fieldset>
-      {filters.without.length > 0 && <p className="text-xs text-stone-600">Ocultamos los platillos que el restaurante marcó con esos alérgenos. Si un platillo no tiene alérgenos declarados te lo indicamos; si tu alergia es grave, confírmala con el restaurante.</p>}
-      {activeCount > 0 && <button type="button" className="text-sm underline" onClick={() => applyFilters(noFilters)}>Quitar filtros</button>}
+      {filters.without.length > 0 && <p className="text-xs text-stone-600">{t('Ocultamos los platillos que el restaurante marcó con esos alérgenos. Si un platillo no tiene alérgenos declarados te lo indicamos; si tu alergia es grave, confírmala con el restaurante.')}</p>}
+      {activeCount > 0 && <button type="button" className="text-sm underline" onClick={() => applyFilters(noFilters)}>{t('Quitar filtros')}</button>}
     </div>}
     {note && <p role="status" className="text-sm text-muted-foreground">{note}</p>}
-    {error && <div role="alert" className="rounded-xl bg-red-50 p-4 text-sm"><p>{error}</p><Button variant="ghost" onClick={() => load(query.trim(), coords)}>Reintentar</Button></div>}
-    {loading ? <p role="status">Buscando…</p> : !error && !items.length ? <p className="text-sm text-muted-foreground">No hay restaurantes publicados que coincidan. Prueba otro platillo, nombre o municipio.</p> :
+    {error && <div role="alert" className="rounded-xl bg-red-50 p-4 text-sm"><p>{error}</p><Button variant="ghost" onClick={() => load(query.trim(), coords)}>{t('Reintentar')}</Button></div>}
+    {loading ? <p role="status">{t('Buscando…')}</p> : !error && !items.length ? <p className="text-sm text-muted-foreground">{t('No hay restaurantes publicados que coincidan. Prueba otro platillo, nombre o municipio.')}</p> :
       <BranchList items={items} onSelect={setSelected} restricted={filters.without.length > 0} />}
   </div>
 }
@@ -144,9 +145,9 @@ function BranchList({ items, onSelect, restricted = false }: { items: PublicCata
       <p className="text-sm">{item.branch_name} · {item.address}, {item.municipality}</p>
       {item.description && <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{item.description}</p>}
       {item.dish && <p className="mt-1 text-sm"><span className="font-medium">{item.dish.name}</span> <span className="tabular-nums">Q{item.dish.price.toFixed(2)}</span>
-        {restricted && !item.dish.allergensDeclared && <span className="ml-2 rounded-full border border-dashed border-amber-500 px-2 py-0.5 text-xs text-amber-900">Alérgenos sin declarar</span>}</p>}
+        {restricted && !item.dish.allergensDeclared && <span className="ml-2 rounded-full border border-dashed border-amber-500 px-2 py-0.5 text-xs text-amber-900">{t('Alérgenos sin declarar')}</span>}</p>}
       <p className="mt-1 flex flex-wrap gap-x-3 text-xs text-muted-foreground">
-        {item.openNow === true && <span className="font-semibold text-green-700">Abierto ahora</span>}{item.openNow === false && <span>Cerrado ahora</span>}
+        {item.openNow === true && <span className="font-semibold text-green-700">{t('Abierto ahora')}</span>}{item.openNow === false && <span>{t('Cerrado ahora')}</span>}
         {distance(item.distanceKm) && <span>{distance(item.distanceKm)}</span>}</p>
       </div>
     </button>
@@ -167,12 +168,12 @@ export function FavoriteBranches({ onLogin }: { onLogin: () => void }) {
     webApi.listFavorites().then((rows) => { if (active) setItems(rows) }).catch((e) => { if (active) setError(e.message) })
     return () => { active = false }
   }, [user?.id, selected, retry])
-  if (sessionLoading) return <FoodLoader label="Cargando…" />
-  if (!user) return <div className="space-y-3"><p className="text-sm text-muted-foreground">Inicia sesión para guardar tus restaurantes favoritos y verlos también en la app.</p><Button onClick={onLogin}>Iniciar sesión o crear cuenta</Button></div>
+  if (sessionLoading) return <FoodLoader label={t('Cargando…')} />
+  if (!user) return <div className="space-y-3"><p className="text-sm text-muted-foreground">{t('Inicia sesión para guardar tus restaurantes favoritos y verlos también en la app.')}</p><Button onClick={onLogin}>{t('Iniciar sesión o crear cuenta')}</Button></div>
   if (selected) return <BranchDetail id={selected} onBack={() => setSelected(null)} />
-  if (error) return <div role="alert"><p>{error}</p><Button variant="outline" onClick={() => setRetry((v) => v + 1)}>Reintentar</Button></div>
-  if (!items) return <FoodLoader label="Cargando favoritos…" />
-  return items.length ? <BranchList items={items} onSelect={setSelected} /> : <p className="text-sm text-muted-foreground">Aún no tienes favoritos. Abre una sede y toca «Guardar en favoritos».</p>
+  if (error) return <div role="alert"><p>{error}</p><Button variant="outline" onClick={() => setRetry((v) => v + 1)}>{t('Reintentar')}</Button></div>
+  if (!items) return <FoodLoader label={t('Cargando favoritos…')} />
+  return items.length ? <BranchList items={items} onSelect={setSelected} /> : <p className="text-sm text-muted-foreground">{t('Aún no tienes favoritos. Abre una sede y toca «Guardar en favoritos».')}</p>
 }
 
 function FavoriteButton({ branchId }: { branchId: string }) {
@@ -190,10 +191,10 @@ function FavoriteButton({ branchId }: { branchId: string }) {
   async function toggle() {
     setBusy(true); setError('')
     try { await (saved ? webApi.removeFavorite(branchId) : webApi.addFavorite(branchId)); setSaved(!saved) }
-    catch (e) { setError(e instanceof Error ? e.message : 'No pudimos guardar el favorito.') }
+    catch (e) { setError(e instanceof Error ? e.message : t('No pudimos guardar el favorito.')) }
     finally { setBusy(false) }
   }
-  return <div><Button variant="outline" aria-pressed={saved} disabled={busy} onClick={toggle}><Heart className={`mr-1 h-4 w-4 ${saved ? 'fill-primary text-primary' : ''}`} />{saved ? 'En favoritos' : 'Guardar en favoritos'}</Button>{error && <p role="alert" className="text-sm text-red-700">{error}</p>}</div>
+  return <div><Button variant="outline" aria-pressed={saved} disabled={busy} onClick={toggle}><Heart className={`mr-1 h-4 w-4 ${saved ? 'fill-primary text-primary' : ''}`} />{saved ? t('En favoritos') : t('Guardar en favoritos')}</Button>{error && <p role="alert" className="text-sm text-red-700">{error}</p>}</div>
 }
 
 export function BranchDetail({ id, onBack, onHide, surprise, onSurpriseAgain }: {
@@ -208,46 +209,46 @@ export function BranchDetail({ id, onBack, onHide, surprise, onSurpriseAgain }: 
     let active = true
     setData(null); setError('')
     webApi.getPublicBranch(id).then((r) => { if (active) setData(r) })
-      .catch((e) => { if (active) setError(e instanceof ApiError && e.status === 404 ? 'Esta sede ya no está publicada.' : e instanceof Error ? e.message : 'No pudimos cargar la sede.') })
+      .catch((e) => { if (active) setError(e instanceof ApiError && e.status === 404 ? t('Esta sede ya no está publicada.') : e instanceof Error ? e.message : t('No pudimos cargar la sede.')) })
     return () => { active = false }
   }, [id, retry])
   const b = data?.branch
   return <div className="space-y-4">
-    <Button variant="ghost" onClick={onBack}><ArrowLeft className="mr-1 h-4 w-4" />Volver a resultados</Button>
+    <Button variant="ghost" onClick={onBack}><ArrowLeft className="mr-1 h-4 w-4" />{t('Volver a resultados')}</Button>
     {surprise && <div role="status" className="flex flex-wrap items-center gap-2 rounded-2xl border border-[#BD481F]/40 bg-[#BD481F]/5 p-3 text-sm">
-      <Dices className="h-5 w-5 text-[#BD481F]" /><span className="flex-1"><b>¡Sorpresa!</b> Te proponemos {surprise.name}{surprise.dish ? `: ${surprise.dish.name} (Q${surprise.dish.price.toFixed(2)})` : ''}.</span>
-      {onSurpriseAgain && <Button size="sm" variant="outline" onClick={onSurpriseAgain}>Otra opción</Button>}</div>}
-    {error ? <div role="alert"><p>{error}</p><Button variant="outline" onClick={() => setRetry((v) => v + 1)}>Reintentar</Button></div> : !b ? <FoodLoader label="Cargando sede…" /> : <>
+      <Dices className="h-5 w-5 text-[#BD481F]" /><span className="flex-1"><b>{t('¡Sorpresa!')}</b> {t('Te proponemos')} {surprise.name}{surprise.dish ? `: ${surprise.dish.name} (Q${surprise.dish.price.toFixed(2)})` : ''}.</span>
+      {onSurpriseAgain && <Button size="sm" variant="outline" onClick={onSurpriseAgain}>{t('Otra opción')}</Button>}</div>}
+    {error ? <div role="alert"><p>{error}</p><Button variant="outline" onClick={() => setRetry((v) => v + 1)}>{t('Reintentar')}</Button></div> : !b ? <FoodLoader label={t('Cargando sede…')} /> : <>
       <section className="overflow-hidden rounded-2xl border bg-white">
-        {b.cover_url && <img src={b.cover_url} alt={`Foto de ${b.name}`} className="h-48 w-full object-cover sm:h-64" />}
+        {b.cover_url && <img src={b.cover_url} alt={t('Foto de {name}', { name: b.name })} className="h-48 w-full object-cover sm:h-64" />}
         <div className="space-y-2 p-5">
         <div className="flex items-center gap-3"><Logo url={b.logo_url} name={b.name} size="h-16 w-16" /><div><h2 className="text-2xl font-bold">{b.name}</h2><RatingSummary rating={b.rating} /></div></div>
         <div className="flex flex-wrap gap-2"><FavoriteButton branchId={b.id} />
           {onHide && b.restaurant_id && <Button variant="ghost" disabled={hiding} onClick={async () => {
             setHiding(true); setHideError('')
-            try { await webApi.hideRestaurant(b.restaurant_id!); onHide(b.restaurant_id!) } catch (e) { setHideError(e instanceof Error ? e.message : 'No pudimos ocultarlo.') } finally { setHiding(false) }
-          }}><EyeOff className="mr-1 h-4 w-4" />No me interesa</Button>}</div>
+            try { await webApi.hideRestaurant(b.restaurant_id!); onHide(b.restaurant_id!) } catch (e) { setHideError(e instanceof Error ? e.message : t('No pudimos ocultarlo.')) } finally { setHiding(false) }
+          }}><EyeOff className="mr-1 h-4 w-4" />{t('No me interesa')}</Button>}</div>
         {hideError && <p role="alert" className="text-sm text-red-700">{hideError}</p>}
         <p className="font-medium">{b.branch_name}{b.category ? ` · ${b.category}` : ''}</p>
         <p className="text-sm">{b.address}, {b.municipality}, {b.department}</p>
-        <p className="text-sm text-muted-foreground">{b.description || 'Sin descripción.'}</p>
+        <p className="text-sm text-muted-foreground">{b.description || t('Sin descripción.')}</p>
         <Hours hours={b.opening_hours ?? []} />
-        {b.phone && <div className="flex flex-wrap gap-2"><a className="rounded-md border px-3 py-1.5 text-sm" href={phoneUrl(b.phone)}>Llamar · {b.phone}</a>{b.whatsapp && <a className="rounded-md border px-3 py-1.5 text-sm" target="_blank" rel="noreferrer" href={whatsappUrl(b.phone)}>WhatsApp</a>}</div>}
-        {b.latitude != null && b.longitude != null && <a className="inline-flex items-center gap-2 rounded-xl bg-[#BD481F] px-4 py-2 text-sm font-semibold text-white hover:bg-[#9a3a18]" target="_blank" rel="noreferrer" href={directionsUrl(b.latitude, b.longitude)}><MapPin className="h-4 w-4" />Cómo llegar</a>}
+        {b.phone && <div className="flex flex-wrap gap-2"><a className="rounded-md border px-3 py-1.5 text-sm" href={phoneUrl(b.phone)}>{t('Llamar ·')} {b.phone}</a>{b.whatsapp && <a className="rounded-md border px-3 py-1.5 text-sm" target="_blank" rel="noreferrer" href={whatsappUrl(b.phone)}>{t('WhatsApp')}</a>}</div>}
+        {b.latitude != null && b.longitude != null && <a className="inline-flex items-center gap-2 rounded-xl bg-[#BD481F] px-4 py-2 text-sm font-semibold text-white hover:bg-[#9a3a18]" target="_blank" rel="noreferrer" href={directionsUrl(b.latitude, b.longitude)}><MapPin className="h-4 w-4" />{t('Cómo llegar')}</a>}
         </div>
       </section>
       <section className="rounded-2xl border bg-white p-5 space-y-3">
-        <h3 className="text-lg font-semibold">Menú</h3>
-        {data.menu.length === 0 ? <p className="text-sm text-muted-foreground">Este restaurante aún no ha publicado su menú.</p> :
+        <h3 className="text-lg font-semibold">{t('Menú')}</h3>
+        {data.menu.length === 0 ? <p className="text-sm text-muted-foreground">{t('Este restaurante aún no ha publicado su menú.')}</p> :
           <ul className="divide-y">{data.menu.map((dish) => <li key={dish.id} className="flex gap-3 py-3">
-            {dish.image_url && <img src={dish.image_url} alt={`Foto de ${dish.name}`} loading="lazy" className="h-20 w-20 shrink-0 rounded-xl object-cover" />}
+            {dish.image_url && <img src={dish.image_url} alt={t('Foto de {name}', { name: dish.name })} loading="lazy" className="h-20 w-20 shrink-0 rounded-xl object-cover" />}
             <div className="min-w-0 flex-1">
               <p className="font-medium">{dish.name} <span className="whitespace-nowrap">· Q{dish.price.toFixed(2)}</span></p>
               {dish.category && <p className="text-xs text-muted-foreground">{dish.category}</p>}
               {dish.description && <p className="text-sm text-muted-foreground">{dish.description}</p>}
-              {dish.ingredients?.length ? <p className="text-sm text-muted-foreground">Ingredientes: {dish.ingredients.join(', ')}</p> : null}
+              {dish.ingredients?.length ? <p className="text-sm text-muted-foreground">{t('Ingredientes:')} {dish.ingredients.join(', ')}</p> : null}
               <DishAllergens allergens={dish.allergens} other={dish.allergens_other} />
-              {!dish.is_available && <p className="text-xs font-semibold text-red-700">Agotado por ahora</p>}
+              {!dish.is_available && <p className="text-xs font-semibold text-red-700">{t('Agotado por ahora')}</p>}
               <DishReviews dishId={dish.id} rating={dish.rating} />
             </div>
           </li>)}</ul>}
@@ -258,14 +259,14 @@ export function BranchDetail({ id, onBack, onHide, surprise, onSurpriseAgain }: 
 
 function Hours({ hours }: { hours: NonNullable<PublicBranchExtras['opening_hours']> }) {
   const open = isOpenNow(hours)
-  if (open === null) return <p className="text-sm text-muted-foreground">Horario sin información.</p>
-  return <details className="text-sm"><summary className="cursor-pointer"><span className={open ? 'font-semibold text-green-700' : 'font-semibold text-red-700'}>{open ? 'Abierto ahora' : 'Cerrado ahora'}</span> · ver horario</summary>
+  if (open === null) return <p className="text-sm text-muted-foreground">{t('Horario sin información.')}</p>
+  return <details className="text-sm"><summary className="cursor-pointer"><span className={open ? 'font-semibold text-green-700' : 'font-semibold text-red-700'}>{open ? t('Abierto ahora') : t('Cerrado ahora')}</span> · ver horario</summary>
     <ul className="mt-1">{describeHours(hours).map((line) => <li key={line}>{line}</li>)}</ul></details>
 }
 
 function DishAllergens({ allergens, other = [] }: { allergens?: readonly string[]; other?: readonly string[] }) {
   const { declared, contains } = allergenStatus(allergens, other)
-  if (!declared) return <p className="text-xs text-amber-900">Alérgenos no declarados por el restaurante</p>
-  if (!contains.length && !other.length) return <p className="text-xs text-green-800">Sin alérgenos comunes, según el restaurante</p>
-  return <p className="flex flex-wrap gap-1">{allergenNames(allergens, other).map((a) => <span key={a} className="rounded-full border border-[#BD481F] px-2 py-0.5 text-xs text-[#9a3a18]">Contiene {a.toLowerCase()}</span>)}</p>
+  if (!declared) return <p className="text-xs text-amber-900">{t('Alérgenos no declarados por el restaurante')}</p>
+  if (!contains.length && !other.length) return <p className="text-xs text-green-800">{t('Sin alérgenos comunes, según el restaurante')}</p>
+  return <p className="flex flex-wrap gap-1">{allergenNames(allergens, other).map((a) => <span key={a} className="rounded-full border border-[#BD481F] px-2 py-0.5 text-xs text-[#9a3a18]">{t('Contiene')} {a.toLowerCase()}</span>)}</p>
 }

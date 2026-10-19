@@ -2,6 +2,7 @@
 import { useEffect, useRef } from 'react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
+import { t } from '@/shared/i18n'
 
 export type MapBranch = { id: string; name: string; branch_name: string; latitude: number | null; longitude: number | null }
 
@@ -29,7 +30,7 @@ export default function BranchesOverviewMap({ branches, onOpen }: { branches: Ma
       const box = document.createElement('div')
       const title = document.createElement('p'); title.className = 'font-semibold'; title.textContent = b.name
       const sub = document.createElement('p'); sub.className = 'text-xs text-stone-600'; sub.textContent = b.branch_name
-      const button = document.createElement('button'); button.type = 'button'; button.textContent = 'Ver sede'
+      const button = document.createElement('button'); button.type = 'button'; button.textContent = t('Ver sede')
       button.className = 'mt-2 rounded-md bg-[#173F35] px-3 py-1 text-sm text-white'
       button.onclick = () => open.current(b.id)
       box.append(title, sub, button)
@@ -41,5 +42,5 @@ export default function BranchesOverviewMap({ branches, onOpen }: { branches: Ma
     resize.observe(container.current)
     return () => { resize.disconnect(); map.remove() }
   }, [branches])
-  return <div ref={container} aria-label="Mapa de restaurantes registrados" className="relative z-0 h-80 w-full rounded-2xl border" />
+  return <div ref={container} aria-label={t('Mapa de restaurantes registrados')} className="relative z-0 h-80 w-full rounded-2xl border" />
 }
