@@ -4,7 +4,7 @@ Actualizado el 13 de octubre de 2026.
 
 AntojosGo ayuda a los comensales de Guatemala (piloto en Quetzaltenango) a encontrar dónde comer lo que se les antoja, y a los restaurantes a publicar sus sedes y su menú. Tiene una **web** (comensales y restaurantes) y una **app Android** (comensales y restaurantes) que comparten el mismo servidor, la misma base de datos y las mismas reglas.
 
-- Web en producción: https://antojos-go.vercel.app
+- Web en producción: https://antojosgo.com
 - Código: https://github.com/Pandre2425/AntojosGo (rama `main`; cada cambio subido se publica solo en Vercel)
 - App: APK firmado que se distribuye fuera de Google Play (`scripts/build-apk.ps1`)
 
@@ -116,7 +116,7 @@ AntojosGo ayuda a los comensales de Guatemala (piloto en Quetzaltenango) a encon
 - Expo SDK 57 / React Native 0.86, Expo Router con **5 pestañas**: Inicio · Buscar · Asistente · Favoritos · Mi cuenta.
 - Sistema de diseño en `mobile/src/ui.tsx`: colores, tamaños de letra, espacios y componentes (botón, campo, chip, campo de etiquetas).
 - Sesión guardada cifrada (SecureStore); solo tráfico HTTPS; pide 7 permisos (ubicación, internet, red, lectura de fotos en Android antiguo, vibración, wake lock).
-- APK: `.\scripts\build-apk.ps1 -ApiUrl https://antojos-go.vercel.app` (añadir `-Emulator` para probar en el emulador). Firmado con la llave propia (`~/.antojosgo`), verifica la firma al terminar.
+- APK: `.\scripts\build-apk.ps1 -ApiUrl https://antojosgo.com` (añadir `-Emulator` para probar en el emulador). Firmado con la llave propia (`~/.antojosgo`), verifica la firma al terminar.
 - Aviso de actualización: la app lee `public/app-version.json` del servidor al abrir.
 
 ### Web
@@ -151,7 +151,7 @@ AntojosGo ayuda a los comensales de Guatemala (piloto en Quetzaltenango) a encon
 - ✅ «No me interesa» (web y app): el restaurante desaparece de las búsquedas y del asistente de esa cuenta; se puede mostrar de nuevo en «Mi cuenta». Tabla `hidden_restaurants`, máximo 200.
 - ✅ Búsqueda por voz: en la web con el reconocimiento del navegador (Chrome, Edge, Android); en la app con `expo-speech-recognition` (reconocimiento de Google). Si el dispositivo no lo tiene, el micrófono no aparece.
 - ✅ Filtro de precio (web y app): «Hasta Q25», «Q25 a Q50», «Q50 a Q100», «Más de Q100». Se filtra en la base (`search_catalog_v3`).
-- ✅ Panel de reseñas reportadas en `https://antojos-go.vercel.app/admin`: «Mantener» u «Ocultar» (sale de la lista y del promedio) y «Mostrar de nuevo». Solo administradores (`app_admins`); hoy, la cuenta pabloruiz0123@gmail.com.
+- ✅ Panel de reseñas reportadas en `https://antojosgo.com/admin`: «Mantener» u «Ocultar» (sale de la lista y del promedio) y «Mostrar de nuevo». Solo administradores (`app_admins`); hoy, la cuenta pabloruiz0123@gmail.com.
 - ✅ Accesibilidad: en la web, «Tamaño del texto» (Normal, Grande, Muy grande) en «Mi perfil»; en la app sigue el tamaño de letra de Android, con un acceso directo a esos ajustes. Ambas respetan «reducir animaciones».
 - ⏳ Iniciar sesión con Google: código listo en web y app; falta crear la credencial y activarla (`docs/GOOGLE-LOGIN.md`). El botón aparece solo cuando esté activado.
 

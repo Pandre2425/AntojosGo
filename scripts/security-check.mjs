@@ -1,11 +1,11 @@
-// Security test suite (docs/SEGURIDAD.md). Usage: node scripts/security-check.mjs [https://antojos-go.vercel.app]
+// Security test suite (docs/SEGURIDAD.md). Usage: node scripts/security-check.mjs [https://antojosgo.com]
 // Needs QA_A_EMAIL/QA_A_PASSWORD and QA_B_EMAIL/QA_B_PASSWORD (two QA owner accounts, A with a restaurant,
 // branch and dish) and .env.local with NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY.
 // Writes only touch the QA accounts; attacks that should fail use no-op values.
 import fs from 'node:fs'
 const env = Object.fromEntries(fs.readFileSync(new URL('../.env.local', import.meta.url), 'utf8').split(/\r?\n/).map(l => l.match(/^([A-Z_]+)=(.*)$/)).filter(Boolean).map(m => [m[1], m[2].replace(/^["']|["']$/g, '')]))
 const SB = env.NEXT_PUBLIC_SUPABASE_URL, KEY = env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
-const API = process.argv[2] || 'https://antojos-go.vercel.app'
+const API = process.argv[2] || 'https://antojosgo.com'
 const qa = Object.fromEntries(['A', 'B'].map(k => [k.toLowerCase(), { email: process.env[`QA_${k}_EMAIL`], password: process.env[`QA_${k}_PASSWORD`] }]))
 if (!qa.a.email || !qa.b.email) { console.error('Faltan QA_A_* / QA_B_*'); process.exit(2) }
 const results = []

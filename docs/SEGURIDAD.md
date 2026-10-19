@@ -1,6 +1,6 @@
 # Seguridad de AntojosGo (web y app)
 
-Revisión y pruebas del 10 de octubre de 2026, contra producción (`https://antojos-go.vercel.app`) y el APK 0.3.1.
+Revisión y pruebas del 10 de octubre de 2026, contra producción (`https://antojosgo.com`) y el APK 0.3.1.
 Las pruebas automáticas se repiten con:
 
 ```

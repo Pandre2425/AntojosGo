@@ -61,7 +61,7 @@ export default function AccountAccess({ audience, onBack }: { audience: 'custome
     const db = getSupabase()
     if (!db) return
     setBusy(true)
-    // Leaves the page for Google and comes back here with the session (Redirect URLs: https://antojos-go.vercel.app/**).
+    // Leaves the page for Google and comes back here with the session (Redirect URLs: https://antojosgo.com/**).
     const { error } = await db.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.href.split('#')[0] } })
     if (error) { setError(authErrorMessage(error)); setBusy(false) }
   }

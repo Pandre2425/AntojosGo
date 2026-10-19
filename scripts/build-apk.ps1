@@ -1,6 +1,6 @@
 <#
 Builds the Android test APK (ARM64) pointing at a deployed backend.
-  .\scripts\build-apk.ps1 -ApiUrl https://antojosgo.vercel.app
+  .\scripts\build-apk.ps1 -ApiUrl https://antojosgo.com
   .\scripts\build-apk.ps1 -ApiUrl http://192.168.1.19:3000 -AllowHttp   # LAN test against the dev PC
 Optional: GOOGLE_MAPS_ANDROID_KEY (env var or mobile/.env.local) enables maps (see mobile/app.config.js).
 Signing: the project's own key, read from ~/.gradle/gradle.properties (see mobile/plugins/with-release-signing.js).

@@ -2,7 +2,7 @@
 
 ## Qué está hecho en el código (12 de octubre de 2026)
 
-- **Registro** (web y app): pide a Supabase que el enlace del correo regrese a `https://antojos-go.vercel.app/cuenta?accion=confirmar`. Si la confirmación está activa, el formulario dice «Te enviamos un enlace a …» y vuelve a «Iniciar sesión».
+- **Registro** (web y app): pide a Supabase que el enlace del correo regrese a `https://antojosgo.com/cuenta?accion=confirmar`. Si la confirmación está activa, el formulario dice «Te enviamos un enlace a …» y vuelve a «Iniciar sesión».
 - **«¿Olvidaste tu contraseña?»** (web y app, en «Iniciar sesión»): envía un enlace a `…/cuenta?accion=restablecer`. El mensaje es el mismo exista o no la cuenta, para no revelar qué correos están registrados.
 - **«Reenviar confirmación»**: aparece si al iniciar sesión Supabase responde que el correo no está confirmado.
 - **Página `/cuenta`** (web): muestra «Correo confirmado», o el formulario «Crea tu contraseña nueva» (mínimo 10 caracteres, con confirmación). Si el enlace venció o ya se usó, lo dice y explica cómo pedir otro.
@@ -28,8 +28,8 @@ Límite de Gmail: unos 500 correos al día, suficiente para la tesis. Alternativ
 
 En https://supabase.com/dashboard/project/dmskwpquomqcsumaqaej/auth/url-configuration:
 
-- Site URL: `https://antojos-go.vercel.app`
-- Redirect URLs: `https://antojos-go.vercel.app/**` y, para pruebas locales, `http://localhost:3001/**`. Con `/**` también se aceptan los enlaces que llevan `?accion=…`; sin eso Supabase manda al Site URL.
+- Site URL: `https://antojosgo.com`
+- Redirect URLs: `https://antojosgo.com/**` y, para pruebas locales, `http://localhost:3001/**`. Con `/**` también se aceptan los enlaces que llevan `?accion=…`; sin eso Supabase manda al Site URL.
 
 Prueba del 16 de octubre: el SMTP envió el correo de recuperación, pero el enlace regresaba a `http://localhost:3000` porque el Site URL seguía con ese valor. Con la sesión del enlace, la página `/cuenta` de producción cambió la contraseña: la nueva entra y la anterior da `invalid_credentials`.
 

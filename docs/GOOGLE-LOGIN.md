@@ -8,12 +8,12 @@ El código ya está listo en la web y en la app. El botón «Continuar con Googl
 2. **APIs y servicios → Pantalla de consentimiento de OAuth**:
    - Tipo: **Externo**.
    - Nombre de la app: `AntojosGo`; correo de asistencia: el Gmail del proyecto; logo opcional.
-   - Dominios autorizados: `vercel.app` y `supabase.co`.
+   - Dominios autorizados: `antojosgo.com` y `supabase.co`.
    - Permisos: deja los básicos (`email`, `profile`, `openid`).
    - Publica la app («Publicar app»). En modo «Prueba» solo entran los correos que agregues como testers.
 3. **APIs y servicios → Credenciales → Crear credenciales → ID de cliente de OAuth**:
    - Tipo de aplicación: **Aplicación web**. Sirve también para la app Android, porque el inicio pasa por el navegador.
-   - Orígenes autorizados de JavaScript: `https://antojos-go.vercel.app`.
+   - Orígenes autorizados de JavaScript: `https://antojosgo.com`.
    - URI de redireccionamiento autorizados: `https://dmskwpquomqcsumaqaej.supabase.co/auth/v1/callback`.
    - Crear. Copia el **ID de cliente** y el **Secreto del cliente**. No los pegues en el chat ni en git.
 
@@ -28,7 +28,7 @@ En https://supabase.com/dashboard/project/dmskwpquomqcsumaqaej/auth/url-configur
 
 - `antojosgo://auth` (la app Android).
 
-`https://antojos-go.vercel.app/**` ya está.
+`https://antojosgo.com/**` ya está.
 
 ## 4. Probar
 
