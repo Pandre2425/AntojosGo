@@ -857,4 +857,9 @@ export const en: Record<string, string> = {
   "Confirmo que no contiene ninguno de los alérgenos comunes (maní, nueces, lácteos, huevo, gluten, mariscos, pescado, soya, ajonjolí).": "I confirm it contains none of the common allergens (peanuts, tree nuts, dairy, egg, gluten, shellfish, fish, soy, sesame).",
   "Descubrir": "Discover",
   "Explorar": "Explore",
+  "Informar un problema del mapa": "Report a map problem",
+  "Te proponemos {name}.": "We suggest {name}.",
+  "Te proponemos {name}: {dish}.": "We suggest {name}: {dish}.",
+  "Abrir en otra app (Waze, Maps…)": "Open in another app (Waze, Maps…)",
+  "Conectado a {origin}.": "Connected to {origin}.",
 }

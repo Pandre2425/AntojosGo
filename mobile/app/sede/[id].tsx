@@ -43,7 +43,7 @@ export default function SedeDetail() {
   const b = data.branch
   return <Page>
     {sorpresa ? <View accessibilityLiveRegion="polite" style={{ padding: spacing.md, borderRadius: radius.lg, backgroundColor: colors.orangeSoft, gap: 2 }}>
-      <Txt variant="label">{t('🎲 ¡Sorpresa!')}</Txt><Txt>{sorpresa === '1' ? `Te proponemos ${b.name}.` : `Te proponemos ${b.name}: ${sorpresa}.`}</Txt>
+      <Txt variant="label">{t('🎲 ¡Sorpresa!')}</Txt><Txt>{sorpresa === '1' ? t('Te proponemos {name}.', { name: b.name }) : t('Te proponemos {name}: {dish}.', { name: b.name, dish: sorpresa })}</Txt>
     </View> : null}
     <BranchHeader b={b} />
     <Directions b={b} />
@@ -99,7 +99,7 @@ function Directions({ b }: { b: Branch }) {
     </Pressable> : null}
     <Action title={t('Cómo llegar')} onPress={go} />
     <Pressable accessibilityRole="button" onPress={other} style={{ alignSelf: 'center', paddingVertical: spacing.sm, paddingHorizontal: spacing.md, minHeight: 44, justifyContent: 'center' }}>
-      <Text style={[type.body, { textDecorationLine: 'underline' }]}>Abrir en otra app (Waze, Maps…)</Text>
+      <Text style={[type.body, { textDecorationLine: 'underline' }]}>{t('Abrir en otra app (Waze, Maps…)')}</Text>
     </Pressable>
   </View>
 }

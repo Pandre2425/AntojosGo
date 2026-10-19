@@ -155,9 +155,16 @@ AntojosGo ayuda a los comensales de Guatemala (piloto en Quetzaltenango) a encon
 - ✅ Accesibilidad: en la web, «Tamaño del texto» (Normal, Grande, Muy grande) en «Mi perfil»; en la app sigue el tamaño de letra de Android, con un acceso directo a esos ajustes. Ambas respetan «reducir animaciones».
 - ⏳ Iniciar sesión con Google: código listo en web y app; falta crear la credencial y activarla (`docs/GOOGLE-LOGIN.md`). El botón aparece solo cuando esté activado.
 
+### Inglés (19 de octubre)
+
+- ✅ Web y app en español e inglés. El idioma se elige solo (el del navegador o del teléfono) y se cambia en «Mi perfil» / «Mi cuenta».
+- ✅ Pantallas: 870 textos traducidos a mano en `shared/i18n/en.ts` (la clave es el texto en español). La prueba `tests/i18n.test.cjs` falla si un texto nuevo no tiene su versión en inglés.
+- ✅ Asistente: entiende y responde en inglés («cheap pizza», «without peanuts», «near me»). En «Explorar», las palabras de comida en inglés también buscan sus equivalentes en español.
+- ⏳ Contenido de los restaurantes y reseñas: lo traduce Gemini y se guarda 30 días. **Necesita `GEMINI_API_KEY` en Vercel**; sin la clave se muestra el original con «Original in Spanish».
+
 ### Decisiones pendientes
 
-12. Clave de Gemini (`GEMINI_API_KEY` en `.env.local` y en Vercel).
+12. Clave de Gemini (`GEMINI_API_KEY` en Vercel): activa la IA del asistente y la traducción del contenido al inglés. Gratis en https://aistudio.google.com/apikey.
 13. ✅ Confirmación de correo y recuperación de contraseña: activas y probadas de punta a punta el 16 de octubre (SMTP Gmail, `docs/EMAIL-SETUP.md`).
 14. Límite de peticiones en la API (antes de usar IA de pago).
 15. Documentos de la tesis en el repositorio público.

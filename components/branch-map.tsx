@@ -47,6 +47,6 @@ export default function BranchMap({ value, onChange }: { value: BranchLocation |
       </div>
     </div>
     {failed && <p role="status" className="text-sm">{t('No se cargaron algunas partes del mapa. Puedes guardar coordenadas conocidas o cerrar y reintentar.')}</p>}
-    <a href="https://www.openstreetmap.org/fixthemap" target="_blank" rel="noreferrer" className="text-sm underline">Informar un problema del mapa</a>
+    <a href="https://www.openstreetmap.org/fixthemap" target="_blank" rel="noreferrer" className="text-sm underline">{t('Informar un problema del mapa')}</a>
   </div>
 }

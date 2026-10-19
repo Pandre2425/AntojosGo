@@ -127,7 +127,7 @@ export default function Discover() {
           setBusy(false)
         }
       }} disabled={busy} /></View>
-        <View style={{ flex: 1 }}><Action title={`Filtros${activeCount ? ` (${activeCount})` : ''}`} secondary={!activeCount} onPress={() => setShowFilters(v => !v)} disabled={busy} /></View>
+        <View style={{ flex: 1 }}><Action title={t('Filtros') + (activeCount ? ` (${activeCount})` : '')} secondary={!activeCount} onPress={() => setShowFilters(v => !v)} disabled={busy} /></View>
       </View>
       <Action title={t('🎲 Sorpréndeme')} onPress={surprise} disabled={busy || loading} />
       {showFilters ? <Card>

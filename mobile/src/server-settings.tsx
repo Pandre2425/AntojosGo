@@ -18,7 +18,7 @@ export function ServerSettings() {
     lock.current = true; setBusy(true); setMessage(t('Probando conexión…'))
     try {
       if (!(await testServer(origin))) { setMessage(t('No hubo respuesta de {origin}. Revisa que el backend esté en marcha, la misma Wi-Fi y el firewall.', { origin })); return }
-      await saveServerUrl(origin); setValue(origin); setOpen(false); setMessage(`Conectado a ${origin}.`)
+      await saveServerUrl(origin); setValue(origin); setOpen(false); setMessage(t('Conectado a {origin}.', { origin }))
     } finally { lock.current = false; setBusy(false) }
   }
   return <Card>
