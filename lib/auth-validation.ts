@@ -14,6 +14,9 @@ const mismatch = { path: ['confirmPassword'], message: msg('Las contraseñas no 
 export const registrationSchema = loginSchema.extend({ name: displayNameSchema, password: newPassword, confirmPassword: z.string() }).refine(same, mismatch)
 export const newPasswordSchema = z.object({ password: newPassword, confirmPassword: z.string() }).refine(same, mismatch)
 
+/** Address the email links point to: without «www.», the form registered in Supabase (Vercel sends it on to www). */
+export const authOrigin = (origin: string) => origin.replace('://www.', '://')
+
 /** Web page the email links return to (works from any device, so app users finish there too). */
 export const accountLink = (base: string, accion: 'confirmar' | 'restablecer') => `${base.replace(/\/+$/, '')}/cuenta?accion=${accion}`
 

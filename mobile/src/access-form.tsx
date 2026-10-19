@@ -8,7 +8,7 @@ import { getServerUrl } from './server'
 import { googleAvailable, signInWithGoogle } from './google-auth'
 import { AccessibilityCard } from './account-extras'
 import { LanguageSelector } from './language'
-import { accountEmailSent, accountLink, authErrorMessage, loginSchema, registrationSchema, sendAccountEmail } from '../../lib/auth-validation'
+import { accountEmailSent, accountLink, authErrorMessage, authOrigin, loginSchema, registrationSchema, sendAccountEmail } from '../../lib/auth-validation'
 import { t } from '../../shared/i18n'
 /** Sign in / sign up. The account tab shows it when there is no session. */
 export function AccessForm() {
@@ -28,7 +28,7 @@ export function AccessForm() {
     if (!parsed.success) { setMessage(parsed.error.issues[0].message); return }
     lock.current = true; setBusy(true); setMessage(''); setUnconfirmed(false)
     try {
-      const result = register ? await supabase.auth.signUp({ email: parsed.data.email, password: parsed.data.password, options: { data: { display_name: form.name.trim() }, emailRedirectTo: accountLink(getServerUrl(), 'confirmar') } }) : await supabase.auth.signInWithPassword(parsed.data)
+      const result = register ? await supabase.auth.signUp({ email: parsed.data.email, password: parsed.data.password, options: { data: { display_name: form.name.trim() }, emailRedirectTo: accountLink(authOrigin(getServerUrl()), 'confirmar') } }) : await supabase.auth.signInWithPassword(parsed.data)
       if (result.error) { setMessage(authErrorMessage(result.error)); setUnconfirmed(result.error.code === 'email_not_confirmed') }
       else if (!result.data.session) { setMessage(t('Te enviamos un enlace a {email}. Ábrelo para confirmar tu cuenta y después inicia sesión aquí.', { email: parsed.data.email })); setRegister(false) }
     } catch { setMessage(t('No pudimos conectar. Revisa la conexión e intenta nuevamente.')) }
@@ -40,7 +40,7 @@ export function AccessForm() {
     if (lock.current || !supabase) return
     lock.current = true; setBusy(true); setMessage('')
     try {
-      const error = await sendAccountEmail(supabase.auth, kind, email.data, getServerUrl())
+      const error = await sendAccountEmail(supabase.auth, kind, email.data, authOrigin(getServerUrl()))
       if (error) setMessage(authErrorMessage(error)); else { setMessage(accountEmailSent(kind)); setUnconfirmed(false) }
     } catch { setMessage(t('No pudimos conectar. Revisa la conexión e intenta nuevamente.')) }
     finally { lock.current = false; setBusy(false) }

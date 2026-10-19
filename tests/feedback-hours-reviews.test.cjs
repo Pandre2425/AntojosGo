@@ -37,3 +37,10 @@ test('review stars: whole stars in, average drawn to the nearest half', () => {
   assert.equal(reviewInputSchema.safeParse({ rating: 3.5 }).success, false)
   assert.equal(reviewInputSchema.parse({ rating: 4, comment: ' ' }).comment, null)
 })
+
+test('email links use the domain without www', () => {
+  const { authOrigin, accountLink } = require('../lib/auth-validation.ts')
+  assert.equal(authOrigin('https://www.antojosgo.com'), 'https://antojosgo.com')
+  assert.equal(authOrigin('https://antojosgo.com/restaurant'), 'https://antojosgo.com/restaurant')
+  assert.equal(accountLink(authOrigin('https://www.antojosgo.com'), 'confirmar'), 'https://antojosgo.com/cuenta?accion=confirmar')
+})

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { getSupabase, isSupabaseConfigured } from '@/lib/supabase/client'
-import { accountEmailSent, accountLink, authErrorMessage, isGoogleEnabled, loginSchema, registrationSchema, sendAccountEmail } from '@/lib/auth-validation'
+import { accountEmailSent, accountLink, authErrorMessage, authOrigin, isGoogleEnabled, loginSchema, registrationSchema, sendAccountEmail } from '@/lib/auth-validation'
 import { supabasePublicKey, supabaseUrl } from '@/lib/supabase/config'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
@@ -37,7 +37,7 @@ export default function AccountAccess({ audience, onBack }: { audience: 'custome
     try {
       if (mode === 'register') {
         const { data, error } = await db.auth.signUp({ email: parsed.data.email, password: parsed.data.password,
-          options: { data: { display_name: name.trim() }, emailRedirectTo: accountLink(window.location.origin, 'confirmar') } })
+          options: { data: { display_name: name.trim() }, emailRedirectTo: accountLink(authOrigin(window.location.origin), 'confirmar') } })
         if (error) throw error
         setPassword(''); setConfirmPassword('')
         if (!data.session) {
@@ -62,7 +62,7 @@ export default function AccountAccess({ audience, onBack }: { audience: 'custome
     if (!db) return
     setBusy(true)
     // Leaves the page for Google and comes back here with the session (Redirect URLs: https://antojosgo.com/**).
-    const { error } = await db.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.href.split('#')[0] } })
+    const { error } = await db.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: authOrigin(window.location.href.split('#')[0]) } })
     if (error) { setError(authErrorMessage(error)); setBusy(false) }
   }
 
@@ -74,7 +74,7 @@ export default function AccountAccess({ audience, onBack }: { audience: 'custome
     if (!db || submitting.current) return
     submitting.current = true; setBusy(true)
     try {
-      const error = await sendAccountEmail(db.auth, kind, parsed.data, window.location.origin)
+      const error = await sendAccountEmail(db.auth, kind, parsed.data, authOrigin(window.location.origin))
       if (error) setError(authErrorMessage(error)); else { setNotice(accountEmailSent(kind)); setUnconfirmed(false) }
     } catch (err) { setError(authErrorMessage(err as { name?: string })) }
     finally { submitting.current = false; setBusy(false) }
