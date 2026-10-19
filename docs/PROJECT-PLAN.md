@@ -173,7 +173,7 @@ AntojosGo ayuda a los comensales de Guatemala (piloto en Quetzaltenango) a encon
 ### Menores
 
 17. ✅ Logo de AntojosGo en la web (favicon, encabezado, inicio de sesión) y en la app (ícono, pantalla de arranque). Animación de carga: un shuco que se arma pieza por pieza.
-18. Borrar el código heredado (`android/` de Capacitor, `AllCode.txt`, rutas y componentes antiguos sin uso).
+18. ✅ Código heredado borrado (Capacitor, `AllCode.txt`, 31 componentes y 33 paquetes sin uso). Funciones viejas cerradas; falta ejecutar `supabase/manual/20261020_drop_legacy.sql` para borrar las tablas `users` y `reviews`.
 19. ✅ Respaldos: `scripts/backup-db.mjs` y ensayo de restauración superado (`docs/RESPALDOS.md`).
 
 Pedidos, pagos y repartidores no forman parte del proyecto.

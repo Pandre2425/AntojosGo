@@ -6,7 +6,7 @@ require.extensions['.ts'] = (module, filename) => module._compile(ts.transpileMo
   compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020 },
 }).outputText, filename)
 const { loginSchema, registrationSchema, authErrorMessage } = require('../lib/auth-validation.ts')
-const { businessProfileSchema } = require('../lib/business-profile-validation.ts')
+const { businessProfileSchema } = require('../shared/contracts/restaurants.ts')
 const { branchInputSchema } = require('../shared/contracts/branches.ts')
 const { catalogQuerySchema } = require('../shared/contracts/catalog-query.ts')
 test('catalog filters distinguish absent coordinates from zero and reject invalid bounds', () => {
