@@ -166,7 +166,7 @@ AntojosGo ayuda a los comensales de Guatemala (piloto en Quetzaltenango) a encon
 
 12. Clave de Gemini (`GEMINI_API_KEY` en Vercel): activa la IA del asistente y la traducción del contenido al inglés. Gratis en https://aistudio.google.com/apikey.
 13. ✅ Confirmación de correo y recuperación de contraseña: activas y probadas de punta a punta el 16 de octubre (SMTP Gmail, `docs/EMAIL-SETUP.md`).
-14. Límite de peticiones en la API (antes de usar IA de pago).
+14. ✅ Límite de peticiones por IP: asistente 20/min, búsqueda 60/min, resto 120/min (`lib/server/rate-limit.ts`).
 15. Documentos de la tesis en el repositorio público.
 16. Varios administradores por restaurante; segundo proyecto de Supabase para pruebas.
 
@@ -174,7 +174,7 @@ AntojosGo ayuda a los comensales de Guatemala (piloto en Quetzaltenango) a encon
 
 17. ✅ Logo de AntojosGo en la web (favicon, encabezado, inicio de sesión) y en la app (ícono, pantalla de arranque). Animación de carga: un shuco que se arma pieza por pieza.
 18. Borrar el código heredado (`android/` de Capacitor, `AllCode.txt`, rutas y componentes antiguos sin uso).
-19. Respaldos de la base y ensayo de restauración.
+19. ✅ Respaldos: `scripts/backup-db.mjs` y ensayo de restauración superado (`docs/RESPALDOS.md`).
 
 Pedidos, pagos y repartidores no forman parte del proyecto.
 
