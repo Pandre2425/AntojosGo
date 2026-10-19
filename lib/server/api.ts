@@ -5,6 +5,12 @@ import { ZodError, type ZodType } from 'zod'
 import { AppError } from '../app-error'
 import { createBoundedFetch } from '../bounded-fetch'
 import { isSupabaseConfigured, supabasePublicKey, supabaseUrl } from '../supabase/config'
+import { AsyncLocalStorage } from 'node:async_hooks'
+import { pickLang, setLanguageSource, t, type Lang } from '../../shared/i18n'
+
+// Language of the current request (?lang=en from the API client); t() in modules and errors reads it.
+const requestLang = new AsyncLocalStorage<Lang>()
+setLanguageSource(() => requestLang.getStore() ?? 'es')
 
 export type AuthContext = { db: SupabaseClient; userId: string; requestId: string }
 type Params = Record<string, string>
@@ -20,7 +26,7 @@ const fetchSupabase = createBoundedFetch(10_000)
  * even if a route forgets an ownership check. The secret key is never used here.
  */
 export function route<C extends object = AuthContext>(handler: Handler<C>, options: { auth?: boolean } = {}) {
-  return async (request: NextRequest, context: { params: Promise<Params> }) => {
+  return async (request: NextRequest, context: { params: Promise<Params> }) => requestLang.run(pickLang(request.nextUrl.searchParams.get('lang')), async () => {
     const requestId = crypto.randomUUID()
     try {
       if (!isSupabaseConfigured) throw new AppError('Servicio no configurado.', 503, 'unavailable')
@@ -38,7 +44,7 @@ export function route<C extends object = AuthContext>(handler: Handler<C>, optio
     } catch (error) {
       return errorResponse(error, requestId)
     }
-  }
+  })
 }
 
 async function authenticate(request: NextRequest): Promise<{ db: SupabaseClient; userId: string }> {
@@ -78,5 +84,5 @@ export function errorResponse(error: unknown, requestId: string) {
   if (error instanceof AppError) ({ status, code, message } = error)
   else if (error instanceof ZodError) { status = 400; code = 'invalid'; message = error.issues[0]?.message ?? 'Revisa los datos enviados.' }
   if (status >= 500) console.error(`[api ${requestId}]`, error instanceof AppError ? error.message : error)
-  return NextResponse.json({ error: { code, message }, requestId }, { status, headers: { 'x-request-id': requestId, 'cache-control': 'no-store', 'content-type': JSON_UTF8 } })
+  return NextResponse.json({ error: { code, message: t(message) }, requestId }, { status, headers: { 'x-request-id': requestId, 'cache-control': 'no-store', 'content-type': JSON_UTF8 } })
 }

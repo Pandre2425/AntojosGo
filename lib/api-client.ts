@@ -1,4 +1,5 @@
 import { createBoundedFetch } from './bounded-fetch'
+import { currentLang, t } from '../shared/i18n'
 import type { HomeOption } from '../shared/contracts/home'
 import type { PublicBranchExtras, PublicCatalogItem, PublicDish } from '../modules/catalog/data/public-catalog'
 import type { OpeningHours } from '../shared/contracts/hours'
@@ -32,7 +33,9 @@ export function createApiClient({ baseUrl, getToken, refreshToken }: Options) {
   const fetchApi = createBoundedFetch(15_000)
 
   async function call<T>(method: string, path: string, body?: unknown, extraHeaders: Record<string, string> = {}, auth = true): Promise<T> {
-    const send = async (token: string | null) => fetchApi(`${typeof baseUrl === 'function' ? baseUrl() : baseUrl}/api/v1${path}`, {
+    // Spanish is the default; English adds ?lang=en so messages and content come back translated (and cache per language).
+    const url = `${typeof baseUrl === 'function' ? baseUrl() : baseUrl}/api/v1${path}${currentLang() === 'en' ? `${path.includes('?') ? '&' : '?'}lang=en` : ''}`
+    const send = async (token: string | null) => fetchApi(url, {
       method,
       headers: {
         Accept: 'application/json',
@@ -50,10 +53,10 @@ export function createApiClient({ baseUrl, getToken, refreshToken }: Options) {
         if (fresh) response = await send(fresh)
       }
     } catch {
-      throw new ApiError('No pudimos conectar con el servidor. Revisa tu conexión e intenta de nuevo.', 0, 'network')
+      throw new ApiError(t('No pudimos conectar con el servidor. Revisa tu conexión e intenta de nuevo.'), 0, 'network')
     }
     const json = await response.json().catch(() => null)
-    if (!response.ok) throw new ApiError(json?.error?.message ?? 'El servidor no respondió correctamente.', response.status, json?.error?.code ?? 'unknown')
+    if (!response.ok) throw new ApiError(json?.error?.message ?? t('El servidor no respondió correctamente.'), response.status, json?.error?.code ?? 'unknown')
     return json as T
   }
 

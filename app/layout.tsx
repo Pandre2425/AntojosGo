@@ -2,6 +2,7 @@ import type React from "react"
 import type { Metadata, Viewport } from "next"
 import { GeistSans } from "geist/font/sans"
 import "./globals.css"
+import LanguageProvider from "@/components/language-provider"
 import { TEXT_SIZES, TEXT_SIZE_KEY } from "@/shared/contracts/accessibility"
 
 const TEXT_SIZE_SCRIPT = `try{var p=${JSON.stringify(Object.fromEntries(TEXT_SIZES.map(s => [s.id, s.percent])))}[localStorage.getItem(${JSON.stringify(TEXT_SIZE_KEY)})];if(p&&p!==100)document.documentElement.style.fontSize=p+"%"}catch(e){}`
@@ -35,7 +36,7 @@ export default function RootLayout({
           }
         `}</style>
       </head>
-      <body className="font-sans antialiased">{children}</body>
+      <body className="font-sans antialiased"><LanguageProvider>{children}</LanguageProvider></body>
     </html>
   )
 }
