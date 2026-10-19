@@ -862,4 +862,5 @@ export const en: Record<string, string> = {
   "Te proponemos {name}: {dish}.": "We suggest {name}: {dish}.",
   "Abrir en otra app (Waze, Maps…)": "Open in another app (Waze, Maps…)",
   "Conectado a {origin}.": "Connected to {origin}.",
+  "Demasiadas solicitudes. Espera un momento e intenta de nuevo.": "Too many requests. Wait a moment and try again.",
 }

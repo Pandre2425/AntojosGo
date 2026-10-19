@@ -19,4 +19,4 @@ export const GET = route(async (req, { db }) => {
   if (params.q) after(() => recordSearch(db, params.q))
   const { items, translated } = currentLang() === 'en' ? await translateCatalogItems(found) : { items: found, translated: false }
   return NextResponse.json({ items: items.map(i => ({ ...i, logo_url: mediaUrl(i.logo_url) })), count: items.length, translated }, { headers: { 'cache-control': 'public, s-maxage=30, stale-while-revalidate=120' } })
-}, { auth: false })
+}, { auth: false, rate: { bucket: 'search', max: 60 } })
