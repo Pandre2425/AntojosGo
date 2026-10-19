@@ -58,7 +58,7 @@ function ReviewItem({ review: r, onChange }: { review: OwnerReview; onChange: (p
     {message && <p role={message.ok ? 'status' : 'alert'} className={`text-sm ${message.ok ? 'text-green-800' : 'text-red-700'}`}>{message.text}</p>}
     <div className="flex flex-wrap gap-2">
       <Button size="sm" disabled={busy} onClick={() => run(() => webApi.replyToReview(r.id, reply), reply.trim() ? t('Respuesta publicada.') : t('Respuesta quitada.'), { reply: reply.trim() || null })}>
-        {r.reply ? t('Actualizar respuesta') : 'Responder'}</Button>
+        {r.reply ? t('Actualizar respuesta') : t('Responder')}</Button>
       {!r.reported_at && (reporting
         ? <Button size="sm" variant="outline" disabled={busy} onClick={() => run(() => webApi.reportReview(r.id, reason), t('Reseña reportada. La revisaremos.'), { reported_at: new Date().toISOString() })}>{t('Enviar reporte')}</Button>
         : <Button size="sm" variant="ghost" disabled={busy} onClick={() => setReporting(true)}>{t('Reportar')}</Button>)}

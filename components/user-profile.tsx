@@ -8,6 +8,7 @@ import { metadataName } from "@/shared/contracts/names"
 import { Button } from "@/components/ui/button"
 import AppFeedback from "@/components/app-feedback"
 import TextSizeControl from "@/components/text-size-control"
+import { LanguageSelector } from "@/components/language-provider"
 import type { HiddenRestaurant } from "@/lib/api-client"
 import { t } from '@/shared/i18n'
 
@@ -35,6 +36,7 @@ export default function UserProfile({ user, onLogin }: { user: AccountUser | nul
   if (!user) return <div className="space-y-3">
     <p className="text-sm text-muted-foreground">{t('No necesitas cuenta para buscar restaurantes. Crea una si también administras un negocio.')}</p>
     <Button onClick={onLogin}>{t('Iniciar sesión o crear cuenta')}</Button>
+    <LanguageSelector />
     <TextSizeControl />
   </div>
   return <div className="space-y-4">
@@ -45,6 +47,7 @@ export default function UserProfile({ user, onLogin }: { user: AccountUser | nul
       <Button variant="outline" disabled={busy} onClick={signOut}>{t('Cerrar sesión')}</Button>
     </div>
     <HiddenRestaurants />
+    <LanguageSelector />
     <TextSizeControl />
     <AppFeedback />
   </div>

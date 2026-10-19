@@ -2,6 +2,7 @@ import React, { type ReactNode } from 'react'
 import { KeyboardAvoidingView, Pressable, ScrollView, StyleSheet, Text, TextInput, View, type StyleProp, type TextInputProps, type TextProps, type ViewStyle } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { FoodLoader } from './food-loader'
+import { t } from '../../shared/i18n'
 
 // Design tokens: the only place for colors, sizes and spacing. Screens use these or the components below.
 export const colors = {
@@ -46,7 +47,7 @@ export function Loading({ label }: { label?: string }) { return <FoodLoader labe
 export class ScreenBoundary extends React.Component<{ children: ReactNode }, { failed: boolean }> {
   state = { failed: false }
   static getDerivedStateFromError() { return { failed: true } }
-  render() { return this.state.failed ? <Card><Message>No pudimos mostrar esta sección.</Message><Action title="Reintentar" onPress={() => this.setState({ failed: false })} /></Card> : this.props.children }
+  render() { return this.state.failed ? <Card><Message>{t('No pudimos mostrar esta sección.')}</Message><Action title={t('Reintentar')} onPress={() => this.setState({ failed: false })} /></Card> : this.props.children }
 }
 const styles = StyleSheet.create({
   page: { padding: spacing.xl, gap: spacing.lg, flexGrow: 1 },

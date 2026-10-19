@@ -37,6 +37,7 @@ test('every Spanish text in t() and API errors has an English translation', () =
       if (!(text in en)) missing.set(text, path.relative(ROOT, file))
     }
   }
+  if (process.env.I18N_DUMP) fs.appendFileSync(process.env.I18N_DUMP, [...missing.keys()].map(k => JSON.stringify(k) + '\n').join(''))
   assert.equal(missing.size, 0, `Sin traducir (${missing.size}):\n` + [...missing].map(([k, f]) => `  ${JSON.stringify(k)}  ← ${f}`).join('\n'))
 })
 
@@ -51,4 +52,21 @@ test('English translations keep their {placeholders} and are not empty', () => {
 test('t() falls back to the Spanish text and fills placeholders', () => {
   assert.equal(t('Texto sin traducir', undefined, 'en'), 'Texto sin traducir')
   assert.equal(t('Hola {name}', { name: 'Ana' }, 'es'), 'Hola Ana')
+})
+
+test('every value of the shared lists shown on screen has an English translation', () => {
+  const menu = require('../shared/contracts/menu.ts')
+  const lists = {
+    'menu.DISH_TAG_LABELS': Object.values(menu.DISH_TAG_LABELS),
+    'menu.ALLERGEN_LABELS': Object.values(menu.ALLERGEN_LABELS),
+    'menu.DISH_DETAIL_GROUPS': menu.DISH_DETAIL_GROUPS.flatMap(g => [g.title, g.placeholder, ...g.options.map(o => o.label)]),
+    'hours.DAY_NAMES': [...require('../shared/contracts/hours.ts').DAY_NAMES],
+    'feedback.RATING_LABELS': require('../shared/contracts/feedback.ts').RATING_LABELS.filter(Boolean),
+    'catalog-query.PRICE_RANGES': require('../shared/contracts/catalog-query.ts').PRICE_RANGES.map(p => p.label),
+    'home.HOME_OPTIONS': require('../shared/contracts/home.ts').HOME_OPTIONS.map(o => o.title),
+    'accessibility.TEXT_SIZES': require('../shared/contracts/accessibility.ts').TEXT_SIZES.map(s => s.label),
+  }
+  const missing = Object.entries(lists).flatMap(([name, values]) => values.filter(v => !(v in en)).map(v => `${name}: ${JSON.stringify(v)}`))
+  if (process.env.I18N_DUMP) fs.appendFileSync(process.env.I18N_DUMP, Object.values(lists).flat().filter(v => !(v in en)).map(k => JSON.stringify(k) + '\n').join(''))
+  assert.equal(missing.length, 0, `Sin traducir (${missing.length}):\n  ` + missing.join('\n  '))
 })

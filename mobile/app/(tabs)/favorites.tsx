@@ -4,6 +4,7 @@ import { useSession } from '../../src/session'
 import { api } from '../../src/api'
 import type { PublicCatalogItem } from '../../../modules/catalog/data/public-catalog'
 import { Action, Card, Loading, Message, Page, Title } from '../../src/ui'
+import { t } from '../../../shared/i18n'
 
 export default function Favorites() {
   const { session, ready } = useSession()
@@ -19,13 +20,13 @@ export default function Favorites() {
     return () => { active = false }
   }, [session?.user.id, retry]))
   if (!ready) return <Page tab><Loading /></Page>
-  if (!session) return <Page tab><Title>Mis favoritos</Title><Message>Guarda tus lugares preferidos para encontrarlos rápido. Necesitas una cuenta gratuita.</Message>
-    <Action title="Iniciar sesión o crear cuenta" onPress={() => router.navigate('/account')} /></Page>
-  return <Page tab><Title>Mis favoritos</Title><Message>{error}</Message>
-    {error ? <Action title="Reintentar" onPress={() => setRetry(v => v + 1)} /> : !items ? <Loading /> : items.length ? items.map(item => <Card key={item.id}>
+  if (!session) return <Page tab><Title>{t('Mis favoritos')}</Title><Message>{t('Guarda tus lugares preferidos para encontrarlos rápido. Necesitas una cuenta gratuita.')}</Message>
+    <Action title={t('Iniciar sesión o crear cuenta')} onPress={() => router.navigate('/account')} /></Page>
+  return <Page tab><Title>{t('Mis favoritos')}</Title><Message>{error}</Message>
+    {error ? <Action title={t('Reintentar')} onPress={() => setRetry(v => v + 1)} /> : !items ? <Loading /> : items.length ? items.map(item => <Card key={item.id}>
       <Title>{item.name}</Title>
       <Message>{item.branch_name} · {item.address}, {item.municipality}</Message>
-      <Action title="Ver sede" onPress={() => router.push({ pathname: '/sede/[id]', params: { id: item.id } })} />
-    </Card>) : <Message>Aún no tienes favoritos. Abre una sede y toca «Guardar en favoritos».</Message>}
+      <Action title={t('Ver sede')} onPress={() => router.push({ pathname: '/sede/[id]', params: { id: item.id } })} />
+    </Card>) : <Message>{t('Aún no tienes favoritos. Abre una sede y toca «Guardar en favoritos».')}</Message>}
   </Page>
 }

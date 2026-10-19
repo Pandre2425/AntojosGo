@@ -5,6 +5,7 @@ import { useSession } from '../../src/session'
 import { api } from '../../src/api'
 import { COPIED_NOTICE, DAY_NAMES, copyMondayToAll, fromDayForm, toDayForm, type DayForm } from '../../../shared/contracts/hours'
 import { Action, Card, Field, Loading, Message, Page, Title, Txt, colors } from '../../src/ui'
+import { t } from '../../../shared/i18n'
 
 export default function Hours() {
   const { id } = useLocalSearchParams<{ id: string }>()
@@ -31,28 +32,28 @@ export default function Hours() {
     if (!parsed.success) { setError(parsed.error.issues[0].message); return }
     lock.current = true; setBusy(true); setError('')
     try { await api.saveHours(id, parsed.data); router.back() }
-    catch (e) { setError(e instanceof Error ? e.message : 'No pudimos guardar el horario.') }
+    catch (e) { setError(e instanceof Error ? e.message : t('No pudimos guardar el horario.')) }
     finally { lock.current = false; setBusy(false) }
   }
-  return <Page><Title>Horario</Title><Message>{name}</Message><Message>{error}</Message>
-    {!form ? error ? <Action title="Reintentar" onPress={() => setRetry(v => v + 1)} /> : <Loading /> : <>
-      <Message>Escribe las horas como HH:MM (24 h). Si cierras después de medianoche, pon la hora de cierre menor que la de apertura.</Message>
+  return <Page><Title>{t('Horario')}</Title><Message>{name}</Message><Message>{error}</Message>
+    {!form ? error ? <Action title={t('Reintentar')} onPress={() => setRetry(v => v + 1)} /> : <Loading /> : <>
+      <Message>{t('Escribe las horas como HH:MM (24 h). Si cierras después de medianoche, pon la hora de cierre menor que la de apertura.')}</Message>
       {form.map((d, i) => <Card key={d.day}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Txt variant="headline">{DAY_NAMES[d.day]}</Txt>
+          <Txt variant="headline">{t(DAY_NAMES[d.day])}</Txt>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            <Text style={{ color: colors.green }}>{d.closed ? 'Cerrado' : 'Abre'}</Text>
-            <Switch accessibilityLabel={`${DAY_NAMES[d.day]} abre`} value={!d.closed} onValueChange={open => set(i, { closed: !open })} disabled={busy} />
+            <Text style={{ color: colors.green }}>{d.closed ? t('Cerrado') : t('Abre')}</Text>
+            <Switch accessibilityLabel={t('{day}, abre', { day: t(DAY_NAMES[d.day]) })} value={!d.closed} onValueChange={open => set(i, { closed: !open })} disabled={busy} />
           </View>
         </View>
         {d.closed ? null : <View style={{ flexDirection: 'row', gap: 12 }}>
-          <View style={{ flex: 1 }}><Field label="Abre" accessibilityLabel={`${DAY_NAMES[d.day]}, abre`} value={d.open} onChangeText={open => set(i, { open })} keyboardType="numbers-and-punctuation" maxLength={5} editable={!busy} /></View>
-          <View style={{ flex: 1 }}><Field label="Cierra" accessibilityLabel={`${DAY_NAMES[d.day]}, cierra`} value={d.close} onChangeText={close => set(i, { close })} keyboardType="numbers-and-punctuation" maxLength={5} editable={!busy} /></View>
+          <View style={{ flex: 1 }}><Field label={t('Abre')} accessibilityLabel={t('{day}, abre', { day: t(DAY_NAMES[d.day]) })} value={d.open} onChangeText={open => set(i, { open })} keyboardType="numbers-and-punctuation" maxLength={5} editable={!busy} /></View>
+          <View style={{ flex: 1 }}><Field label={t('Cierra')} accessibilityLabel={t('{day}, cierra', { day: t(DAY_NAMES[d.day]) })} value={d.close} onChangeText={close => set(i, { close })} keyboardType="numbers-and-punctuation" maxLength={5} editable={!busy} /></View>
         </View>}
-        {i === 0 ? <Action title="Copiar el lunes a todos los días" secondary disabled={busy} onPress={() => { setForm(rows => rows && copyMondayToAll(rows)); setNotice(COPIED_NOTICE) }} /> : null}
+        {i === 0 ? <Action title={t('Copiar el lunes a todos los días')} secondary disabled={busy} onPress={() => { setForm(rows => rows && copyMondayToAll(rows)); setNotice(COPIED_NOTICE) }} /> : null}
         {i === 0 ? <Message>{notice}</Message> : null}
       </Card>)}
-      <Action title={busy ? 'Guardando…' : 'Guardar horario'} onPress={save} disabled={busy} />
+      <Action title={busy ? t('Guardando…') : t('Guardar horario')} onPress={save} disabled={busy} />
     </>}
   </Page>
 }

@@ -1,3 +1,5 @@
+'use client'
+
 import Link from 'next/link'
 import { Search, Store, ArrowRight } from 'lucide-react'
 import { t } from '@/shared/i18n'

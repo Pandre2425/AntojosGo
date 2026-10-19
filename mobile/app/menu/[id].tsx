@@ -11,17 +11,18 @@ import {
   ALLERGEN_LABELS, ALLERGENS, DISH_DETAIL_GROUPS, NO_ALLERGENS, allergenNames, allergenStatus, dishDetails, dishInputSchema,
   formatPriceInput, ingredientProblem, labelProblem, splitAllergenLabels, type DetailKey, type Dish,
 } from '../../../shared/contracts/menu'
+import { t, msg } from '../../../shared/i18n'
 
 const empty = { name: '', price: '', description: '', dish_types: [] as string[], cuisines: [] as string[], features: [] as string[],
   ingredients: [] as string[], hasAllergens: false, allergenLabels: [] as string[], noAllergens: false }
 type Photo = Awaited<ReturnType<typeof pickPhoto>>
 const money = (v: number) => `Q${v.toFixed(2)}`
 type Status = 'all' | 'visible' | 'hidden' | 'soldout'
-const STATUS_LABELS: Record<Status, string> = { all: 'Todos', visible: 'Visibles', hidden: 'Ocultos', soldout: 'Agotados' }
+const STATUS_LABELS: Record<Status, string> = { all: msg('Todos'), visible: msg('Visibles'), hidden: msg('Ocultos'), soldout: msg('Agotados') }
 const statusOf = (d: Dish): Exclude<Status, 'all'> => d.status !== 'published' ? 'hidden' : d.is_available ? 'visible' : 'soldout'
 // The left edge of each card tells the owner what diners see.
 const EDGE: Record<Exclude<Status, 'all'>, string> = { visible: colors.green, hidden: colors.inactive, soldout: colors.orange }
-const STATUS_TEXT: Record<Exclude<Status, 'all'>, string> = { visible: 'Visible para clientes', hidden: 'Oculto', soldout: 'Agotado' }
+const STATUS_TEXT: Record<Exclude<Status, 'all'>, string> = { visible: msg('Visible para clientes'), hidden: msg('Oculto'), soldout: msg('Agotado') }
 
 export default function Menu() {
   const { id } = useLocalSearchParams<{ id: string }>()
@@ -66,7 +67,7 @@ export default function Menu() {
     if (lock.current) return
     lock.current = true; setBusy(true)
     try { await action(); setRetry(v => v + 1); return true }
-    catch (e) { onError(e instanceof Error ? e.message : 'No pudimos guardar.') }
+    catch (e) { onError(e instanceof Error ? e.message : t('No pudimos guardar.')) }
     finally { lock.current = false; setBusy(false) }
   }
   async function save() {
@@ -75,11 +76,11 @@ export default function Menu() {
       dish_types: form.dish_types, cuisines: form.cuisines, features: form.features, ingredients: form.ingredients,
       allergens: form.hasAllergens ? own.allergens : form.noAllergens ? [NO_ALLERGENS] : [], allergens_other: form.hasAllergens ? own.allergens_other : [] })
     if (!parsed.success) { setFormError(parsed.error.issues[0].message); return }
-    if (form.hasAllergens && !form.allergenLabels.length) { setFormError('Marca o escribe qué alérgenos contiene, o apaga «Contiene alérgenos».'); return }
+    if (form.hasAllergens && !form.allergenLabels.length) { setFormError(t('Marca o escribe qué alérgenos contiene, o apaga «Contiene alérgenos».')); return }
     setFormError('')
     const ok = await run(async () => {
       const saved = editing ? await api.updateDish(editing, parsed.data) : await api.createDish(id, parsed.data)
-      if (photo) await uploadDishPhoto(saved.id, photo).catch((e: unknown) => { throw new Error(`El platillo se guardó, pero la foto no se pudo subir (${e instanceof Error ? e.message : 'error desconocido'}). Súbela desde «Más opciones».`) })
+      if (photo) await uploadDishPhoto(saved.id, photo).catch((e: unknown) => { throw new Error(t('El platillo se guardó, pero la foto no se pudo subir ({reason}). Súbela desde «Más opciones».', { reason: e instanceof Error ? e.message : t('error desconocido') })) })
     }, setFormError)
     if (ok) resetForm()
   }
@@ -93,104 +94,104 @@ export default function Menu() {
   const setGroup = (key: DetailKey) => (next: string[]) => setForm(v => ({ ...v, [key]: next }))
   const setAllergensOn = (on: boolean) => setForm(v => ({ ...v, hasAllergens: on, noAllergens: false, allergenLabels: on ? v.allergenLabels : [] }))
 
-  return <Page><Title>Menú</Title><Message>{error}</Message>
-    {!rows ? error ? <Action title="Reintentar" onPress={() => setRetry(v => v + 1)} /> : <Loading /> : rows.length === 0 ? <Message>Tu menú está vacío. Agrega tu primer platillo abajo.</Message> : <>
+  return <Page><Title>{t('Menú')}</Title><Message>{error}</Message>
+    {!rows ? error ? <Action title={t('Reintentar')} onPress={() => setRetry(v => v + 1)} /> : <Loading /> : rows.length === 0 ? <Message>{t('Tu menú está vacío. Agrega tu primer platillo abajo.')}</Message> : <>
       {undeclared > 0 ? <View style={{ borderWidth: 1, borderStyle: 'dashed', borderColor: colors.warning.border, backgroundColor: colors.warning.bg, borderRadius: radius.sm, padding: spacing.md }}>
-        <Text style={{ color: colors.warning.text }}>{undeclared === 1 ? '1 platillo no tiene' : `${undeclared} platillos no tienen`} alérgenos declarados. Edítalos para que los clientes con alergias sepan qué pueden comer.</Text>
+        <Text style={{ color: colors.warning.text }}>{undeclared === 1 ? t('1 platillo no tiene') : `${undeclared} platillos no tienen`} {t('alérgenos declarados. Edítalos para que los clientes con alergias sepan qué pueden comer.')}</Text>
       </View> : null}
-      <Input accessibilityLabel="Buscar en el menú" placeholder="Buscar por nombre o ingrediente" value={query} onChangeText={setQuery} />
+      <Input accessibilityLabel={t('Buscar en el menú')} placeholder={t('Buscar por nombre o ingrediente')} value={query} onChangeText={setQuery} />
       <View accessibilityRole="radiogroup" style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-        {(Object.keys(STATUS_LABELS) as Status[]).map(s => <Chip key={s} label={`${STATUS_LABELS[s]} ${counts[s]}`} on={status === s} onPress={() => setStatus(s)} />)}
+        {(Object.keys(STATUS_LABELS) as Status[]).map(s => <Chip key={s} label={`${t(STATUS_LABELS[s])} ${counts[s]}`} on={status === s} onPress={() => setStatus(s)} />)}
       </View>
-      {shown.length === 0 ? <Message>Ningún platillo coincide con la búsqueda.</Message> : shown.map(dish => {
+      {shown.length === 0 ? <Message>{t('Ningún platillo coincide con la búsqueda.')}</Message> : shown.map(dish => {
         const st = statusOf(dish)
         const al = allergenStatus(dish.allergens, dish.allergens_other)
         const names = allergenNames(dish.allergens, dish.allergens_other)
         const open = expanded === dish.id
         return <View key={dish.id} style={{ backgroundColor: colors.white, borderRadius: radius.lg, borderLeftWidth: 6, borderLeftColor: EDGE[st], padding: 14, gap: 8 }}>
           <View style={{ flexDirection: 'row', gap: 12 }}>
-            {dish.image_url ? <Image source={{ uri: dish.image_url }} accessibilityLabel={`Foto de ${dish.name}`} style={{ width: 72, height: 72, borderRadius: 12 }} /> : null}
+            {dish.image_url ? <Image source={{ uri: dish.image_url }} accessibilityLabel={t('Foto de {name}', { name: dish.name })} style={{ width: 72, height: 72, borderRadius: 12 }} /> : null}
             <View style={{ flex: 1, gap: 2 }}>
               <Txt variant="headline">{dish.name}</Txt>
               <Txt>{money(dish.price)}{dish.category ? `  ${dish.category}` : ''}</Txt>
-              <Text style={{ color: st === 'hidden' ? colors.muted : EDGE[st], fontWeight: '600' }}>{STATUS_TEXT[st]}</Text>
+              <Text style={{ color: st === 'hidden' ? colors.muted : EDGE[st], fontWeight: '600' }}>{t(STATUS_TEXT[st])}</Text>
             </View>
           </View>
-          {dish.ingredients?.length ? <Text style={{ color: colors.muted }}>Ingredientes: {dish.ingredients.join(', ')}</Text> : null}
+          {dish.ingredients?.length ? <Text style={{ color: colors.muted }}>{t('Ingredientes:')} {dish.ingredients.join(', ')}</Text> : null}
           <Text style={{ color: al.declared ? (names.length ? colors.danger : colors.green) : colors.warning.text }}>
-            {!al.declared ? 'Alérgenos sin declarar' : names.length ? `Contiene: ${names.map(a => a.toLowerCase()).join(', ')}` : 'Sin alérgenos comunes'}
+            {!al.declared ? t('Alérgenos sin declarar') : names.length ? t('Contiene: {list}', { list: names.map(a => t(a).toLowerCase()).join(', ') }) : t('Sin alérgenos comunes')}
           </Text>
           <View style={{ flexDirection: 'row', gap: 8 }}>
-            <View style={{ flex: 1 }}><Action title={dish.status === 'published' ? 'Ocultar' : 'Mostrar'} secondary={dish.status === 'published'} disabled={busy}
+            <View style={{ flex: 1 }}><Action title={dish.status === 'published' ? t('Ocultar') : t('Mostrar')} secondary={dish.status === 'published'} disabled={busy}
               onPress={() => run(() => api.updateDish(dish.id, { status: dish.status === 'published' ? 'draft' : 'published' }), setError)} /></View>
-            <View style={{ flex: 1 }}><Action title="Editar" secondary disabled={busy} onPress={() => edit(dish)} /></View>
+            <View style={{ flex: 1 }}><Action title={t('Editar')} secondary disabled={busy} onPress={() => edit(dish)} /></View>
           </View>
           <Pressable accessibilityRole="button" accessibilityState={{ expanded: open }} onPress={() => setExpanded(open ? null : dish.id)} style={{ minHeight: 44, justifyContent: 'center' }}>
-            <Text style={[type.body, { textDecorationLine: 'underline' }]}>{open ? 'Menos opciones' : 'Más opciones'}</Text>
+            <Text style={[type.body, { textDecorationLine: 'underline' }]}>{open ? t('Menos opciones') : t('Más opciones')}</Text>
           </Pressable>
           {open ? <View style={{ gap: 8 }}>
-            <Action title={dish.is_available ? 'Marcar agotado' : 'Marcar disponible'} secondary disabled={busy}
+            <Action title={dish.is_available ? t('Marcar agotado') : t('Marcar disponible')} secondary disabled={busy}
               onPress={() => run(() => api.updateDish(dish.id, { is_available: !dish.is_available }), setError)} />
-            <Action title={dish.image_url ? 'Cambiar foto' : 'Subir foto'} secondary disabled={busy} onPress={() => run(() => pickAndUploadDishPhoto(dish.id), setError)} />
-            {dish.image_url ? <Action title="Quitar foto" secondary disabled={busy} onPress={() => run(() => api.removeDishImage(dish.id), setError)} /> : null}
-            <Action title="Eliminar" disabled={busy} onPress={() => Alert.alert('Eliminar platillo', `¿Eliminar «${dish.name}»? No se puede deshacer.`, [{ text: 'Cancelar', style: 'cancel' }, { text: 'Eliminar', style: 'destructive', onPress: () => void run(() => api.deleteDish(dish.id), setError) }])} />
+            <Action title={dish.image_url ? t('Cambiar foto') : t('Subir foto')} secondary disabled={busy} onPress={() => run(() => pickAndUploadDishPhoto(dish.id), setError)} />
+            {dish.image_url ? <Action title={t('Quitar foto')} secondary disabled={busy} onPress={() => run(() => api.removeDishImage(dish.id), setError)} /> : null}
+            <Action title={t('Eliminar')} disabled={busy} onPress={() => Alert.alert(t('Eliminar platillo'), t('¿Eliminar «{name}»? No se puede deshacer.', { name: dish.name }), [{ text: t('Cancelar'), style: 'cancel' }, { text: t('Eliminar'), style: 'destructive', onPress: () => void run(() => api.deleteDish(dish.id), setError) }])} />
           </View> : null}
         </View>
       })}
     </>}
     <Card>
-      <Title>{editing ? 'Editar platillo' : 'Nuevo platillo'}</Title>
-      <Field label="Nombre" placeholder="Ej. Pepián de pollo" value={form.name} onChangeText={name => setForm(v => ({ ...v, name }))} maxLength={120} editable={!busy} />
+      <Title>{editing ? t('Editar platillo') : t('Nuevo platillo')}</Title>
+      <Field label={t('Nombre')} placeholder={t('Ej. Pepián de pollo')} value={form.name} onChangeText={name => setForm(v => ({ ...v, name }))} maxLength={120} editable={!busy} />
       <View style={{ gap: 6 }}>
-        <Txt>Precio</Txt>
+        <Txt>{t('Precio')}</Txt>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
           <Txt variant="headline">Q</Txt>
-          <Input accessibilityLabel="Precio en quetzales" placeholder="45.00" value={form.price} keyboardType="decimal-pad" maxLength={9} editable={!busy} style={{ flex: 1 }}
+          <Input accessibilityLabel={t('Precio en quetzales')} placeholder="45.00" value={form.price} keyboardType="decimal-pad" maxLength={9} editable={!busy} style={{ flex: 1 }}
             onChangeText={price => setForm(v => ({ ...v, price: price.replace(/[^0-9.,]/g, '') }))} onBlur={() => setForm(v => ({ ...v, price: formatPriceInput(v.price) }))} />
         </View>
-        <Txt variant="subhead">Solo el número, en quetzales.</Txt>
+        <Txt variant="subhead">{t('Solo el número, en quetzales.')}</Txt>
       </View>
       <View style={{ gap: 6 }}>
-        <Txt>Descripción (opcional)</Txt>
-        <Input accessibilityLabel="Descripción" placeholder="Cómo se prepara, con qué se acompaña, tamaño de la porción…" value={form.description} maxLength={500} multiline
+        <Txt>{t('Descripción (opcional)')}</Txt>
+        <Input accessibilityLabel={t('Descripción')} placeholder={t('Cómo se prepara, con qué se acompaña, tamaño de la porción…')} value={form.description} maxLength={500} multiline
           textAlignVertical="top" editable={!busy} style={{ minHeight: 120 }} onChangeText={description => setForm(v => ({ ...v, description }))} />
         <Txt variant="subhead" style={{ textAlign: 'right' }}>{form.description.length}/500</Txt>
       </View>
 
-      <Txt variant="label">Foto (opcional)</Txt>
-      {photo || currentPhoto ? <Image source={{ uri: photo?.uri ?? currentPhoto! }} accessibilityLabel="Foto del platillo" style={{ width: '100%', aspectRatio: 4 / 3, borderRadius: radius.md }} /> : null}
-      <Action title={photo || currentPhoto ? 'Cambiar foto' : 'Elegir foto'} secondary disabled={busy}
-        onPress={() => void pickPhoto().then(a => { if (a) setPhoto(a) }).catch(() => setFormError('No pudimos abrir la galería.'))} />
-      {photo ? <Txt variant="subhead">La foto se subirá al guardar.</Txt> : null}
+      <Txt variant="label">{t('Foto (opcional)')}</Txt>
+      {photo || currentPhoto ? <Image source={{ uri: photo?.uri ?? currentPhoto! }} accessibilityLabel={t('Foto del platillo')} style={{ width: '100%', aspectRatio: 4 / 3, borderRadius: radius.md }} /> : null}
+      <Action title={photo || currentPhoto ? t('Cambiar foto') : t('Elegir foto')} secondary disabled={busy}
+        onPress={() => void pickPhoto().then(a => { if (a) setPhoto(a) }).catch(() => setFormError(t('No pudimos abrir la galería.')))} />
+      {photo ? <Txt variant="subhead">{t('La foto se subirá al guardar.')}</Txt> : null}
 
-      {DISH_DETAIL_GROUPS.map(g => <TagField key={g.key} title={g.title} placeholder={g.placeholder} disabled={busy}
-        hint={g.key === 'dish_types' ? 'Elige o escribe todas las que apliquen. Ayudan a que te encuentren.' : undefined}
-        options={g.options.map(o => o.label)} value={form[g.key]} onChange={setGroup(g.key)} validate={(t, cur) => labelProblem(t, cur)} />)}
+      {DISH_DETAIL_GROUPS.map(g => <TagField key={g.key} title={t(g.title)} placeholder={t(g.placeholder)} disabled={busy}
+        hint={g.key === 'dish_types' ? t('Elige o escribe todas las que apliquen. Ayudan a que te encuentren.') : undefined}
+        options={g.options.map(o => o.label)} value={form[g.key]} onChange={setGroup(g.key)} validate={(text, cur) => labelProblem(text, cur)} />)}
 
-      <TagField title="Ingredientes principales (opcional)" placeholder="Escribe uno: Ej. pollo" disabled={busy}
-        hint="Agrega un ingrediente a la vez. Los clientes pueden buscar por ingrediente o pedir platillos sin alguno."
+      <TagField title={t('Ingredientes principales (opcional)')} placeholder={t('Escribe uno: Ej. pollo')} disabled={busy}
+        hint={t("Agrega un ingrediente a la vez. Los clientes pueden buscar por ingrediente o pedir platillos sin alguno.")}
         value={form.ingredients} onChange={ingredients => setForm(v => ({ ...v, ingredients }))} validate={ingredientProblem} />
 
       <View style={{ gap: spacing.sm, paddingTop: spacing.sm, borderTopWidth: 1, borderTopColor: colors.border }}>
-        <Txt variant="label" accessibilityRole="header">Alérgenos</Txt>
+        <Txt variant="label" accessibilityRole="header">{t('Alérgenos')}</Txt>
         {/* The whole row toggles: people tap the words, not only the switch. */}
         <Pressable accessibilityRole="switch" accessibilityState={{ checked: form.hasAllergens, disabled: busy }} disabled={busy}
           onPress={() => setAllergensOn(!form.hasAllergens)} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.md, minHeight: 48 }}>
-          <Txt style={{ flex: 1 }}>Contiene alérgenos</Txt>
+          <Txt style={{ flex: 1 }}>{t('Contiene alérgenos')}</Txt>
           <Switch value={form.hasAllergens} disabled={busy} importantForAccessibility="no" trackColor={{ true: colors.orange, false: colors.border }} thumbColor={colors.white}
             onValueChange={setAllergensOn} />
         </Pressable>
         {form.hasAllergens
-          ? <TagField title="¿Qué alérgenos contiene?" placeholder="¿Otro? Escríbelo: Ej. mostaza" tone="red" disabled={busy}
+          ? <TagField title={t('¿Qué alérgenos contiene?')} placeholder={t('¿Otro? Escríbelo: Ej. mostaza')} tone="red" disabled={busy}
               options={ALLERGENS.map(a => ALLERGEN_LABELS[a])} value={form.allergenLabels} onChange={allergenLabels => setForm(v => ({ ...v, allergenLabels }))}
-              validate={(t, cur) => labelProblem(t, cur, 'un alérgeno', 19)} />
-          : <><Chip label="Confirmo: no contiene alérgenos comunes" on={form.noAllergens} disabled={busy} onPress={() => setForm(v => ({ ...v, noAllergens: !v.noAllergens }))} />
-            <Txt variant="subhead">Si no lo confirmas, los clientes verán «alérgenos sin declarar».</Txt></>}
+              validate={(text, cur) => labelProblem(text, cur, t('un alérgeno'), 19)} />
+          : <><Chip label={t('Confirmo: no contiene alérgenos comunes')} on={form.noAllergens} disabled={busy} onPress={() => setForm(v => ({ ...v, noAllergens: !v.noAllergens }))} />
+            <Txt variant="subhead">{t('Si no lo confirmas, los clientes verán «alérgenos sin declarar».')}</Txt></>}
       </View>
 
       <Message>{formError}</Message>
-      <Action title={busy ? 'Guardando…' : editing ? 'Guardar cambios' : 'Agregar platillo'} onPress={save} disabled={busy} />
-      {editing ? <Action title="Cancelar edición" secondary onPress={() => { resetForm(); setFormError('') }} disabled={busy} /> : null}
+      <Action title={busy ? t('Guardando…') : editing ? t('Guardar cambios') : t('Agregar platillo')} onPress={save} disabled={busy} />
+      {editing ? <Action title={t('Cancelar edición')} secondary onPress={() => { resetForm(); setFormError('') }} disabled={busy} /> : null}
     </Card>
   </Page>
 }

@@ -9,6 +9,7 @@ import { businessProfileSchema, type BrandImageKind } from '../../../shared/cont
 import { normalize } from '../../../shared/contracts/assistant'
 import { Chip, Txt } from '../../src/ui'
 import { pickAndUploadRestaurantImage } from '../../src/dish-photo'
+import { t } from '../../../shared/i18n'
 export default function Business() {
   const { id } = useLocalSearchParams<{ id: string }>()
   const { session, ready } = useSession()
@@ -23,7 +24,7 @@ export default function Business() {
   useEffect(() => {
     if (!session) return
     let active = true; setLoaded(false); setError('')
-    api.getRestaurant(id).then(data => { if (active) { setForm({ name: data.name, description: data.description || '', category: data.category || '' }); setImages({ logo: data.logo_url, cover: data.cover_url }); setLoaded(true) } }).catch(() => { if (active) setError('No pudimos cargar el negocio. Reintenta.') })
+    api.getRestaurant(id).then(data => { if (active) { setForm({ name: data.name, description: data.description || '', category: data.category || '' }); setImages({ logo: data.logo_url, cover: data.cover_url }); setLoaded(true) } }).catch(() => { if (active) setError(t('No pudimos cargar el negocio. Reintenta.')) })
     api.listBusinessTypes().then(t => { if (active) setTypes(t) }).catch(() => {}) // suggestions are optional
     return () => { active = false }
   }, [id, session?.user.id, retry])
@@ -34,42 +35,42 @@ export default function Business() {
     const parsed = businessProfileSchema.safeParse({ ...form, category: form.category || null })
     if (!parsed.success) { setError(parsed.error.issues[0].message); return }
     lock.current = true; setBusy(true); setError('')
-    try { await api.updateRestaurant(id, parsed.data); setError('Perfil guardado.') }
-    catch (e) { setError(e instanceof Error ? e.message : 'No pudimos guardar.') }
+    try { await api.updateRestaurant(id, parsed.data); setError(t('Perfil guardado.')) }
+    catch (e) { setError(e instanceof Error ? e.message : t('No pudimos guardar.')) }
     finally { lock.current = false; setBusy(false) }
   }
   async function changeImage(kind: BrandImageKind, remove = false) {
     if (lock.current) return
     lock.current = true; setBusy(true); setError('')
     try {
-      if (remove) { await api.removeRestaurantImage(id, kind); setImages(v => ({ ...v, [kind]: null })); setError('Imagen quitada.') }
-      else if (await pickAndUploadRestaurantImage(id, kind)) { const p = await api.getRestaurant(id); setImages({ logo: p.logo_url, cover: p.cover_url }); setError(kind === 'logo' ? 'Logo guardado.' : 'Foto guardada.') }
-    } catch (e) { setError(e instanceof Error ? e.message : 'No pudimos guardar la imagen.') }
+      if (remove) { await api.removeRestaurantImage(id, kind); setImages(v => ({ ...v, [kind]: null })); setError(t('Imagen quitada.')) }
+      else if (await pickAndUploadRestaurantImage(id, kind)) { const p = await api.getRestaurant(id); setImages({ logo: p.logo_url, cover: p.cover_url }); setError(kind === 'logo' ? t('Logo guardado.') : t('Foto guardada.')) }
+    } catch (e) { setError(e instanceof Error ? e.message : t('No pudimos guardar la imagen.')) }
     finally { lock.current = false; setBusy(false) }
   }
   // Suggestions under the field: types that contain what was typed (all when empty), excluding an exact match.
   const typed = normalize(form.category)
   const suggestions = types.filter(t => normalize(t) !== typed && (!typed || normalize(t).includes(typed))).slice(0, 8)
-  return <Page><Title>Mi negocio</Title><Message>{error}</Message>{!loaded ? error ? <Action title="Reintentar" onPress={() => setRetry(v => v + 1)} /> : <Loading /> : <>
+  return <Page><Title>{t('Mi negocio')}</Title><Message>{error}</Message>{!loaded ? error ? <Action title={t('Reintentar')} onPress={() => setRetry(v => v + 1)} /> : <Loading /> : <>
     <Card>
       {(['logo', 'cover'] as const).map(kind => <View key={kind} style={{ gap: 8 }}>
-        <Txt variant="label">{kind === 'logo' ? 'Logo' : 'Foto del restaurante'}</Txt>
-        {images[kind] ? <Image source={{ uri: images[kind]! }} accessibilityLabel={kind === 'logo' ? 'Logo actual' : 'Foto actual'} style={kind === 'logo' ? { width: 96, height: 96, borderRadius: 48 } : { width: '100%', aspectRatio: 16 / 9, borderRadius: 14 }} />
-          : <Txt variant="subhead">{kind === 'logo' ? 'Sin logo todavía.' : 'Sin foto. Sube la fachada, el salón o tu mejor platillo.'}</Txt>}
+        <Txt variant="label">{kind === 'logo' ? 'Logo' : t('Foto del restaurante')}</Txt>
+        {images[kind] ? <Image source={{ uri: images[kind]! }} accessibilityLabel={kind === 'logo' ? t('Logo actual') : t('Foto actual')} style={kind === 'logo' ? { width: 96, height: 96, borderRadius: 48 } : { width: '100%', aspectRatio: 16 / 9, borderRadius: 14 }} />
+          : <Txt variant="subhead">{kind === 'logo' ? t('Sin logo todavía.') : t('Sin foto. Sube la fachada, el salón o tu mejor platillo.')}</Txt>}
         <View style={{ flexDirection: 'row', gap: 8 }}>
-          <View style={{ flex: 1 }}><Action title={images[kind] ? 'Cambiar' : 'Subir'} secondary disabled={busy} onPress={() => void changeImage(kind)} /></View>
-          {images[kind] ? <View style={{ flex: 1 }}><Action title="Quitar" secondary disabled={busy} onPress={() => void changeImage(kind, true)} /></View> : null}
+          <View style={{ flex: 1 }}><Action title={images[kind] ? t('Cambiar') : t('Subir')} secondary disabled={busy} onPress={() => void changeImage(kind)} /></View>
+          {images[kind] ? <View style={{ flex: 1 }}><Action title={t('Quitar')} secondary disabled={busy} onPress={() => void changeImage(kind, true)} /></View> : null}
         </View>
       </View>)}
     </Card>
-    <Card><Field label="Nombre comercial" value={form.name} onChangeText={name => setForm(v => ({ ...v, name }))} maxLength={100} editable={!busy} />
-      <Field label="Tipo de negocio" placeholder="Ej. Pizzería, Pupusería, Cafetería" value={form.category} onChangeText={category => setForm(v => ({ ...v, category }))} maxLength={60} editable={!busy} autoCorrect={false} />
+    <Card><Field label={t('Nombre comercial')} value={form.name} onChangeText={name => setForm(v => ({ ...v, name }))} maxLength={100} editable={!busy} />
+      <Field label={t('Tipo de negocio')} placeholder={t('Ej. Pizzería, Pupusería, Cafetería')} value={form.category} onChangeText={category => setForm(v => ({ ...v, category }))} maxLength={60} editable={!busy} autoCorrect={false} />
       {suggestions.length ? <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>{suggestions.map(t => <Chip key={t} label={t} on={false} disabled={busy} onPress={() => setForm(v => ({ ...v, category: t }))} />)}</View> : null}
-      <Field label="Descripción" placeholder="Ej. Pizzas artesanales al horno de leña. Ambiente familiar y servicio a domicilio." value={form.description} onChangeText={description => setForm(v => ({ ...v, description }))} maxLength={2000} multiline editable={!busy} />
+      <Field label={t('Descripción')} placeholder={t('Ej. Pizzas artesanales al horno de leña. Ambiente familiar y servicio a domicilio.')} value={form.description} onChangeText={description => setForm(v => ({ ...v, description }))} maxLength={2000} multiline editable={!busy} />
       <Txt variant="subhead">{form.description.length}/2000</Txt>
-      <Action title={busy ? 'Guardando…' : 'Guardar perfil'} onPress={save} disabled={busy} /></Card>
-    <Action title="Administrar menú" secondary onPress={() => router.push({ pathname: '/menu/[id]', params: { id } })} disabled={busy} />
-    <Action title="Reseñas de mis platillos" secondary onPress={() => router.push({ pathname: '/reviews/[id]', params: { id } })} disabled={busy} />
+      <Action title={busy ? t('Guardando…') : t('Guardar perfil')} onPress={save} disabled={busy} /></Card>
+    <Action title={t('Administrar menú')} secondary onPress={() => router.push({ pathname: '/menu/[id]', params: { id } })} disabled={busy} />
+    <Action title={t('Reseñas de mis platillos')} secondary onPress={() => router.push({ pathname: '/reviews/[id]', params: { id } })} disabled={busy} />
     <ScreenBoundary><Branches restaurantId={id} /></ScreenBoundary>
   </>}</Page>
 }

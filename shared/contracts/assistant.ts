@@ -14,66 +14,75 @@ type Concept = { label: string; triggers: string[]; terms: string[]; tags?: Dish
 // triggers: word starts in the user's (accent-free, lowercase) message. terms: word starts searched in
 // dish/restaurant text. Both are plain [a-z0-9 ] so the server-built regex stays safe.
 export const CONCEPTS = {
-  picante: { label: 'algo picante', triggers: ['picant', 'picos', 'enchil', 'chile', 'chiltepe', 'jalapen', 'habaner', 'diabla', msg('que pique')], terms: ['picant', 'picos', 'chile', 'chiltepe', 'jalapen', 'habaner', 'diabla', 'enchilad', 'chipotle', 'sriracha'], tags: ['picante'] },
-  desayuno: { label: 'desayuno', triggers: ['desayun', 'huevos', 'panquequ', 'pancake', 'mosh'], terms: ['desayun', 'huevo', 'panquequ', 'pancake', 'mosh', 'omelet', 'waffle', 'chilaquil', 'tostada francesa', 'frijoles volteados'], tags: ['desayuno'], openNow: true },
-  postre: { label: 'postres', triggers: ['postre', 'dulce', 'pastel', 'flan', 'brownie', 'galleta', 'chocobanano', 'rellenito', 'churro'], terms: ['postre', 'pastel', 'flan', 'helado', 'nieve', msg('pie de'), 'gelatina', 'chocobanano', 'rellenito', 'churro', 'brownie', 'galleta', 'dulce', 'tres leches', 'cheesecake'], tags: ['postre'] },
-  frio: { label: msg('algo frío'), triggers: ['frio', 'fria', 'helado', 'nieve', 'granizad', 'refrescant', 'fresquito', 'smoothie', 'frappe'], terms: ['helado', 'nieve', 'granizad', 'smoothie', 'licuado', 'frappe', 'frio', 'fria', 'sorbete', 'paleta', 'gelatina'], tags: ['frio'] },
-  caliente: { label: 'algo calientito', triggers: ['calient', 'calentit', msg('para el frio'), 'hace frio', 'caldo', 'sopa', 'atol', 'consome', 'ponche'], terms: ['caldo', 'sopa', 'atol', 'consome', 'ponche', 'chocolate caliente', 'cafe', 'kakik', 'revolcado', 'calient'], tags: ['caliente'] },
-  cafe: { label: 'café', triggers: ['cafe', 'capuchin', 'cappucc', 'latte', 'espresso', 'cafeteri'], terms: ['cafe', 'capuchin', 'cappucc', 'latte', 'espresso', 'americano', 'mocca', 'moka'] },
-  pizza: { label: 'pizza', triggers: ['pizz'], terms: ['pizz'] },
-  hamburguesa: { label: 'hamburguesas', triggers: ['hamburgues', 'burger'], terms: ['hamburgues', 'burger'] },
-  mexicana: { label: 'comida mexicana', triggers: ['taco', 'burrito', 'quesadill', 'nacho', 'enchilada', 'mexican'], terms: ['taco', 'burrito', 'quesadill', 'nacho', 'enchilada', 'mexican', 'gringa'] },
-  mariscos: { label: 'mariscos', triggers: ['marisc', 'ceviche', 'camaron', 'pescad', 'mojarra', 'pulpo'], terms: ['marisc', 'ceviche', 'camaron', 'pescad', 'mojarra', 'pulpo', 'tapado'] },
-  carne: { label: 'carnes', triggers: ['carne', 'churrasc', 'asad', 'parrill', 'lomito', 'puyazo', 'costill', 'steak'], terms: ['carne', 'churrasc', 'asad', 'parrill', 'lomito', 'puyazo', 'costill', 'steak', msg('carne de res')] },
-  pollo: { label: 'pollo', triggers: ['pollo', 'alitas', 'pechuga'], terms: ['pollo', 'alitas', 'pechuga'] },
-  tipico: { label: msg('comida típica'), triggers: ['tipic', 'chapin', 'pepian', 'kakik', 'jocon', 'subanik', 'chuchit', 'tamal', 'revolcad', 'hilacha', 'shuco', 'paches', 'chojin', 'pupusa'], terms: ['tipic', 'chapin', 'pepian', 'kakik', 'jocon', 'subanik', 'chuchit', 'tamal', 'revolcad', 'hilacha', 'shuco', 'paches', 'chojin', 'pupusa', 'pulique'] },
-  china: { label: 'comida china', triggers: ['chino', 'china', 'chao mein', 'chow mein', 'arroz frito', 'wantan', 'wonton'], terms: ['chino', 'china', 'chao mein', 'chow mein', 'arroz frito', 'wantan', 'wonton'] },
-  japonesa: { label: 'comida japonesa', triggers: ['sushi', 'ramen', 'japon'], terms: ['sushi', 'ramen', 'japon', 'teriyaki'] },
-  vegetariano: { label: 'opciones vegetarianas', triggers: ['vegetarian', msg('sin carne'), 'ensalada', 'verdura'], terms: ['vegetarian', 'ensalada', 'verdura', 'vegetal', 'tofu'], tags: ['vegetariano', 'vegano'] },
-  vegano: { label: 'opciones veganas', triggers: ['vegan'], terms: ['vegan'], tags: ['vegano'] },
-  sin_gluten: { label: msg('opciones sin gluten'), triggers: [msg('sin gluten'), 'celiac', 'gluten free'], terms: [msg('sin gluten'), 'gluten free'], tags: ['sin_gluten'] },
-  bebida: { label: 'bebidas', triggers: ['bebida', 'tomar algo', 'refresco', 'jugo', 'limonada', 'licuado', 'horchata', 'jamaica', 'tamarindo'], terms: ['bebida', 'refresco', 'jugo', 'limonada', 'licuado', 'horchata', 'jamaica', 'tamarindo'], tags: ['bebida'] },
+  picante: { label: msg('algo picante'), triggers: ['picant', 'picos', 'enchil', 'chile', 'chiltepe', 'jalapen', 'habaner', 'diabla', 'que pique', 'spicy', 'hot sauce', 'jalapeno'], terms: ['picant', 'picos', 'chile', 'chiltepe', 'jalapen', 'habaner', 'diabla', 'enchilad', 'chipotle', 'sriracha'], tags: ['picante'] },
+  desayuno: { label: msg('desayuno'), triggers: ['desayun', 'huevos', 'panquequ', 'pancake', 'mosh', 'breakfast', 'brunch', 'eggs', 'omelet'], terms: ['desayun', 'huevo', 'panquequ', 'pancake', 'mosh', 'omelet', 'waffle', 'chilaquil', 'tostada francesa', 'frijoles volteados'], tags: ['desayuno'], openNow: true },
+  postre: { label: msg('postres'), triggers: ['postre', 'dulce', 'pastel', 'flan', 'brownie', 'galleta', 'chocobanano', 'rellenito', 'churro', 'dessert', 'sweet', 'cake', 'cookie', 'pie '], terms: ['postre', 'pastel', 'flan', 'helado', 'nieve', 'pie de', 'gelatina', 'chocobanano', 'rellenito', 'churro', 'brownie', 'galleta', 'dulce', 'tres leches', 'cheesecake'], tags: ['postre'] },
+  frio: { label: msg('algo frío'), triggers: ['frio', 'fria', 'helado', 'nieve', 'granizad', 'refrescant', 'fresquito', 'smoothie', 'frappe', 'cold', 'ice cream', 'iced', 'frozen', 'refreshing'], terms: ['helado', 'nieve', 'granizad', 'smoothie', 'licuado', 'frappe', 'frio', 'fria', 'sorbete', 'paleta', 'gelatina'], tags: ['frio'] },
+  caliente: { label: msg('algo calientito'), triggers: ['calient', 'calentit', 'para el frio', 'hace frio', 'caldo', 'sopa', 'atol', 'consome', 'ponche', 'warm', 'soup', 'hot drink', 'hot chocolate', 'stew'], terms: ['caldo', 'sopa', 'atol', 'consome', 'ponche', 'chocolate caliente', 'cafe', 'kakik', 'revolcado', 'calient'], tags: ['caliente'] },
+  cafe: { label: msg('café'), triggers: ['cafe', 'capuchin', 'cappucc', 'latte', 'espresso', 'cafeteri', 'coffee', 'cappuccino'], terms: ['cafe', 'capuchin', 'cappucc', 'latte', 'espresso', 'americano', 'mocca', 'moka'] },
+  pizza: { label: msg('pizza'), triggers: ['pizz', 'pizza'], terms: ['pizz'] },
+  hamburguesa: { label: msg('hamburguesas'), triggers: ['hamburgues', 'burger', 'hamburger', 'cheeseburger'], terms: ['hamburgues', 'burger'] },
+  mexicana: { label: msg('comida mexicana'), triggers: ['taco', 'burrito', 'quesadill', 'nacho', 'enchilada', 'mexican', 'mexican', 'tacos'], terms: ['taco', 'burrito', 'quesadill', 'nacho', 'enchilada', 'mexican', 'gringa'] },
+  mariscos: { label: msg('mariscos'), triggers: ['marisc', 'ceviche', 'camaron', 'pescad', 'mojarra', 'pulpo', 'seafood', 'shrimp', 'fish', 'octopus'], terms: ['marisc', 'ceviche', 'camaron', 'pescad', 'mojarra', 'pulpo', 'tapado'] },
+  carne: { label: msg('carnes'), triggers: ['carne', 'churrasc', 'asad', 'parrill', 'lomito', 'puyazo', 'costill', 'steak', 'meat', 'beef', 'grill', 'bbq', 'barbecue', 'ribs'], terms: ['carne', 'churrasc', 'asad', 'parrill', 'lomito', 'puyazo', 'costill', 'steak', 'carne de res'] },
+  pollo: { label: msg('pollo'), triggers: ['pollo', 'alitas', 'pechuga', 'chicken', 'wings'], terms: ['pollo', 'alitas', 'pechuga'] },
+  tipico: { label: msg('comida típica'), triggers: ['tipic', 'chapin', 'pepian', 'kakik', 'jocon', 'subanik', 'chuchit', 'tamal', 'revolcad', 'hilacha', 'shuco', 'paches', 'chojin', 'pupusa', 'traditional', 'typical', 'local food', 'guatemalan'], terms: ['tipic', 'chapin', 'pepian', 'kakik', 'jocon', 'subanik', 'chuchit', 'tamal', 'revolcad', 'hilacha', 'shuco', 'paches', 'chojin', 'pupusa', 'pulique'] },
+  china: { label: msg('comida china'), triggers: ['chino', 'china', 'chao mein', 'chow mein', 'arroz frito', 'wantan', 'wonton', 'chinese', 'fried rice'], terms: ['chino', 'china', 'chao mein', 'chow mein', 'arroz frito', 'wantan', 'wonton'] },
+  japonesa: { label: msg('comida japonesa'), triggers: ['sushi', 'ramen', 'japon', 'japanese'], terms: ['sushi', 'ramen', 'japon', 'teriyaki'] },
+  vegetariano: { label: msg('opciones vegetarianas'), triggers: ['vegetarian', 'sin carne', 'ensalada', 'verdura', 'veggie', 'salad', 'meatless'], terms: ['vegetarian', 'ensalada', 'verdura', 'vegetal', 'tofu'], tags: ['vegetariano', 'vegano'] },
+  vegano: { label: msg('opciones veganas'), triggers: ['vegan', 'plant based'], terms: ['vegan'], tags: ['vegano'] },
+  sin_gluten: { label: msg('opciones sin gluten'), triggers: ['sin gluten', 'celiac', 'gluten free', 'gluten free', 'celiac'], terms: ['sin gluten', 'gluten free'], tags: ['sin_gluten'] },
+  bebida: { label: msg('bebidas'), triggers: ['bebida', 'tomar algo', 'refresco', 'jugo', 'limonada', 'licuado', 'horchata', 'jamaica', 'tamarindo', 'drink', 'juice', 'lemonade', 'smoothie', 'soda'], terms: ['bebida', 'refresco', 'jugo', 'limonada', 'licuado', 'horchata', 'jamaica', 'tamarindo'], tags: ['bebida'] },
 } satisfies Record<string, Concept>
 export type ConceptKey = keyof typeof CONCEPTS
 export const CONCEPT_KEYS = Object.keys(CONCEPTS) as [ConceptKey, ...ConceptKey[]]
 
-const STOPWORDS = new Set((msg('quiero quisiera queria me te le gustaria gusta gustan algo alguna algun algunos un una unos unas el la los las lo de del al a en con sin para por que quien cual donde como cuando mas menos muy ') +
-  msg('comer come comida cenar cena almorzar almuerzo merendar tomar tengo hay hambre antojo antoja se ser este esta esto estoy esa ese hoy ahora ahorita mismo rico rica buen bueno buena ') +
-  msg('lugar lugares restaurante restaurantes opcion opciones busco buscar recomiendas recomienda recomendar dame dime puedes podrias favor porfa por favor y o pero si no mi mis tu tus ya bien ') +
+const STOPWORDS = new Set(('quiero quisiera queria me te le gustaria gusta gustan algo alguna algun algunos un una unos unas el la los las lo de del al a en con sin para por que quien cual donde como cuando mas menos muy ' +
+  'comer come comida cenar cena almorzar almuerzo merendar tomar tengo hay hambre antojo antoja se ser este esta esto estoy esa ese hoy ahora ahorita mismo rico rica buen bueno buena ' +
+  'lugar lugares restaurante restaurantes opcion opciones busco buscar recomiendas recomienda recomendar dame dime puedes podrias favor porfa por favor y o pero si no mi mis tu tus ya bien ' +
   'tienen tiene tienes venden vende ofrecen ofrece hacen menu carta platillos platillo mucho mucha muchos muchas gracias otro otra otros otras ' +
-  'cosa cosas tipo ver vamos voy ir salir soy alergico alergica alergia intolerante intolerancia puedo nada').split(' '))
+  'cosa cosas tipo ver vamos voy ir salir soy alergico alergica alergia intolerante intolerancia puedo nada ' +
+  // English
+  'i im want wanna would like love need some any something the an of to for with in on at and or but me my is are it its eat eating food meal place places restaurant restaurants ' +
+  'option options looking find show give recommend please can could you get have has good nice best really very today now hungry craving thanks thank around ' +
+  'one ones that this there what where which some more most other them they something anything go going lets let').split(' '))
 
 const INTENTS = {
-  near: /\b(cerca|cercan|cerquit|por aqui|aqui cerca|a pie|caminando|cerca de mi)/,
-  openNow: /\b(abiert|ahorita|ya mismo|en este momento|ahora mismo)/,
-  meal: /\b(almorz|almuerzo|cenar|cena|comer ya|merend)/,
-  cheap: /\b(barat|economic|no tan car|no muy car|poco dinero|presupuesto|accesible)/,
-  more: /\b(otr[oa]s?|mas opcion|alguna otra|siguiente|diferente|algo mas)\b/,
-  menu: /\b(menu|carta|que tienen|que mas tienen|que venden|que ofrecen|sus platillos|platillos tienen)/,
-  hello: /^(hola|buenas|buenos dias|buenas tardes|buenas noches|hey|que tal|saludos)\b/,
-  thanks: /\b(gracias|muchas gracias|perfecto|excelente|listo)\b/,
+  near: /\b(cerca|cercan|cerquit|por aqui|aqui cerca|a pie|caminando|cerca de mi|near|nearby|close by|closest|around here|walking distance|near me)/,
+  openNow: /\b(abiert|ahorita|ya mismo|en este momento|ahora mismo|open now|right now|currently open)/,
+  meal: /\b(almorz|almuerzo|cenar|cena|comer ya|merend|lunch|dinner|supper)/,
+  cheap: /\b(barat|economic|no tan car|no muy car|poco dinero|presupuesto|accesible|cheap|affordable|inexpensive|budget|low cost)/,
+  more: /\b(otr[oa]s?|mas opcion|alguna otra|siguiente|diferente|algo mas|another|other|more options|next|something else|anything else)\b/,
+  menu: /\b(menu|carta|que tienen|que mas tienen|que venden|que ofrecen|sus platillos|platillos tienen|what do they (?:have|serve|sell)|their dishes)/,
+  hello: /^(hola|buenas|buenos dias|buenas tardes|buenas noches|hey|que tal|saludos|hi|hello|good morning|good afternoon|good evening)\b/,
+  thanks: /\b(gracias|muchas gracias|perfecto|excelente|listo|thanks|thank you|great|awesome)\b/,
 }
 
 // Words that name an allergen (accent-free stems) -> allergen key.
 const ALLERGEN_WORDS: Record<Allergen, string[]> = {
-  mani: ['mani', 'cacahuate', 'cacahuete'], nueces: ['nuez', 'nueces', 'almendra', 'maranon', 'pistach', 'avellana'],
-  lacteos: ['lacteo', 'leche', 'queso', 'crema', 'lactosa', 'mantequilla'], huevo: ['huevo'], gluten: ['gluten', 'trigo', 'harina'],
-  mariscos: ['marisco', 'camaron', 'langost', 'cangrejo', 'concha', 'pulpo', 'calamar'], pescado: ['pescado'],
-  soya: ['soya', 'soja'], ajonjoli: ['ajonjoli', 'sesamo'],
+  mani: ['mani', 'cacahuate', 'cacahuete', 'peanut'], nueces: ['nuez', 'nueces', 'almendra', 'maranon', 'pistach', 'avellana', 'nut', 'almond', 'cashew', 'pistachio', 'hazelnut', 'walnut'],
+  lacteos: ['lacteo', 'leche', 'queso', 'crema', 'lactosa', 'mantequilla', 'dairy', 'milk', 'cheese', 'cream', 'lactose', 'butter'], huevo: ['huevo', 'egg'], gluten: ['gluten', 'trigo', 'harina', 'wheat', 'flour'],
+  mariscos: ['marisco', 'camaron', 'langost', 'cangrejo', 'concha', 'pulpo', 'calamar', 'shellfish', 'shrimp', 'lobster', 'crab', 'octopus', 'squid'], pescado: ['pescado', 'fish'],
+  soya: ['soya', 'soja', 'soy'], ajonjoli: ['ajonjoli', 'sesamo', 'sesame'],
 }
 // "sin X", "no como X", "alergico al X", "que no tenga X" (X = up to 3 words; "ni"/"y" chain more items).
-const NEGATION = /\b(?:sin|no (?:puedo comer|como|quiero|me gusta|me gustan)|alergic[oa] (?:a|al|a la|a los|a las)|intolerante (?:a|al|a la)|evit(?:o|ar)|que no (?:tenga|lleve))\s+((?:[a-z0-9]+)(?:\s+(?:y|ni|o|,)?\s*[a-z0-9]+){0,4})/g
-const FILLER = new Set(['el', 'la', 'los', 'las', 'de', 'y', 'ni', 'o', 'nada', 'algo', 'comida', 'cosas', 'con', 'que', 'tenga', 'lleve'])
+const NEGATION = /\b(?:sin|no (?:puedo comer|como|quiero|me gusta|me gustan)|alergic[oa] (?:a|al|a la|a los|a las)|intolerante (?:a|al|a la)|evit(?:o|ar)|que no (?:tenga|lleve)|without|allergic to|(?:can t|cannot|cant|don t|dont|do not) (?:eat|have)|avoid(?:ing)?|free of)\s+((?:[a-z0-9]+)(?:\s+(?:y|ni|o|,)?\s*[a-z0-9]+){0,4})/g
+const FILLER = new Set(['el', 'la', 'los', 'las', 'de', 'y', 'ni', 'o', 'nada', 'algo', 'comida', 'cosas', 'con', 'que', 'tenga', 'lleve',
+  'the', 'a', 'an', 'and', 'or', 'nor', 'any', 'food', 'with', 'please'])
 
 /** Pulls exclusions out of a normalized message; returns the message without them. */
 export function extractExclusions(text: string): { without: Allergen[]; avoid: string[]; rest: string } {
   const without = new Set<Allergen>(); const avoid = new Set<string>()
   const rest = text.replace(NEGATION, (_m, items: string) => {
-    for (const w of items.split(/\s+/)) {
+    const words = items.split(/\s+/)
+    let took = false
+    for (const [i, w] of words.entries()) {
+      // "alérgico al maní, un postre frío": after the first excluded item, a craving word starts the request again.
+      if (took && detectConcepts(w).length) return ` ${words.slice(i).join(' ')} `
       if (w.length < 3 || FILLER.has(w)) continue
       const allergen = ALLERGENS.find(a => ALLERGEN_WORDS[a].some(stem => w.startsWith(stem)))
-      if (allergen) without.add(allergen)
-      else if (/^[a-z0-9]{3,30}$/.test(w) && !STOPWORDS.has(w)) avoid.add(w)
+      if (allergen) { without.add(allergen); took = true }
+      else if (/^[a-z0-9]{3,30}$/.test(w) && !STOPWORDS.has(w)) { avoid.add(w); took = true }
     }
     return ' '
   }).replace(/\s+/g, ' ').trim()
@@ -143,10 +152,10 @@ export function interpret(message: string, previous: AssistantContext = emptyCon
     const context = withModifiers({ ...emptyContext(), near: previous.near, concepts: concepts.slice(0, 6), words, ...restrictions })
     return { context, action: 'search' }
   }
-  // t("sin maní") alone refines the current search (or searches everything with that restriction).
+  // "sin maní" alone refines the current search (or searches everything with that restriction).
   if (restricted) return { context: { ...withModifiers(previous), ...restrictions, shown: [] }, action: 'search' }
   if (intent.menu && previous.lastBranchId) return { context: previous, action: 'menu' }
-  // t("algo más barato") / t("otro más cerca") refine the search; a bare t("otra opción") pages through it.
+  // "algo más barato" / "otro más cerca" refine the search; a bare "otra opción" pages through it.
   if (modifiers) return { context: { ...withModifiers(previous), shown: [] }, action: 'search' }
   if (intent.more && (previous.concepts.length || previous.words.length || previous.near)) return { context: previous, action: 'more' }
   if (intent.thanks) return { context: previous, action: 'thanks' }
@@ -171,12 +180,12 @@ export function queryGroups(q: string): { re: string; tags: string[] }[] {
   return words.slice(0, 4).map(w => ({ re: `\\m(${w})`, tags: [] }))
 }
 
-const joinEs = (items: string[]) => items.length <= 1 ? items.join('') : `${items.slice(0, -1).join(', ')} ni ${items[items.length - 1]}`
+const joinList = (items: string[]) => items.length <= 1 ? items.join('') : `${items.slice(0, -1).join(', ')}${t(' ni ')}${items[items.length - 1]}`
 
-/** Human label of what is being searched: "algo picante y postres sin maní ni cebolla". */
+/** Human label of what is being searched: "algo picante y postres sin maní ni cebolla" (English when the reader uses English). */
 export function contextLabel(ctx: AssistantContext): string {
-  const parts = [...ctx.concepts.map(k => CONCEPTS[k].label), ...(ctx.words.length ? [`«${ctx.words.join(' ')}»`] : [])]
-  const base = parts.length ? parts.join(' y ') : 'lugares'
-  const excluded = [...ctx.without.map(a => ALLERGEN_LABELS[a].replace(/ \(.*\)$/, '').toLowerCase()), ...ctx.avoid]
-  return excluded.length ? `${base} sin ${joinEs(excluded)}` : base
+  const parts = [...ctx.concepts.map(k => t(CONCEPTS[k].label)), ...(ctx.words.length ? [`«${ctx.words.join(' ')}»`] : [])]
+  const base = parts.length ? parts.join(t(' y ')) : t('lugares')
+  const excluded = [...ctx.without.map(a => t(ALLERGEN_LABELS[a]).replace(/ \(.*\)$/, '').toLowerCase()), ...ctx.avoid]
+  return excluded.length ? t('{base} sin {list}', { base, list: joinList(excluded) }) : base
 }

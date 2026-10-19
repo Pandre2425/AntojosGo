@@ -1,5 +1,5 @@
-import { t } from '@/shared/i18n'
 'use client'
+import { t } from '@/shared/i18n'
 
 export default function PageError({ reset }: { error: Error & { digest?: string }; reset: () => void }) {
   return <main className="mx-auto max-w-md p-6 space-y-4">

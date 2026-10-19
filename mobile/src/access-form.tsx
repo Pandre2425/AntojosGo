@@ -7,7 +7,9 @@ import { ServerSettings } from './server-settings'
 import { getServerUrl } from './server'
 import { googleAvailable, signInWithGoogle } from './google-auth'
 import { AccessibilityCard } from './account-extras'
+import { LanguageSelector } from './language'
 import { accountEmailSent, accountLink, authErrorMessage, loginSchema, registrationSchema, sendAccountEmail } from '../../lib/auth-validation'
+import { t } from '../../shared/i18n'
 /** Sign in / sign up. The account tab shows it when there is no session. */
 export function AccessForm() {
   const { ready } = useSession()
@@ -28,19 +30,19 @@ export function AccessForm() {
     try {
       const result = register ? await supabase.auth.signUp({ email: parsed.data.email, password: parsed.data.password, options: { data: { display_name: form.name.trim() }, emailRedirectTo: accountLink(getServerUrl(), 'confirmar') } }) : await supabase.auth.signInWithPassword(parsed.data)
       if (result.error) { setMessage(authErrorMessage(result.error)); setUnconfirmed(result.error.code === 'email_not_confirmed') }
-      else if (!result.data.session) { setMessage(`Te enviamos un enlace a ${parsed.data.email}. Ábrelo para confirmar tu cuenta y después inicia sesión aquí.`); setRegister(false) }
-    } catch { setMessage('No pudimos conectar. Revisa la conexión e intenta nuevamente.') }
+      else if (!result.data.session) { setMessage(t('Te enviamos un enlace a {email}. Ábrelo para confirmar tu cuenta y después inicia sesión aquí.', { email: parsed.data.email })); setRegister(false) }
+    } catch { setMessage(t('No pudimos conectar. Revisa la conexión e intenta nuevamente.')) }
     finally { lock.current = false; setBusy(false) }
   }
   async function emailLink(kind: 'reset' | 'resend') {
     const email = loginSchema.shape.email.safeParse(form.email)
-    if (!email.success) { setMessage('Escribe tu correo arriba y vuelve a tocar el botón.'); return }
+    if (!email.success) { setMessage(t('Escribe tu correo arriba y vuelve a tocar el botón.')); return }
     if (lock.current || !supabase) return
     lock.current = true; setBusy(true); setMessage('')
     try {
       const error = await sendAccountEmail(supabase.auth, kind, email.data, getServerUrl())
       if (error) setMessage(authErrorMessage(error)); else { setMessage(accountEmailSent(kind)); setUnconfirmed(false) }
-    } catch { setMessage('No pudimos conectar. Revisa la conexión e intenta nuevamente.') }
+    } catch { setMessage(t('No pudimos conectar. Revisa la conexión e intenta nuevamente.')) }
     finally { lock.current = false; setBusy(false) }
   }
   async function google_() {
@@ -50,17 +52,17 @@ export function AccessForm() {
     finally { lock.current = false; setBusy(false) }
   }
   const field = (key: keyof typeof form) => (value: string) => setForm(v => ({ ...v, [key]: value }))
-  return <Page tab><Image source={require('./assets/logo.png')} accessibilityIgnoresInvertColors style={{ width: 72, height: 72, borderRadius: 16 }} /><Title>Mi cuenta</Title><Message>Para buscar no necesitas cuenta. Inicia sesión para guardar favoritos o administrar tu restaurante.</Message><Card>
-    <Title>{register ? 'Crea tu cuenta' : 'Bienvenido'}</Title>
-    {google ? <><Action title="Continuar con Google" secondary onPress={() => void google_()} disabled={busy} /><Message>o con tu correo:</Message></> : null}
-    {register && <Field label="Tu nombre" value={form.name} onChangeText={field('name')} maxLength={100} editable={!busy} />}
-    <Field label="Correo electrónico" value={form.email} onChangeText={field('email')} keyboardType="email-address" autoCapitalize="none" autoCorrect={false} maxLength={254} editable={!busy} />
-    <Field label="Contraseña" value={form.password} onChangeText={field('password')} secureTextEntry autoCapitalize="none" maxLength={128} editable={!busy} />
-    {register && <Field label="Confirmar contraseña" value={form.confirmPassword} onChangeText={field('confirmPassword')} secureTextEntry autoCapitalize="none" maxLength={128} editable={!busy} />}
-    <Message>{supabase ? message : 'Falta la configuración pública de Supabase. Revisa mobile/.env.local.'}</Message>
-    <Action title={busy ? 'Procesando…' : register ? 'Crear cuenta' : 'Iniciar sesión'} onPress={submit} disabled={busy || !supabase} />
-    {!register && <Action title="¿Olvidaste tu contraseña?" secondary onPress={() => emailLink('reset')} disabled={busy} />}
-    {unconfirmed && <Action title="Reenviar confirmación" secondary onPress={() => emailLink('resend')} disabled={busy} />}
-    <Action title={register ? 'Ya tengo cuenta' : 'Crear una cuenta'} secondary onPress={() => { setRegister(!register); setMessage('') }} disabled={busy} />
-  </Card><AccessibilityCard /><ServerSettings /></Page>
+  return <Page tab><Image source={require('./assets/logo.png')} accessibilityIgnoresInvertColors style={{ width: 72, height: 72, borderRadius: 16 }} /><Title>{t('Mi cuenta')}</Title><Message>{t('Para buscar no necesitas cuenta. Inicia sesión para guardar favoritos o administrar tu restaurante.')}</Message><Card>
+    <Title>{register ? t('Crea tu cuenta') : t('Bienvenido')}</Title>
+    {google ? <><Action title={t('Continuar con Google')} secondary onPress={() => void google_()} disabled={busy} /><Message>{t('o con tu correo:')}</Message></> : null}
+    {register && <Field label={t('Tu nombre')} value={form.name} onChangeText={field('name')} maxLength={100} editable={!busy} />}
+    <Field label={t('Correo electrónico')} value={form.email} onChangeText={field('email')} keyboardType="email-address" autoCapitalize="none" autoCorrect={false} maxLength={254} editable={!busy} />
+    <Field label={t('Contraseña')} value={form.password} onChangeText={field('password')} secureTextEntry autoCapitalize="none" maxLength={128} editable={!busy} />
+    {register && <Field label={t('Confirmar contraseña')} value={form.confirmPassword} onChangeText={field('confirmPassword')} secureTextEntry autoCapitalize="none" maxLength={128} editable={!busy} />}
+    <Message>{supabase ? message : t('Falta la configuración pública de Supabase. Revisa mobile/.env.local.')}</Message>
+    <Action title={busy ? t('Procesando…') : register ? t('Crear cuenta') : t('Iniciar sesión')} onPress={submit} disabled={busy || !supabase} />
+    {!register && <Action title={t('¿Olvidaste tu contraseña?')} secondary onPress={() => emailLink('reset')} disabled={busy} />}
+    {unconfirmed && <Action title={t('Reenviar confirmación')} secondary onPress={() => emailLink('resend')} disabled={busy} />}
+    <Action title={register ? t('Ya tengo cuenta') : t('Crear una cuenta')} secondary onPress={() => { setRegister(!register); setMessage('') }} disabled={busy} />
+  </Card><Card><LanguageSelector /></Card><AccessibilityCard /><ServerSettings /></Page>
 }

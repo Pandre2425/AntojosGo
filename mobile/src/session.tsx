@@ -3,6 +3,7 @@ import { AppState } from 'react-native'
 import type { Session } from '@supabase/supabase-js'
 import { supabase } from './supabase'
 import { Action, Message, Page } from './ui'
+import { t } from '../../shared/i18n'
 const Context = createContext<{ session: Session | null; ready: boolean }>({ session: null, ready: false })
 export const useSession = () => useContext(Context)
 export function SessionProvider({ children }: { children: ReactNode }) {
@@ -20,6 +21,6 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     const state = AppState.addEventListener('change', (value) => value === 'active' ? supabase!.auth.startAutoRefresh() : supabase!.auth.stopAutoRefresh())
     return () => { active = false; subscription.data.subscription.unsubscribe(); state.remove(); supabase!.auth.stopAutoRefresh() }
   }, [retry])
-  if (error) return <Page><Message>No pudimos recuperar tu sesión.</Message><Action title="Reintentar" onPress={() => setRetry(v => v + 1)} /></Page>
+  if (error) return <Page><Message>{t('No pudimos recuperar tu sesión.')}</Message><Action title={t('Reintentar')} onPress={() => setRetry(v => v + 1)} /></Page>
   return <Context.Provider value={{ session, ready }}>{children}</Context.Provider>
 }

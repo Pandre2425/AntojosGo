@@ -6,6 +6,7 @@ import { createBoundedFetch } from '../../lib/bounded-fetch'
 import { parseAnnouncements, type Announcement } from '../../shared/contracts/announcements'
 import { getServerUrl } from './server'
 import { Action, Txt, colors, radius, spacing } from './ui'
+import { t } from '../../shared/i18n'
 
 const fetchNotices = createBoundedFetch(8000)
 const SEEN_KEY = 'seen-announcements'
@@ -30,25 +31,25 @@ export function NotificationsBell() {
     setSeen(ids); SecureStore.setItemAsync(SEEN_KEY, JSON.stringify(ids)).catch(() => {})
   }
   return <>
-    <Pressable accessibilityRole="button" accessibilityLabel={unseen ? `Notificaciones, ${unseen} sin leer` : 'Notificaciones'} onPress={show} hitSlop={8}
+    <Pressable accessibilityRole="button" accessibilityLabel={unseen ? t('Notificaciones, {n} sin leer', { n: unseen }) : t('Notificaciones')} onPress={show} hitSlop={8}
       style={({ pressed }) => ({ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: pressed ? colors.border : colors.white })}>
       <Image source={require('./assets/bell.png')} style={{ width: 24, height: 24 }} />
       {unseen ? <View style={{ position: 'absolute', top: 9, right: 10, width: 10, height: 10, borderRadius: 5, backgroundColor: colors.orange, borderWidth: 2, borderColor: colors.white }} /> : null}
     </Pressable>
     <Modal visible={open} transparent animationType="slide" onRequestClose={() => setOpen(false)} statusBarTranslucent>
-      <Pressable accessibilityLabel="Cerrar notificaciones" onPress={() => setOpen(false)} style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)' }} />
+      <Pressable accessibilityLabel={t('Cerrar notificaciones')} onPress={() => setOpen(false)} style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)' }} />
       <View style={{ maxHeight: '75%', backgroundColor: colors.cream, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingBottom: insets.bottom }}>
         <View style={{ alignSelf: 'center', width: 40, height: 5, borderRadius: 3, backgroundColor: colors.border, marginVertical: spacing.sm }} />
         <ScrollView contentContainerStyle={{ padding: spacing.xl, paddingTop: spacing.sm, gap: spacing.md }}>
-          <Txt variant="title" accessibilityRole="header" style={{ fontSize: 24 }}>Notificaciones</Txt>
-          {items.length === 0 ? <Txt variant="subhead">No hay notificaciones.</Txt> : items.map(a => <View key={a.id}
+          <Txt variant="title" accessibilityRole="header" style={{ fontSize: 24 }}>{t('Notificaciones')}</Txt>
+          {items.length === 0 ? <Txt variant="subhead">{t('No hay notificaciones.')}</Txt> : items.map(a => <View key={a.id}
             style={{ gap: spacing.xs, padding: spacing.lg, borderRadius: radius.lg, backgroundColor: colors.white }}>
             <Txt variant="label">{a.title}</Txt>
             <Txt>{a.body}</Txt>
             <Text style={{ color: colors.muted, fontSize: 13 }}>{a.date.split('-').reverse().join('/')}</Text>
             {a.link ? <Action title={a.link.label} onPress={() => void Linking.openURL(a.link!.url)} style={{ marginTop: spacing.xs }} /> : null}
           </View>)}
-          <Action title="Cerrar" secondary onPress={() => setOpen(false)} />
+          <Action title={t('Cerrar')} secondary onPress={() => setOpen(false)} />
         </ScrollView>
       </View>
     </Modal>

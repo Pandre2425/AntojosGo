@@ -109,3 +109,28 @@ test('dish form rules: categories drive tags and summary; one ingredient at a ti
   assert.deepEqual(m.splitAllergenLabels(['Maní', 'Mostaza']), { allergens: ['mani'], allergens_other: ['Mostaza'] })
   assert.equal(m.labelProblem('Colombiana, Peruana', []), 'Agrega una opción a la vez (sin comas).')
 })
+
+test('English cravings, intents and restrictions are understood without AI', () => {
+  let r = interpret('I want something spicy near me')
+  assert.equal(r.action, 'search'); assert.deepEqual(r.context.concepts, ['picante']); assert.equal(r.context.near, true); assert.deepEqual(r.context.words, [])
+  r = interpret('cheap burgers open now')
+  assert.deepEqual(r.context.concepts, ['hamburguesa']); assert.equal(r.context.cheap, true); assert.equal(r.context.openNow, true)
+  r = interpret('seafood without peanuts or onion')
+  assert.deepEqual(r.context.concepts, ['mariscos']); assert.deepEqual(r.context.without, ['mani']); assert.deepEqual(r.context.avoid, ['onion'])
+  r = interpret("I'm allergic to dairy, a cold dessert please")
+  assert.deepEqual(r.context.without, ['lacteos']); assert.deepEqual(r.context.concepts.sort(), ['frio', 'postre'])
+  assert.equal(interpret('hello').action, 'hello')
+  assert.equal(interpret('thank you').action, 'thanks')
+  const prev = interpret('pizza').context
+  assert.equal(interpret('another one', prev).action, 'more')
+})
+
+test('the search label follows the reader language', () => {
+  const { t } = require('../shared/i18n/index.ts')
+  const ctx = { ...emptyContext(), concepts: ['picante', 'postre'], without: ['mani'], avoid: ['cebolla'] }
+  assert.equal(contextLabel(ctx), 'algo picante y postres sin maní ni cebolla')
+  const { setLanguageSource } = require('../shared/i18n/index.ts')
+  setLanguageSource(() => 'en')
+  try { assert.equal(contextLabel(ctx), 'something spicy and desserts without peanuts or cebolla') } finally { setLanguageSource(() => 'es') }
+  assert.equal(t('Buscar', undefined, 'en'), 'Search')
+})

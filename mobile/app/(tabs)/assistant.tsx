@@ -9,13 +9,14 @@ import type { AssistantItem } from '../../../modules/catalog/data/assistant'
 import { Input, colors, radius, spacing, type } from '../../src/ui'
 import { VoiceButton } from '../../src/voice-button'
 import { hiddenIds } from '../../src/hidden'
+import { t, msg } from '../../../shared/i18n'
 
 type Turn = { id: number; from: 'user' | 'bot'; text: string; items?: AssistantItem[] }
-const SUGGESTIONS = ['Algo picante', 'Quiero desayunar cerca', 'Un postre frío', 'Comida típica barata']
+const SUGGESTIONS = [msg('Algo picante'), msg('Quiero desayunar cerca'), msg('Un postre frío'), msg('Comida típica barata')]
 
 /** Diner assistant: works without an account; the conversation lives only on this phone. */
 export default function Assistant() {
-  const [turns, setTurns] = useState<Turn[]>([{ id: 0, from: 'bot', text: '¡Hola! Cuéntame qué se te antoja y te digo dónde encontrarlo.' }])
+  const [turns, setTurns] = useState<Turn[]>([{ id: 0, from: 'bot', text: t('¡Hola! Cuéntame qué se te antoja y te digo dónde encontrarlo.') }])
   const [text, setText] = useState('')
   const [busy, setBusy] = useState(false)
   const context = useRef<AssistantContext>(emptyContext())
@@ -23,7 +24,7 @@ export default function Assistant() {
   const scroll = useRef<ScrollView>(null)
   const nextId = useRef(1)
 
-  const add = (turn: Omit<Turn, 'id'>) => setTurns(t => [...t, { ...turn, id: nextId.current++ }])
+  const add = (turn: Omit<Turn, 'id'>) => setTurns(turns => [...turns, { ...turn, id: nextId.current++ }])
 
   async function send(message: string) {
     const clean = message.trim()
@@ -32,16 +33,16 @@ export default function Assistant() {
     try {
       let result = await api.assistant(clean, context.current, location.current ?? undefined, hiddenIds())
       if (result.needsLocation) {
-        add({ from: 'bot', text: 'Buscando tu ubicación…' })
+        add({ from: 'bot', text: t('Buscando tu ubicación…') })
         location.current = await requestUserLocation()
         result = location.current
           ? await api.assistant(clean, context.current, location.current, hiddenIds())
-          : { ...result, reply: 'No pude obtener tu ubicación. Busco en toda la zona si quitas «cerca», o revisa el permiso de ubicación.' }
+          : { ...result, reply: t('No pude obtener tu ubicación. Busco en toda la zona si quitas «cerca», o revisa el permiso de ubicación.') }
       }
       context.current = result.context
       add({ from: 'bot', text: result.reply, items: result.items })
     } catch (e) {
-      add({ from: 'bot', text: e instanceof Error ? e.message : 'No pude responder. Revisa tu conexión e intenta de nuevo.' })
+      add({ from: 'bot', text: e instanceof Error ? e.message : t('No pude responder. Revisa tu conexión e intenta de nuevo.') })
     } finally { setBusy(false) }
   }
   // A question typed or picked on the home tab arrives as ?q=…; send it once, then clear it.
@@ -55,29 +56,29 @@ export default function Assistant() {
           <View accessibilityLiveRegion={turn.from === 'bot' ? 'polite' : 'none'} style={{ backgroundColor: turn.from === 'user' ? colors.green : colors.white, borderRadius: radius.lg, padding: spacing.md }}>
             <Text style={[type.body, turn.from === 'user' && { color: colors.white }]}>{turn.text}</Text>
           </View>
-          {turn.items?.map(item => <Pressable key={item.id} accessibilityRole="button" accessibilityLabel={`Ver sede ${item.name}`} onPress={() => router.push({ pathname: '/sede/[id]', params: { id: item.id } })}
+          {turn.items?.map(item => <Pressable key={item.id} accessibilityRole="button" accessibilityLabel={t('Ver sede {name}', { name: item.name })} onPress={() => router.push({ pathname: '/sede/[id]', params: { id: item.id } })}
             style={({ pressed }) => ({ backgroundColor: pressed ? colors.cream : colors.white, borderRadius: radius.md, padding: spacing.md, borderWidth: 1, borderColor: pressed ? colors.green : colors.border, minHeight: 48 })}>
             <Text style={type.label}>{item.name}</Text>
             <Text style={{ color: colors.green }}>{item.dish ? `${item.dish.name} · Q${item.dish.price.toFixed(2)}` : item.branch_name}</Text>
-            <Text style={{ color: colors.orange, fontWeight: '600', marginTop: 4 }}>Ver sede ›</Text>
+            <Text style={{ color: colors.orange, fontWeight: '600', marginTop: 4 }}>{t('Ver sede ›')}</Text>
           </Pressable>)}
         </View>)}
         {turns.length === 1 ? <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-          {SUGGESTIONS.map(s => <Pressable key={s} accessibilityRole="button" onPress={() => send(s)} disabled={busy}
+          {SUGGESTIONS.map(s => <Pressable key={s} accessibilityRole="button" onPress={() => send(t(s))} disabled={busy}
             style={({ pressed }) => ({ borderWidth: 1, borderColor: colors.green, backgroundColor: pressed ? colors.white : 'transparent', borderRadius: radius.lg, paddingVertical: 10, paddingHorizontal: 14, minHeight: 44, justifyContent: 'center' })}>
-            <Text style={{ color: colors.green }}>{s}</Text>
+            <Text style={{ color: colors.green }}>{t(s)}</Text>
           </Pressable>)}
         </View> : null}
-        {busy ? <Text accessibilityLiveRegion="polite" style={{ color: colors.green, fontStyle: 'italic' }}>Buscando…</Text> : null}
+        {busy ? <Text accessibilityLiveRegion="polite" style={{ color: colors.green, fontStyle: 'italic' }}>{t('Buscando…')}</Text> : null}
       </ScrollView>
       <View style={{ flexDirection: 'row', gap: 8, padding: 12, borderTopWidth: 1, borderColor: colors.border, backgroundColor: colors.cream }}>
-        <Input accessibilityLabel="Escribe qué se te antoja" placeholder="Ej. algo picante cerca" value={text} onChangeText={setText} maxLength={300}
+        <Input accessibilityLabel={t('Escribe qué se te antoja')} placeholder={t('Ej. algo picante cerca')} value={text} onChangeText={setText} maxLength={300}
           editable={!busy} returnKeyType="send" onSubmitEditing={() => send(text)}
           style={{ flex: 1 }} />
-        <VoiceButton onText={t => void send(t)} onError={m => add({ from: 'bot', text: m })} />
-        <Pressable accessibilityRole="button" accessibilityLabel="Enviar" onPress={() => send(text)} disabled={busy || !text.trim()}
+        <VoiceButton onText={text => void send(text)} onError={m => add({ from: 'bot', text: m })} />
+        <Pressable accessibilityRole="button" accessibilityLabel={t('Enviar')} onPress={() => send(text)} disabled={busy || !text.trim()}
           style={({ pressed }) => ({ backgroundColor: colors.orange, borderRadius: radius.sm, paddingHorizontal: spacing.lg, justifyContent: 'center', minHeight: 48, opacity: busy || !text.trim() ? 0.5 : pressed ? 0.8 : 1 })}>
-          <Text style={[type.label, { color: colors.white }]}>Enviar</Text>
+          <Text style={[type.label, { color: colors.white }]}>{t('Enviar')}</Text>
         </Pressable>
       </View>
     </KeyboardAvoidingView>

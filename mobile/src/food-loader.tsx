@@ -1,5 +1,6 @@
 import { useEffect, useRef, type ReactNode } from 'react'
 import { AccessibilityInfo, Animated, Easing, Text, View, type ViewStyle } from 'react-native'
+import { t } from '../../shared/i18n'
 
 // Loading state: the logo's shuco assembles itself piece by piece (same idea as the web's components/food-loader.tsx).
 // Drawn on a 160x110 grid; with reduced motion the finished shuco is shown still.
@@ -27,7 +28,7 @@ const PIECES: ReactNode[] = [
   </View>,
 ]
 
-export function FoodLoader({ label = 'Cargando…', scale = 0.8 }: { label?: string; scale?: number }) {
+export function FoodLoader({ label = t('Cargando…'), scale = 0.8 }: { label?: string; scale?: number }) {
   const drops = useRef(PIECES.map(() => new Animated.Value(0))).current
   const pop = useRef(new Animated.Value(0)).current
   const fade = useRef(new Animated.Value(1)).current

@@ -81,7 +81,7 @@ export default function BusinessProfileEditor({ userId, restaurant, onSaved, onC
                 : <span className="px-2 text-center text-xs text-muted-foreground">{kind === 'logo' ? t('Sin logo') : t('Fachada, salón o tu mejor platillo')}</span>}
             </div>
             <div className="flex flex-wrap gap-2">
-              <Button type="button" size="sm" variant="outline" disabled={busy} onClick={() => { fileFor.current = kind; fileInput.current?.click() }}>{images[kind] ? 'Cambiar' : 'Subir'}</Button>
+              <Button type="button" size="sm" variant="outline" disabled={busy} onClick={() => { fileFor.current = kind; fileInput.current?.click() }}>{images[kind] ? t('Cambiar') : t('Subir')}</Button>
               {images[kind] && <Button type="button" size="sm" variant="ghost" disabled={busy} onClick={() => void changeImage(kind, null)}>{t('Quitar')}</Button>}
             </div>
           </div>)}

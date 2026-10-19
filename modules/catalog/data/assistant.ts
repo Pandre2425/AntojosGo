@@ -5,6 +5,7 @@ import { assistantRequestSchema, avoidRegex, contextLabel, emptyContext, interpr
 import { ALLERGEN_LABELS, allergenStatus, type Allergen } from '../../../shared/contracts/menu'
 import { isOpenNow, type OpeningHours } from '../../../shared/contracts/hours'
 import { getPublicMenu, getPublishedBranch } from './public-catalog'
+import { t } from '../../../shared/i18n'
 
 export type AssistantItem = {
   id: string; name: string; branch_name: string; address: string; municipality: string; category: string | null
@@ -37,19 +38,19 @@ export async function runAssistant(db: SupabaseClient, input: z.input<typeof ass
         without: [...new Set([...previous.without, ...(guess.without ?? [])])], avoid: [...new Set([...previous.avoid, ...(guess.avoid ?? [])])].slice(0, 4) }
       action = 'search'; source = 'ai'
     } else {
-      return { reply: 'No te entendí del todo. Prueba con un antojo («algo picante», «postre frío», «pizza») o pide «algo cerca de mí».', items: [], context: previous, source: 'none' }
+      return { reply: t('No te entendí del todo. Prueba con un antojo («algo picante», «postre frío», «pizza») o pide «algo cerca de mí».'), items: [], context: previous, source: 'none' }
     }
   }
-  if (action === 'hello') return { reply: '¡Hola! Cuéntame qué se te antoja: un platillo, «algo picante», «desayunar cerca» o «un postre frío».', items: [], context, source }
-  if (action === 'thanks') return { reply: '¡Buen provecho! Si se te antoja otra cosa, aquí estoy.', items: [], context, source }
+  if (action === 'hello') return { reply: t('¡Hola! Cuéntame qué se te antoja: un platillo, «algo picante», «desayunar cerca» o «un postre frío».'), items: [], context, source }
+  if (action === 'thanks') return { reply: t('¡Buen provecho! Si se te antoja otra cosa, aquí estoy.'), items: [], context, source }
   if (action === 'menu') return menuReply(db, context, source)
 
   const hasTopic = context.concepts.length > 0 || context.words.length > 0 || context.near || context.openNow || context.cheap
   if (action === 'search' && !hasTopic && (context.without.length || context.avoid.length)) {
-    return { reply: `Anotado: buscaré opciones ${contextLabel(context).replace(/^lugares /, '')}. ¿Qué se te antoja?`, items: [], context, source }
+    return { reply: t('Anotado: buscaré opciones {what}. ¿Qué se te antoja?', { what: contextLabel(context).replace(new RegExp(`^${t('lugares')} `), '') }), items: [], context, source }
   }
   if (context.near && !location) {
-    return { reply: 'Para buscar cerca de ti necesito tu ubicación.', items: [], context, source, needsLocation: true }
+    return { reply: t('Para buscar cerca de ti necesito tu ubicación.'), items: [], context, source, needsLocation: true }
   }
   const exclude = action === 'more' ? context.shown : []
   const search = async (ctx: AssistantContext) => {
@@ -68,7 +69,7 @@ export async function runAssistant(db: SupabaseClient, input: z.input<typeof ass
     const guess = await ai(message)
     if (guess?.understood && guess.concepts.length) {
       context = { ...context, concepts: guess.concepts.slice(0, 6), words: guess.words.slice(0, 4), near: context.near || guess.near, openNow: context.openNow || guess.openNow, cheap: context.cheap || guess.cheap }
-      if (context.near && !location) return { reply: 'Para buscar cerca de ti necesito tu ubicación.', items: [], context, source: 'ai', needsLocation: true }
+      if (context.near && !location) return { reply: t('Para buscar cerca de ti necesito tu ubicación.'), items: [], context, source: 'ai', needsLocation: true }
       rows = await search(context); source = 'ai'
     }
   }
@@ -90,36 +91,38 @@ export async function runAssistant(db: SupabaseClient, input: z.input<typeof ass
 
 function searchReply(ctx: AssistantContext, items: AssistantItem[], total: number, more: boolean, closed: number): string {
   const restricted = ctx.without.length > 0 || ctx.avoid.length > 0
-  const what = contextLabel(ctx) + (ctx.near ? ' cerca de ti' : '') + (ctx.openNow ? ' abierto ahora' : '') + (ctx.cheap ? ', lo más económico' : '')
+  const what = contextLabel(ctx) + (ctx.near ? t(' cerca de ti') : '') + (ctx.openNow ? t(' abierto ahora') : '') + (ctx.cheap ? t(', lo más económico') : '')
   if (!items.length) {
-    if (more) return 'Ya te mostré todas las opciones que encontré. Prueba con otro antojo.'
-    const hint = closed ? ` Hay ${closed} que coinciden pero están cerrados ahora.` : ctx.near ? ' Prueba sin «cerca» para buscar en toda la zona.' : ' Prueba con otra palabra o un platillo concreto.'
-    return `No encontré ${what}.${hint}`
+    if (more) return t('Ya te mostré todas las opciones que encontré. Prueba con otro antojo.')
+    const hint = closed ? t('Hay {n} que coinciden pero están cerrados ahora.', { n: closed }) : ctx.near ? t('Prueba sin «cerca» para buscar en toda la zona.') : t('Prueba con otra palabra o un platillo concreto.')
+    return `${t('No encontré {what}.', { what })} ${hint}`
   }
   const lines = items.map(i => {
-    const why = i.dish ? `tiene «${i.dish.name}» (${money(i.dish.price)})` : i.category ? `es de ${i.category.toLowerCase()}` : 'coincide con tu búsqueda'
-    const extra = [i.distanceKm != null ? (i.distanceKm < 1 ? `${Math.round(i.distanceKm * 1000)} m` : `${i.distanceKm.toFixed(1)} km`) : null, i.open === true ? 'abierto ahora' : i.open === false ? 'cerrado ahora' : null].filter(Boolean).join(' · ')
+    const why = i.dish ? t('tiene «{dish}» ({price})', { dish: i.dish.name, price: money(i.dish.price) }) : i.category ? t('es de {category}', { category: i.category.toLowerCase() }) : t('coincide con tu búsqueda')
+    const extra = [i.distanceKm != null ? (i.distanceKm < 1 ? `${Math.round(i.distanceKm * 1000)} m` : `${i.distanceKm.toFixed(1)} km`) : null, i.open === true ? t('abierto ahora') : i.open === false ? t('cerrado ahora') : null].filter(Boolean).join(' · ')
     // Exclusions never present an undeclared dish as safe.
-    const unknown = restricted && i.dish && !i.dish.allergensDeclared ? ' · ⚠️ alérgenos no indicados, confírmalo' : ''
+    const unknown = restricted && i.dish && !i.dish.allergensDeclared ? ` · ⚠️ ${t('alérgenos no indicados, confírmalo')}` : ''
     return `• ${i.name}: ${why}${extra ? ` · ${extra}` : ''}${unknown}`
   })
   const rest = total - items.length
-  return `${more ? 'Otras opciones' : `Encontré ${total === 1 ? '1 lugar' : `${total} lugares`}`} con ${what}:\n${lines.join('\n')}${rest > 0 && !more ? '\nEscribe «otra opción» para ver más.' : ''}\nPregúntame «¿qué tienen?» para ver el menú del primero.${restricted ? '\nLa información de alérgenos la registra cada restaurante; si tu alergia es grave, confírmala con ellos.' : ''}`
+  const head = more ? t('Otras opciones con {what}:', { what }) : total === 1 ? t('Encontré 1 lugar con {what}:', { what }) : t('Encontré {n} lugares con {what}:', { n: total, what })
+  return [head, ...lines, ...(rest > 0 && !more ? [t('Escribe «otra opción» para ver más.')] : []), t('Pregúntame «¿qué tienen?» para ver el menú del primero.'),
+    ...(restricted ? [t('La información de alérgenos la registra cada restaurante; si tu alergia es grave, confírmala con ellos.')] : [])].join('\n')
 }
 
 async function menuReply(db: SupabaseClient, ctx: AssistantContext, source: AssistantResponse['source']): Promise<AssistantResponse> {
   const [branch, dishes] = await Promise.all([getPublishedBranch(db, ctx.lastBranchId!), getPublicMenu(db, ctx.lastBranchId!)])
-  if (!branch) return { reply: 'Esa sede ya no está publicada. Busquemos otra opción.', items: [], context: { ...ctx, lastBranchId: null }, source }
+  if (!branch) return { reply: t('Esa sede ya no está publicada. Busquemos otra opción.'), items: [], context: { ...ctx, lastBranchId: null }, source }
   const list = dishes.slice(0, 8).map(d => {
     const { declared, contains, other } = allergenStatus(d.allergens, d.allergens_other)
     // Fixed-list allergens the diner excluded, plus restaurant-written ones matching what they avoid ("sin mostaza").
-    const hit = [...contains.filter(a => ctx.without.includes(a)).map(a => ALLERGEN_LABELS[a].toLowerCase()),
+    const hit = [...contains.filter(a => ctx.without.includes(a)).map(a => t(ALLERGEN_LABELS[a]).toLowerCase()),
       ...other.filter(o => ctx.avoid.some(w => normalize(o).includes(normalize(w)))).map(o => o.toLowerCase())]
-    const allergy = hit.length ? ` ⛔ contiene ${hit.join(', ')}` : ctx.without.length && !declared ? ' ⚠️ alérgenos no indicados' : ''
-    return `• ${d.name} — ${money(d.price)}${d.is_available ? '' : ' (agotado por ahora)'}${allergy}`
+    const allergy = hit.length ? ` ⛔ ${t('contiene {list}', { list: hit.join(', ') })}` : ctx.without.length && !declared ? ` ⚠️ ${t('alérgenos no indicados')}` : ''
+    return `• ${d.name} — ${money(d.price)}${d.is_available ? '' : ` (${t('agotado por ahora')})`}${allergy}`
   })
   return {
-    reply: list.length ? `Menú de ${branch.name} (${branch.branch_name}):\n${list.join('\n')}` : `${branch.name} aún no ha publicado su menú.`,
+    reply: list.length ? `${t('Menú de {name} ({branch}):', { name: branch.name, branch: branch.branch_name })}\n${list.join('\n')}` : t('{name} aún no ha publicado su menú.', { name: branch.name }),
     items: [{ id: branch.id, name: branch.name, branch_name: branch.branch_name, address: branch.address, municipality: branch.municipality, category: null, distanceKm: null, dish: null, open: null }],
     context: ctx, source,
   }

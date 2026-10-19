@@ -15,20 +15,20 @@ import { Textarea } from './ui/textarea'
 import TagField from './tag-field'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu'
 import FoodLoader from './food-loader'
-import { t } from '@/shared/i18n'
+import { t, msg } from '@/shared/i18n'
 
 const empty = { name: '', price: '', description: '', dish_types: [] as string[], cuisines: [] as string[], features: [] as string[],
   ingredients: [] as string[], hasAllergens: false, allergenLabels: [] as string[], noAllergens: false }
 const money = (v: number) => `Q${v.toFixed(2)}`
 type Status = 'all' | 'visible' | 'hidden' | 'soldout'
-const STATUS_LABELS: Record<Status, string> = { all: 'Todos', visible: 'Visibles', hidden: 'Ocultos', soldout: 'Agotados' }
+const STATUS_LABELS: Record<Status, string> = { all: msg('Todos'), visible: msg('Visibles'), hidden: msg('Ocultos'), soldout: msg('Agotados') }
 const statusOf = (d: Dish): Exclude<Status, 'all'> => d.status !== 'published' ? 'hidden' : d.is_available ? 'visible' : 'soldout'
 // The left edge of each row tells the owner what diners see.
 const EDGE: Record<Exclude<Status, 'all'>, string> = { visible: 'border-l-[#173F35]', hidden: 'border-l-stone-300', soldout: 'border-l-[#BD481F]' }
 const PILL: Record<Exclude<Status, 'all'>, string> = {
   visible: 'bg-[#173F35]/10 text-[#173F35]', hidden: 'bg-stone-100 text-stone-600', soldout: 'bg-[#BD481F]/10 text-[#9a3a18]',
 }
-const PILL_TEXT: Record<Exclude<Status, 'all'>, string> = { visible: 'Visible', hidden: 'Oculto', soldout: 'Agotado' }
+const PILL_TEXT: Record<Exclude<Status, 'all'>, string> = { visible: msg('Visible'), hidden: msg('Oculto'), soldout: msg('Agotado') }
 
 function Chip({ on, onClick, children, tone = 'green' }: { on: boolean; onClick: () => void; children: ReactNode; tone?: 'green' | 'red' }) {
   const active = tone === 'red' ? 'border-[#BD481F] bg-[#BD481F] text-white' : 'border-[#173F35] bg-[#173F35] text-white'
@@ -146,7 +146,7 @@ export default function RestaurantMenu({ restaurantId, restaurantName, onClose }
           <div role="radiogroup" aria-label={t('Estado')} className="inline-flex flex-wrap rounded-xl border bg-white p-1">
             {(Object.keys(STATUS_LABELS) as Status[]).map((s) => <button key={s} type="button" role="radio" aria-checked={status === s} onClick={() => setStatus(s)}
               className={`rounded-lg px-3 py-1.5 text-sm focus-visible:outline-2 focus-visible:outline-[#173F35] ${status === s ? 'bg-[#173F35] text-white' : 'text-stone-700 hover:bg-stone-100'}`}>
-              {STATUS_LABELS[s]} <span className={status === s ? 'text-white/70' : 'text-stone-400'}>{counts[s]}</span>
+              {t(STATUS_LABELS[s])} <span className={status === s ? 'text-white/70' : 'text-stone-400'}>{counts[s]}</span>
             </button>)}
           </div>
           <button type="button" aria-expanded={moreFilters} aria-controls="menu-more-filters" onClick={() => setMoreFilters((v) => !v)}
@@ -175,7 +175,7 @@ export default function RestaurantMenu({ restaurantId, restaurantName, onClose }
                   className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg border border-dashed text-xs text-stone-500 hover:border-stone-500">{t('Agregar foto')}</button>}
               <div className="min-w-[12rem] flex-1 space-y-1">
                 <div className="flex flex-wrap items-baseline gap-x-3"><p className="font-semibold">{dish.name}</p><p className="tabular-nums">{money(dish.price)}</p>
-                  <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${PILL[st]}`}>{PILL_TEXT[st]}</span></div>
+                  <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${PILL[st]}`}>{t(PILL_TEXT[st])}</span></div>
                 {dish.description && <p className="line-clamp-2 text-sm text-stone-600">{dish.description}</p>}
                 {dish.ingredients?.length ? <p className="text-sm text-stone-600"><span className="text-stone-500">{t('Ingredientes:')}</span> {dish.ingredients.join(', ')}</p> : null}
                 <div className="flex flex-wrap gap-1.5">
@@ -188,7 +188,7 @@ export default function RestaurantMenu({ restaurantId, restaurantName, onClose }
               <div className="flex items-center gap-2">
                 <Button size="sm" variant={dish.status === 'published' ? 'outline' : 'default'} disabled={busy}
                   onClick={() => patch(dish, { status: dish.status === 'published' ? 'draft' : 'published' }, dish.status === 'published' ? t('Platillo ocultado.') : t('Platillo visible en el menú.'))}>
-                  {dish.status === 'published' ? 'Ocultar' : 'Mostrar'}</Button>
+                  {dish.status === 'published' ? t('Ocultar') : t('Mostrar')}</Button>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild><Button size="sm" variant="outline" disabled={busy} aria-label={t('Más acciones para {name}', { name: dish.name })}><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
