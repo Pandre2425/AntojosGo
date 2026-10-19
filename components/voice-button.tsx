@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { Mic, MicOff } from 'lucide-react'
-import { t, msg } from '@/shared/i18n'
+import { currentLang, t, msg } from '@/shared/i18n'
 
 // Web Speech API (Chrome, Edge, Android browsers); hidden where the browser has no speech recognition.
 type Recognition = { lang: string; interimResults: boolean; maxAlternatives: number; start(): void; abort(): void
@@ -30,9 +30,9 @@ export default function VoiceButton({ onText, onError, className = '' }: { onTex
     if (listening) { current.current?.abort(); return }
     const SR = Speech()!
     const r = new SR()
-    r.lang = 'es-GT'; r.interimResults = false; r.maxAlternatives = 1
+    r.lang = currentLang() === 'en' ? 'en-US' : 'es-GT'; r.interimResults = false; r.maxAlternatives = 1
     r.onresult = e => { const text = e.results[0]?.[0]?.transcript?.trim(); if (text) onText(text) }
-    r.onerror = e => { if (e.error !== 'aborted') onError?.(ERRORS[e.error] ?? t('No pudimos usar el micrófono. Escribe tu búsqueda.')) }
+    r.onerror = e => { if (e.error !== 'aborted') onError?.(ERRORS[e.error] ? t(ERRORS[e.error]) : t('No pudimos usar el micrófono. Escribe tu búsqueda.')) }
     r.onend = () => { setListening(false); current.current = null }
     current.current = r; setListening(true); r.start()
   }

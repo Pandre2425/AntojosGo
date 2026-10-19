@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { ALLERGENS, DISH_TAGS } from './menu'
+import { t, msg } from '../i18n'
 
 const optionalCoordinate = (min: number, max: number) => z.preprocess(
   value => value == null || (typeof value === 'string' && !value.trim()) ? undefined : value,
@@ -8,7 +9,7 @@ const optionalCoordinate = (min: number, max: number) => z.preprocess(
 // Query strings carry lists as "a,b,c".
 const csv = <T extends [string, ...string[]]>(values: T, max: number) => z.preprocess(
   value => typeof value === 'string' ? value.split(',').map(s => s.trim()).filter(Boolean) : value,
-  z.array(z.enum(values, { errorMap: () => ({ message: 'Uno de los filtros no es válido.' }) })).max(max).default([]),
+  z.array(z.enum(values, { errorMap: () => ({ message: t('Uno de los filtros no es válido.') }) })).max(max).default([]),
 )
 const price = z.preprocess(v => v == null || (typeof v === 'string' && !v.trim()) ? undefined : v, z.coerce.number().finite().min(0).max(100000).optional())
 const flag = z.preprocess(value => value === true || value === '1' || value === 'true', z.boolean()).default(false)
@@ -34,18 +35,18 @@ export const catalogQuerySchema = z.object({
   maxPrice: price,
   hide: z.preprocess(
     value => typeof value === 'string' ? value.split(',').map(s => s.trim()).filter(Boolean) : value,
-    z.array(z.string().uuid('Uno de los filtros no es válido.')).max(100).default([]),
+    z.array(z.string().uuid(t('Uno de los filtros no es válido.'))).max(100).default([]),
   ),
-}).refine(value => (value.lat === undefined) === (value.lng === undefined), 'Se requieren ambas coordenadas.')
-  .refine(value => value.minPrice === undefined || value.maxPrice === undefined || value.minPrice <= value.maxPrice, 'El precio mínimo no puede ser mayor que el máximo.')
+}).refine(value => (value.lat === undefined) === (value.lng === undefined), t('Se requieren ambas coordenadas.'))
+  .refine(value => value.minPrice === undefined || value.maxPrice === undefined || value.minPrice <= value.maxPrice, t('El precio mínimo no puede ser mayor que el máximo.'))
 export type CatalogQuery = z.input<typeof catalogQuerySchema>
 
 /** Quick price ranges (quetzales) for the matching dish; web and app show the same chips. */
 export const PRICE_RANGES = [
-  { label: 'Hasta Q25', max: 25 },
+  { label: msg('Hasta Q25'), max: 25 },
   { label: 'Q25 a Q50', min: 25, max: 50 },
   { label: 'Q50 a Q100', min: 50, max: 100 },
-  { label: 'Más de Q100', min: 100 },
+  { label: msg('Más de Q100'), min: 100 },
 ] as const satisfies readonly { label: string; min?: number; max?: number }[]
 
 /** «Sorpréndeme»: a random result that isn't the previous surprise (when there is another option). */

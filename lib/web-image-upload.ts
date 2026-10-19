@@ -1,14 +1,15 @@
 'use client'
 import { getSupabase } from './supabase/client'
 import { webApi } from './web-api'
+import { t } from '../shared/i18n'
 
 const MAX_SIDE = 1200
 type Target = { path: string; token: string; maxBytes: number }
 
 /** Downscales and re-encodes to JPEG in the browser. Re-encoding also drops EXIF (incl. GPS location). */
 async function toJpeg(file: File): Promise<Blob> {
-  if (!file.type.startsWith('image/')) throw new Error('Elige un archivo de imagen.')
-  const bitmap = await createImageBitmap(file).catch(() => { throw new Error('No pudimos leer esa imagen. Prueba con JPG o PNG.') })
+  if (!file.type.startsWith('image/')) throw new Error(t('Elige un archivo de imagen.'))
+  const bitmap = await createImageBitmap(file).catch(() => { throw new Error(t('No pudimos leer esa imagen. Prueba con JPG o PNG.')) })
   const scale = Math.min(1, MAX_SIDE / Math.max(bitmap.width, bitmap.height))
   const canvas = document.createElement('canvas')
   canvas.width = Math.round(bitmap.width * scale); canvas.height = Math.round(bitmap.height * scale)
@@ -17,7 +18,7 @@ async function toJpeg(file: File): Promise<Blob> {
   ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height)
   bitmap.close()
   const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.85))
-  if (!blob) throw new Error('No pudimos procesar la imagen.')
+  if (!blob) throw new Error(t('No pudimos procesar la imagen.'))
   return blob
 }
 
@@ -25,11 +26,11 @@ async function toJpeg(file: File): Promise<Blob> {
 async function upload(file: File, prepare: () => Promise<Target>, confirm: (path: string) => Promise<string>): Promise<string> {
   const jpeg = await toJpeg(file)
   const target = await prepare()
-  if (jpeg.size > target.maxBytes) throw new Error('La imagen sigue siendo demasiado grande (máx. 5 MB).')
+  if (jpeg.size > target.maxBytes) throw new Error(t('La imagen sigue siendo demasiado grande (máx. 5 MB).'))
   const storage = getSupabase()?.storage.from('restaurant-media')
-  if (!storage) throw new Error('Servicio no configurado.')
+  if (!storage) throw new Error(t('Servicio no configurado.'))
   const { error } = await storage.uploadToSignedUrl(target.path, target.token, jpeg, { contentType: 'image/jpeg' })
-  if (error) throw new Error('No pudimos subir la foto. Intenta de nuevo.')
+  if (error) throw new Error(t('No pudimos subir la foto. Intenta de nuevo.'))
   return confirm(target.path)
 }
 

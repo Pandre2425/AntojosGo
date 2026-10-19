@@ -49,7 +49,7 @@ export default function BranchLocationEditor({ branch, onSaved, onClose }: { bra
       <div inert={busy}><ModuleBoundary name={msg('el mapa')}><BranchMap value={point} onChange={select} /></ModuleBoundary></div>
       <Button type="button" variant="outline" disabled={locating} onClick={pickCurrentLocation}>{locating ? t('Buscando ubicación…') : t('Usar mi ubicación actual')}</Button>
       <p role="status" className="text-sm">{point ? t('Punto seleccionado. Ajusta el mapa y confirma la ubicación.') : t('Mueve el mapa para seleccionar la ubicación de tu restaurante.')}</p>
-      <details><summary className="cursor-pointer text-sm underline">Introducir coordenadas manualmente (opcional)</summary>
+      <details><summary className="cursor-pointer text-sm underline">{t('Introducir coordenadas manualmente (opcional)')}</summary>
       <div className="grid grid-cols-2 gap-3">
         <div><Label htmlFor={`lat-${branch.id}`}>{t('Latitud')}</Label><Input id={`lat-${branch.id}`} type="number" step="any" min={-90} max={90} value={latitude} onChange={(e) => setLatitude(e.target.value)} /></div>
         <div><Label htmlFor={`lng-${branch.id}`}>{t('Longitud')}</Label><Input id={`lng-${branch.id}`} type="number" step="any" min={-180} max={180} value={longitude} onChange={(e) => setLongitude(e.target.value)} /></div>

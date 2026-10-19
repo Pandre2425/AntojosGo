@@ -37,11 +37,11 @@ export default function TagField({ id, legend, hint, placeholder, options = [], 
       <Button type="button" variant="outline" disabled={disabled || !text.trim()} onClick={add}>{t('Agregar')}</Button>
     </div>
     {problem && <p role="alert" className="text-sm text-[#9a3a18]">{problem}</p>}
-    {custom.length > 0 && <ul aria-label={`${legend} agregados`} className="flex flex-wrap gap-2">{custom.map((c) => <li key={c}>
-      <span className={`inline-flex items-center gap-1 rounded-full border py-1 pl-3 pr-1 text-sm ${on}`}>{c}
-        <button type="button" aria-label={`Quitar ${c}`} disabled={disabled} onClick={() => toggle(c)} className="rounded-full p-0.5 hover:bg-white/20"><X className="h-3.5 w-3.5" /></button></span>
+    {custom.length > 0 && <ul aria-label={t('{legend}: agregados', { legend })} className="flex flex-wrap gap-2">{custom.map((c) => <li key={c}>
+      <span className={`inline-flex items-center gap-1 rounded-full border py-1 pl-3 pr-1 text-sm ${on}`}>{t(c)}
+        <button type="button" aria-label={t('Quitar {item}', { item: t(c) })} disabled={disabled} onClick={() => toggle(c)} className="rounded-full p-0.5 hover:bg-white/20"><X className="h-3.5 w-3.5" /></button></span>
     </li>)}</ul>}
     {options.length > 0 && <div className="flex flex-wrap gap-2">{options.map((o) => <button key={o} type="button" aria-pressed={has(o)} disabled={disabled} onClick={() => toggle(o)}
-      className={`rounded-full border px-3 py-1 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#173F35] ${has(o) ? on : 'border-stone-300 bg-white text-stone-700 hover:border-stone-500'}`}>{o}</button>)}</div>}
+      className={`rounded-full border px-3 py-1 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#173F35] ${has(o) ? on : 'border-stone-300 bg-white text-stone-700 hover:border-stone-500'}`}>{t(o)}</button>)}</div>}
   </fieldset>
 }

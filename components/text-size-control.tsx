@@ -17,7 +17,7 @@ export default function TextSizeControl() {
     <legend className="px-1 text-sm font-semibold text-[#173F35]">{t('Tamaño del texto')}</legend>
     <div className="flex flex-wrap gap-2">{TEXT_SIZES.map(s => <button key={s.id} type="button" aria-pressed={size === s.id} onClick={() => choose(s.id)}
       className={`rounded-full border px-4 py-1.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#173F35] ${size === s.id ? 'border-[#173F35] bg-[#173F35] text-white' : 'border-stone-300 bg-white'}`}
-      style={{ fontSize: `${s.percent * 0.14}px` }}>{s.label}</button>)}</div>
+      style={{ fontSize: `${s.percent * 0.14}px` }}>{t(s.label)}</button>)}</div>
     <p className="text-xs text-stone-600">{t('Se guarda en este navegador. Si tu sistema pide reducir animaciones, AntojosGo también las reduce.')}</p>
   </fieldset>
 }

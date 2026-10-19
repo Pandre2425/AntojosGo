@@ -106,11 +106,11 @@ export default function CustomerCatalog({ initialQuery = '' }: { initialQuery?: 
             <option value="">{t('Todos')}</option>{types.map((c) => <option key={c} value={c}>{c}</option>)}</select></label>
       </div>
       <fieldset className="flex flex-wrap items-center gap-2"><legend className="sr-only">{t('Precio')}</legend><span className="text-sm text-stone-600">{t('Precio')}</span>
-        {PRICE_RANGES.map((r, i) => <FilterChip key={r.label} on={filters.price === i} onClick={() => applyFilters({ ...filters, price: filters.price === i ? null : i })}>{r.label}</FilterChip>)}</fieldset>
+        {PRICE_RANGES.map((r, i) => <FilterChip key={r.label} on={filters.price === i} onClick={() => applyFilters({ ...filters, price: filters.price === i ? null : i })}>{t(r.label)}</FilterChip>)}</fieldset>
       <fieldset className="flex flex-wrap items-center gap-2"><legend className="sr-only">{t('Etiquetas')}</legend><span className="text-sm text-stone-600">{t('Quiero')}</span>
         {DISH_TAGS.map((tag) => <FilterChip key={tag} on={filters.tags.includes(tag)} onClick={() => applyFilters({ ...filters, tags: toggle(filters.tags, tag) })}>{t(DISH_TAG_LABELS[tag])}</FilterChip>)}</fieldset>
       <fieldset className="flex flex-wrap items-center gap-2"><legend className="sr-only">{t('Alérgenos a evitar')}</legend><span className="text-sm text-stone-600">{t('Sin')}</span>
-        {ALLERGENS.map((a) => <FilterChip key={a} tone="red" on={filters.without.includes(a)} onClick={() => applyFilters({ ...filters, without: toggle(filters.without, a) })}>{ALLERGEN_LABELS[a]}</FilterChip>)}</fieldset>
+        {ALLERGENS.map((a) => <FilterChip key={a} tone="red" on={filters.without.includes(a)} onClick={() => applyFilters({ ...filters, without: toggle(filters.without, a) })}>{t(ALLERGEN_LABELS[a])}</FilterChip>)}</fieldset>
       {filters.without.length > 0 && <p className="text-xs text-stone-600">{t('Ocultamos los platillos que el restaurante marcó con esos alérgenos. Si un platillo no tiene alérgenos declarados te lo indicamos; si tu alergia es grave, confírmala con el restaurante.')}</p>}
       {activeCount > 0 && <button type="button" className="text-sm underline" onClick={() => applyFilters(noFilters)}>{t('Quitar filtros')}</button>}
     </div>}
@@ -260,7 +260,7 @@ export function BranchDetail({ id, onBack, onHide, surprise, onSurpriseAgain }: 
 function Hours({ hours }: { hours: NonNullable<PublicBranchExtras['opening_hours']> }) {
   const open = isOpenNow(hours)
   if (open === null) return <p className="text-sm text-muted-foreground">{t('Horario sin información.')}</p>
-  return <details className="text-sm"><summary className="cursor-pointer"><span className={open ? 'font-semibold text-green-700' : 'font-semibold text-red-700'}>{open ? t('Abierto ahora') : t('Cerrado ahora')}</span> · ver horario</summary>
+  return <details className="text-sm"><summary className="cursor-pointer"><span className={open ? 'font-semibold text-green-700' : 'font-semibold text-red-700'}>{open ? t('Abierto ahora') : t('Cerrado ahora')}</span> · {t('ver horario')}</summary>
     <ul className="mt-1">{describeHours(hours).map((line) => <li key={line}>{line}</li>)}</ul></details>
 }
 
@@ -268,5 +268,5 @@ function DishAllergens({ allergens, other = [] }: { allergens?: readonly string[
   const { declared, contains } = allergenStatus(allergens, other)
   if (!declared) return <p className="text-xs text-amber-900">{t('Alérgenos no declarados por el restaurante')}</p>
   if (!contains.length && !other.length) return <p className="text-xs text-green-800">{t('Sin alérgenos comunes, según el restaurante')}</p>
-  return <p className="flex flex-wrap gap-1">{allergenNames(allergens, other).map((a) => <span key={a} className="rounded-full border border-[#BD481F] px-2 py-0.5 text-xs text-[#9a3a18]">{t('Contiene')} {a.toLowerCase()}</span>)}</p>
+  return <p className="flex flex-wrap gap-1">{allergenNames(allergens, other).map((a) => <span key={a} className="rounded-full border border-[#BD481F] px-2 py-0.5 text-xs text-[#9a3a18]">{t('Contiene {allergen}', { allergen: t(a).toLowerCase() })}</span>)}</p>
 }

@@ -1,14 +1,15 @@
 import { z } from 'zod'
+import { t, msg } from '../i18n'
 
 export const DAY_NAMES = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'] as const
-const time = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Usa el formato HH:MM, por ejemplo 08:30.')
+const time = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, t('Usa el formato HH:MM, por ejemplo 08:30.'))
 
 /** One opening range. close <= open means it ends after midnight (e.g. 18:00–02:00). */
 export const hoursRangeSchema = z.object({ day: z.number().int().min(0).max(6), open: time, close: time })
-  .refine(r => r.open !== r.close, 'La hora de apertura y la de cierre no pueden ser iguales.')
+  .refine(r => r.open !== r.close, t('La hora de apertura y la de cierre no pueden ser iguales.'))
 // One range per day: the web and mobile editors show one per day, so saving can never drop a second one.
 export const openingHoursSchema = z.array(hoursRangeSchema).max(7)
-  .refine(rs => new Set(rs.map(r => r.day)).size === rs.length, 'Registra un solo horario por día.')
+  .refine(rs => new Set(rs.map(r => r.day)).size === rs.length, t('Registra un solo horario por día.'))
 export type HoursRange = z.infer<typeof hoursRangeSchema>
 export type OpeningHours = HoursRange[]
 
@@ -35,7 +36,7 @@ export function isOpenNow(hours: OpeningHours, now = new Date()): boolean | null
 export function describeHours(hours: OpeningHours): string[] {
   return [1, 2, 3, 4, 5, 6, 0].map(day => {
     const ranges = hours.filter(r => r.day === day).sort((a, b) => a.open.localeCompare(b.open))
-    return `${DAY_NAMES[day]}: ${ranges.length ? ranges.map(r => `${r.open}–${r.close}`).join(', ') : 'Cerrado'}`
+    return `${t(DAY_NAMES[day])}: ${ranges.length ? ranges.map(r => `${r.open}–${r.close}`).join(', ') : t('Cerrado')}`
   })
 }
 
@@ -47,5 +48,5 @@ export const toDayForm = (hours: OpeningHours): DayForm => [1, 2, 3, 4, 5, 6, 0]
 })
 /** Monday's hours (or «closed») on every day; the owner then adjusts the days that differ. */
 export const copyMondayToAll = (form: DayForm): DayForm => form.map(d => ({ ...d, open: form[0].open, close: form[0].close, closed: form[0].closed }))
-export const COPIED_NOTICE = 'Copiamos el horario del lunes a todos los días. Ajusta los que sean distintos y guarda.'
+export const COPIED_NOTICE = msg('Copiamos el horario del lunes a todos los días. Ajusta los que sean distintos y guarda.')
 export const fromDayForm = (form: DayForm) => openingHoursSchema.safeParse(form.filter(d => !d.closed).map(({ day, open, close }) => ({ day, open: open.trim(), close: close.trim() })))

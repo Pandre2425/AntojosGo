@@ -28,7 +28,7 @@ export function StarInput({ value, onChange, disabled }: { value: number; onChan
     {[1, 2, 3, 4, 5].map(n => <button key={n} type="button" aria-pressed={value === n} aria-label={t('{n} de 5: {label}', { n, label: t(RATING_LABELS[n]) })} disabled={disabled}
       onClick={() => onChange(n)} className="rounded-md p-0.5 focus-visible:outline-2 focus-visible:outline-[#173F35]">
       <Star className={`h-7 w-7 ${n <= value ? 'fill-[#BD481F] text-[#BD481F]' : 'text-stone-300'}`} /></button>)}
-    {value > 0 && <span className="ml-1 text-sm font-medium text-[#173F35]">{RATING_LABELS[value]}</span>}
+    {value > 0 && <span className="ml-1 text-sm font-medium text-[#173F35]">{t(RATING_LABELS[value])}</span>}
   </div>
 }
 
@@ -93,7 +93,7 @@ function MyReviewForm({ dishId, onSaved }: { dishId: string; onSaved: () => void
   return <div className="space-y-2 rounded-lg border bg-white p-3">
     <p className="text-sm font-semibold text-[#173F35]">{mine ? t('Tu reseña') : t('¿Lo probaste? Califícalo')}</p>
     <StarInput value={rating} onChange={n => { setRating(n); setMessage(null) }} disabled={busy} />
-    <label className="sr-only" htmlFor={`review-${dishId}`}>Comentario (opcional)</label>
+    <label className="sr-only" htmlFor={`review-${dishId}`}>{t('Comentario (opcional)')}</label>
     <textarea id={`review-${dishId}`} value={comment} onChange={e => setComment(e.target.value)} maxLength={1000} rows={3} disabled={busy}
       placeholder={t('Cuéntanos qué te pareció (opcional). Se publica sin tu nombre.')}
       className="w-full rounded-lg border border-input p-2 text-sm focus-visible:outline-2 focus-visible:outline-[#173F35]" />

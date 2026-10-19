@@ -1,12 +1,13 @@
 import { z } from 'zod'
+import { t } from '../i18n'
 
 // Dish reviews: whole stars 1–5 and an optional comment, one per account and dish; shown without author.
 export const reviewInputSchema = z.object({
-  rating: z.number().int().min(1, 'Elige de 1 a 5 estrellas.').max(5, 'Elige de 1 a 5 estrellas.'),
-  comment: z.string().trim().max(1000, 'Usa hasta 1000 caracteres.').transform(v => v || null).nullable().default(null),
+  rating: z.number().int().min(1, t('Elige de 1 a 5 estrellas.')).max(5, t('Elige de 1 a 5 estrellas.')),
+  comment: z.string().trim().max(1000, t('Usa hasta 1000 caracteres.')).transform(v => v || null).nullable().default(null),
 })
-export const replyInputSchema = z.object({ reply: z.string().trim().max(1000, 'Usa hasta 1000 caracteres.') })
-export const reportInputSchema = z.object({ reason: z.string().trim().max(300, 'Usa hasta 300 caracteres.').default('') })
+export const replyInputSchema = z.object({ reply: z.string().trim().max(1000, t('Usa hasta 1000 caracteres.')) })
+export const reportInputSchema = z.object({ reason: z.string().trim().max(300, t('Usa hasta 300 caracteres.')).default('') })
 export type ReviewInput = z.input<typeof reviewInputSchema>
 
 export type Rating = { rating_avg: number | null; rating_count: number }
@@ -24,6 +25,6 @@ export function starParts(avg: number | null): ('full' | 'half' | 'empty')[] {
 
 /** «4.3 (12 reseñas)», or «Sin reseñas». */
 export function ratingLabel({ rating_avg, rating_count }: Rating): string {
-  if (!rating_count || rating_avg === null) return 'Sin reseñas'
-  return `${rating_avg.toFixed(1)} (${rating_count} ${rating_count === 1 ? 'reseña' : 'reseñas'})`
+  if (!rating_count || rating_avg === null) return t('Sin reseñas')
+  return rating_count === 1 ? t('{avg} (1 reseña)', { avg: rating_avg.toFixed(1) }) : t('{avg} ({n} reseñas)', { avg: rating_avg.toFixed(1), n: rating_count })
 }

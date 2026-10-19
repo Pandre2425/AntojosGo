@@ -157,7 +157,7 @@ export default function RestaurantMenu({ restaurantId, restaurantName, onClose }
           <div className="flex flex-wrap items-center gap-2"><span className="text-sm text-stone-600">{t('Etiquetas')}</span>
             {DISH_TAGS.map((tag) => <Chip key={tag} on={tagFilter.includes(tag)} onClick={() => setTagFilter((v) => toggle(v, tag))}>{t(DISH_TAG_LABELS[tag])}</Chip>)}</div>
           <div className="flex flex-wrap items-center gap-2"><span className="text-sm text-stone-600">{t('Sin')}</span>
-            {ALLERGENS.map((a) => <Chip key={a} tone="red" on={withoutFilter.includes(a)} onClick={() => setWithoutFilter((v) => toggle(v, a))}>{ALLERGEN_LABELS[a]}</Chip>)}</div>
+            {ALLERGENS.map((a) => <Chip key={a} tone="red" on={withoutFilter.includes(a)} onClick={() => setWithoutFilter((v) => toggle(v, a))}>{t(ALLERGEN_LABELS[a])}</Chip>)}</div>
           </div>}
           {filtering && <div className="flex items-center justify-between text-sm text-stone-600"><span>{visibleRows.length} de {dishes.length} platillos</span>
             <button type="button" className="underline" onClick={() => { setQuery(''); setStatus('all'); setTagFilter([]); setWithoutFilter([]) }}>{t('Quitar filtros')}</button></div>}
@@ -181,7 +181,7 @@ export default function RestaurantMenu({ restaurantId, restaurantName, onClose }
                 <div className="flex flex-wrap gap-1.5">
                   {Object.values(dishDetails(dish)).flat().map((c) => <span key={c} className="rounded-full bg-stone-100 px-2 py-0.5 text-xs text-stone-700">{c}</span>)}
                   {!al.declared ? <span className="rounded-full border border-dashed border-amber-500 px-2 py-0.5 text-xs text-amber-900">{t('Alérgenos sin declarar')}</span>
-                    : al.contains.length || al.other.length ? allergenNames(dish.allergens, dish.allergens_other).map((a) => <span key={a} className="rounded-full border border-[#BD481F] px-2 py-0.5 text-xs text-[#9a3a18]">{t('Contiene')} {a.toLowerCase()}</span>)
+                    : al.contains.length || al.other.length ? allergenNames(dish.allergens, dish.allergens_other).map((a) => <span key={a} className="rounded-full border border-[#BD481F] px-2 py-0.5 text-xs text-[#9a3a18]">{t('Contiene {allergen}', { allergen: t(a).toLowerCase() })}</span>)
                     : <span className="rounded-full border border-[#173F35]/40 px-2 py-0.5 text-xs text-[#173F35]">{t('Sin alérgenos comunes')}</span>}
                 </div>
               </div>
@@ -222,7 +222,7 @@ export default function RestaurantMenu({ restaurantId, restaurantName, onClose }
             <p className="text-right text-xs text-muted-foreground">{form.description.length}/500</p></div>
         </div>
         <div className="space-y-2">
-          <Label>Foto (opcional)</Label>
+          <Label>{t('Foto (opcional)')}</Label>
           <input ref={formPhoto} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" aria-hidden tabIndex={-1}
             onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) setPhoto(f) }} />
           <button type="button" disabled={busy} onClick={() => formPhoto.current?.click()}
@@ -234,11 +234,11 @@ export default function RestaurantMenu({ restaurantId, restaurantName, onClose }
         </div>
       </div>
 
-      {DISH_DETAIL_GROUPS.map((g) => <TagField key={g.key} id={`dish-${g.key}`} legend={g.title} placeholder={g.placeholder} disabled={busy}
+      {DISH_DETAIL_GROUPS.map((g) => <TagField key={g.key} id={`dish-${g.key}`} legend={t(g.title)} placeholder={t(g.placeholder)} disabled={busy}
         hint={g.key === 'dish_types' ? t('Elige o escribe todas las que apliquen; ayudan a que te encuentren.') : undefined}
         options={g.options.map((o) => o.label)} value={form[g.key]} onChange={setGroup(g.key)} validate={(text, cur) => labelProblem(text, cur)} />)}
 
-      <TagField id="dish-ingredients" legend="Ingredientes principales (opcional)" placeholder={t('Escribe uno: Ej. pollo')} disabled={busy}
+      <TagField id="dish-ingredients" legend={t('Ingredientes principales (opcional)')} placeholder={t('Escribe uno: Ej. pollo')} disabled={busy}
         hint={t('Agrega un ingrediente a la vez. Los clientes pueden buscar por ingrediente o pedir platillos sin alguno («sin cebolla»).')}
         value={form.ingredients} onChange={(ingredients) => setForm((v) => ({ ...v, ingredients }))} validate={ingredientProblem} />
 

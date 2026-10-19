@@ -1,16 +1,17 @@
 import { z } from 'zod'
 import { displayNameSchema } from './names'
 import type { OpeningHours } from './hours'
+import { t } from '../i18n'
 
 export const branchInputSchema = z.object({
   name: displayNameSchema,
   department: z.string().trim().min(2).max(100),
   municipality: z.string().trim().min(2).max(100),
-  address: z.string().trim().min(5, 'Escribe una dirección de al menos 5 caracteres.').max(300),
+  address: z.string().trim().min(5, t('Escribe una dirección de al menos 5 caracteres.')).max(300),
   // Optional so a client that does not send them never clears them. '' clears the phone.
   phone: z.preprocess(
     v => typeof v === 'string' ? (v.replace(/[\s().-]/g, '') || null) : v,
-    z.string().regex(/^\+?[0-9]{8,15}$/, 'Escribe un teléfono de 8 a 15 dígitos, por ejemplo 7765 4321.').nullable(),
+    z.string().regex(/^\+?[0-9]{8,15}$/, t('Escribe un teléfono de 8 a 15 dígitos, por ejemplo 7765 4321.')).nullable(),
   ).optional(),
   whatsapp: z.boolean().optional(),
 })

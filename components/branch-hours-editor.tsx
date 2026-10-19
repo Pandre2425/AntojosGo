@@ -29,10 +29,10 @@ export default function BranchHoursEditor({ branch, onSaved, onClose }: { branch
     <p className="text-sm text-muted-foreground">{t('Si cierras después de medianoche, pon la hora de cierre menor que la de apertura (ej. 18:00 a 02:00).')}</p>
     <fieldset disabled={busy} className="space-y-2">
       {form.map((d, i) => <div key={d.day} className="grid grid-cols-[6.5rem_auto_1fr_1fr] items-center gap-2">
-        <span className="text-sm font-medium">{DAY_NAMES[d.day]}</span>
+        <span className="text-sm font-medium">{t(DAY_NAMES[d.day])}</span>
         <label className="flex items-center gap-1 text-sm"><input type="checkbox" checked={!d.closed} onChange={(e) => set(i, { closed: !e.target.checked })} />{t('Abre')}</label>
-        <Input type="time" aria-label={`${DAY_NAMES[d.day]} apertura`} value={d.open} disabled={d.closed} onChange={(e) => set(i, { open: e.target.value })} />
-        <Input type="time" aria-label={`${DAY_NAMES[d.day]} cierre`} value={d.close} disabled={d.closed} onChange={(e) => set(i, { close: e.target.value })} />
+        <Input type="time" aria-label={t('{day}, apertura', { day: t(DAY_NAMES[d.day]) })} value={d.open} disabled={d.closed} onChange={(e) => set(i, { open: e.target.value })} />
+        <Input type="time" aria-label={t('{day}, cierre', { day: t(DAY_NAMES[d.day]) })} value={d.close} disabled={d.closed} onChange={(e) => set(i, { close: e.target.value })} />
         {i === 0 && <Button type="button" variant="link" size="sm" className="col-span-4 justify-self-start px-0" onClick={() => { setForm(copyMondayToAll); setNotice(COPIED_NOTICE) }}>{t('Copiar el lunes a todos los días')}</Button>}
       </div>)}
       {notice && <p role="status" className="text-sm text-green-800">{notice}</p>}

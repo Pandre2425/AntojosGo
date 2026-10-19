@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { RELEASES_URL } from './app-version'
+import { t } from '../i18n'
 
 /** Android app download while it is not on Google Play (QR short link in public/descargar-apk-qr.png). */
 export const APK_DOWNLOAD_URL = 'https://qr.codes/0Z1jMD'
@@ -12,7 +13,7 @@ const announcementSchema = z.object({
   title: z.string().min(1).max(80),
   body: z.string().max(400),
   for: z.enum(['web', 'app', 'all']).default('all'),
-  link: z.object({ label: z.string().min(1).max(40), url: z.string().url().refine(u => ALLOWED_LINKS.some(a => u.startsWith(a)), 'Enlace no permitido') }).optional(),
+  link: z.object({ label: z.string().min(1).max(40), url: z.string().url().refine(u => ALLOWED_LINKS.some(a => u.startsWith(a)), t('Enlace no permitido')) }).optional(),
 })
 export type Announcement = z.infer<typeof announcementSchema>
 

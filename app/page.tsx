@@ -67,7 +67,7 @@ export default function AntojosGoApp() {
         <div className="mobile-content flex items-center justify-around py-2">
           {tabs.map(({ id, label, icon: Icon }) => (
             <Button key={id} variant="ghost" aria-current={activeTab === id ? "page" : undefined} className={`flex-col gap-1 h-auto px-2 py-2 ${activeTab === id ? "text-primary" : "text-muted-foreground"}`} onClick={() => setActiveTab(id)}>
-              <Icon className="w-5 h-5" /><span className="text-[10px]">{label}</span>
+              <Icon className="w-5 h-5" /><span className="text-[10px]">{t(label)}</span>
             </Button>
           ))}
         </div>

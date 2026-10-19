@@ -69,7 +69,7 @@ export default function CustomerAssistant({ initialMessage = '' }: { initialMess
           <span className="mt-1 block text-sm font-semibold text-primary">{t('Ver sede ›')}</span>
         </button>)}
       </div>)}
-      {turns.length === 1 && <div className="flex flex-wrap gap-2">{SUGGESTIONS.map((s) => <Button key={s} variant="outline" size="sm" disabled={busy} onClick={() => send(s)}>{s}</Button>)}</div>}
+      {turns.length === 1 && <div className="flex flex-wrap gap-2">{SUGGESTIONS.map((s) => <Button key={s} variant="outline" size="sm" disabled={busy} onClick={() => send(t(s))}>{t(s)}</Button>)}</div>}
       {busy && <p role="status" className="text-sm italic text-muted-foreground">{t('Buscando…')}</p>}
       <div ref={end} />
     </div>
