@@ -1,6 +1,6 @@
 # Seguridad de AntojosGo (web y app)
 
-Revisión y pruebas del 10 de octubre de 2026, contra producción (`https://antojosgo.com`) y el APK 0.3.1.
+Revisión y pruebas del 10 de octubre de 2026 (ampliadas el 20 de octubre: 114 controles), contra producción (`https://antojosgo.com`) y el APK 0.3.1.
 Las pruebas automáticas se repiten con:
 
 ```
@@ -28,6 +28,10 @@ Leyenda: ✅ cumple y se probó · 🔧 falló y se corrigió · ⚠️ pendient
 | W13 | Subida de imágenes: URL firmada de un solo uso, carpeta del dueño, solo JPG/PNG/WebP ≤ 5 MB, verificación de los bytes reales, borrado si es falsa | ✅ | HTML disfrazado de JPG → rechazado y borrado; SVG/HTML directos → 400; `../` en la ruta → 400; B no sube a la carpeta de A |
 | W14 | Las fotos pierden EXIF (incluida la ubicación GPS) al subirse | ✅ | Se re-codifican en el navegador y en la app |
 | W15 | Ninguna clave secreta en el código, en Vercel ni en el navegador; solo la clave publicable | ✅ | `.env.local` y Vercel usan `sb_publishable_…`; ningún `sb_secret_` en el código |
+| W16 | Reseñas: nadie lee, modifica, borra ni escribe la reseña de otra persona; las públicas no muestran id ni correo; solo el dueño responde o reporta; solo el admin modera | ✅ | 20 de octubre: 14 intentos de B (API y base directa) contra la reseña de A → 400/403 o vacío; la reseña de A sigue intacta |
+| W17 | Favoritos, ocultos, calificación de la app, perfil y lista de admins: cada quien ve solo lo suyo y nadie escribe a nombre de otro ni se hace admin | ✅ | Lectura e inserción directas con la sesión de B → 0 filas o 403 |
+| W18 | Barrido de inyección SQL: 12 rutas con id en la URL × 4 cargas, 11 parámetros de búsqueda × 7 cargas, asistente con contexto manipulado, nombre de platillo con SQL | ✅ | Sin errores 500 ni mensajes de base de datos; `pg_sleep` no retrasa nada; el texto se guarda literal y el catálogo sigue intacto |
+| W19 | Cambiar la URL no da acceso a otra sesión: la web no lleva ids ni sesiones en la URL; el enlace de correo con un token falsificado muestra «El enlace no es válido»; `/admin` sin sesión pide iniciar sesión | ✅ | Navegador contra producción |
 | W16 | Contenido público solo de sedes **publicadas** | ✅ | Todas las funciones públicas filtran `published` |
 | W17 | Las sugerencias de "tipo de negocio" solo muestran tipos de restaurantes publicados | 🔧 | Antes incluían cuentas no publicadas (cualquiera podía inyectar texto en el filtro de todos) |
 | W18 | Límite de peticiones por IP en la API (abuso, costos) | ⚠️ | No existe. Supabase Auth limita inicios de sesión y registros; la IA está topada por la cuota gratuita de Gemini. Ver §5 |

@@ -49,7 +49,7 @@ AntojosGo ayuda a los comensales de Guatemala (piloto en Quetzaltenango) a encon
 
 ### Calidad y seguridad
 
-- 54 pruebas automáticas (`npm test`) y una batería de seguridad contra producción (`node scripts/security-check.mjs`): 80 de 80 controles superados. Detalle en [SEGURIDAD.md](SEGURIDAD.md).
+- 67 pruebas automáticas (`npm test`) y una batería de seguridad contra producción (`node scripts/security-check.mjs`): 114 de 114 controles superados (20 de octubre). Detalle en [SEGURIDAD.md](SEGURIDAD.md).
 - Cada función nueva se verificó en el navegador (Playwright) y en el emulador Android antes de subirla.
 
 ---

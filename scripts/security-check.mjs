@@ -15,8 +15,9 @@ async function login(acc) {
   const r = await fetch(`${SB}/auth/v1/token?grant_type=password`, { method: 'POST', headers: { apikey: KEY, 'content-type': 'application/json' }, body: JSON.stringify(acc) })
   const j = await r.json(); if (!j.access_token) throw new Error('login failed'); return j
 }
-const api = async (method, path, token, body, headers = {}) => {
+const api = async (method, path, token, body, headers = {}, tries = 3) => {
   const r = await fetch(API + '/api/v1' + path, { method, headers: { ...(token ? { authorization: `Bearer ${token}` } : {}), ...(body !== undefined ? { 'content-type': 'application/json' } : {}), ...headers }, body: body === undefined ? undefined : typeof body === 'string' ? body : JSON.stringify(body) })
+  if (r.status === 429 && tries > 0) { const ms = (Number(r.headers.get('retry-after')) || 30) * 1000; await new Promise(res => setTimeout(res, ms)); const again = await api(method, path, token, body, headers, tries - 1); return { ...again, waited: ms + (again.waited ?? 0) } }
   let j = null; const t = await r.text(); try { j = JSON.parse(t) } catch {}
   return { status: r.status, j, t, h: r.headers }
 }
@@ -79,7 +80,7 @@ const after = (await api('GET', `/restaurants/${aRid}/dishes`, A.access_token)).
 check('Autorización (B contra A)', 'el platillo de A sigue intacto', (after.items ?? after).some(d => d.id === aDish.id && d.name === aDish.name))
 
 // 4. Direct database access (PostgREST) with the public key
-for (const t of ['restaurants', 'foods', 'restaurant_branches', 'account_profiles', 'favorites', 'reviews', 'users']) {
+for (const t of ['restaurants', 'foods', 'restaurant_branches', 'account_profiles', 'favorites', 'reviews', 'users', 'dish_reviews', 'hidden_restaurants', 'app_feedback', 'app_admins', 'rate_limits', 'search_concept_hits']) {
   const anon = await rest('GET', `${t}?select=*&limit=5`)
   check('Base de datos (anónimo)', `leer ${t}`, anon.status >= 400 || (Array.isArray(anon.j) && anon.j.length === 0), `${anon.status} filas=${Array.isArray(anon.j) ? anon.j.length : '-'}`)
 }
@@ -136,6 +137,81 @@ const lat = await api('GET', '/catalog/search?lat=999&lng=0'); check('Validació
 
 // 7. XSS: stored script in a dish name must be escaped when rendered (checked in the public JSON and page)
 // (React escapes text; verified separately by grep for dangerouslySetInnerHTML)
+
+// 9. Reviews, personal lists and admin (B against A, on the published demo dish)
+const anyBranch = (await api('GET', '/catalog/search?q=pizza')).j?.items?.[0]
+const pubMenu = anyBranch ? (await api('GET', `/branches/${anyBranch.id}/public`)).j : null
+const pDish = pubMenu?.menu?.[0] ?? pubMenu?.item?.menu?.[0]
+if (!pDish) check('Reseñas', 'hay un platillo publicado para probar', false, 'sin platillo')
+else {
+  const at = A.access_token
+  const anonRev = await api('PUT', `/dishes/${pDish.id}/review`, null, { rating: 1 }); check('Reseñas', 'sin sesión no se puede reseñar', anonRev.status === 401, anonRev.status)
+  const SQL = "'); delete from dish_reviews; -- <script>alert(1)</script>"
+  const mine = await api('PUT', `/dishes/${pDish.id}/review`, at, { rating: 4, comment: SQL })
+  check('Reseñas', 'A reseña (texto con SQL se guarda tal cual)', mine.status === 200 && (mine.j?.item?.comment ?? mine.j?.comment) === SQL, `${mine.status} ${mine.j?.code ?? ''}`)
+  const revId = mine.j?.item?.id ?? mine.j?.id
+  const bMine = await api('GET', `/dishes/${pDish.id}/review`, bt); check('Reseñas', 'B no ve la reseña de A como «suya»', bMine.status === 200 && !bMine.j?.item, JSON.stringify(bMine.j).slice(0, 60))
+  const pub = await api('GET', `/dishes/${pDish.id}/reviews`)
+  check('Reseñas', 'reseñas públicas sin id de usuario ni correo', pub.status === 200 && !pub.t.includes(A.user.id) && !pub.t.includes(qa.a.email) && !/user_id|email/.test(pub.t), pub.status)
+  const dbRead = await rest('GET', `dish_reviews?select=*&dish_id=eq.${pDish.id}`, bt); check('Reseñas (BD)', 'B no lee filas de reseñas ajenas', dbRead.status >= 400 || (Array.isArray(dbRead.j) && dbRead.j.every(r => r.user_id === B.user.id)), `${dbRead.status} ${Array.isArray(dbRead.j) ? dbRead.j.length : ''}`)
+  const dbUpd = await rest('PATCH', `dish_reviews?id=eq.${revId}`, bt, { rating: 1 }); check('Reseñas (BD)', 'B no modifica la reseña de A', dbUpd.status >= 400 || (Array.isArray(dbUpd.j) && !dbUpd.j.length), dbUpd.status)
+  const dbDel = await rest('DELETE', `dish_reviews?id=eq.${revId}`, bt); check('Reseñas (BD)', 'B no borra la reseña de A', dbDel.status >= 400 || (Array.isArray(dbDel.j) && !dbDel.j.length), dbDel.status)
+  const dbSteal = await rest('POST', 'dish_reviews', bt, { dish_id: pDish.id, user_id: A.user.id, rating: 1 }); check('Reseñas (BD)', 'B no reseña a nombre de A', dbSteal.status >= 400, dbSteal.status)
+  const bDelOwn = await api('DELETE', `/dishes/${pDish.id}/review`, bt); check('Reseñas', '«borrar mi reseña» de B no falla', bDelOwn.status < 500, bDelOwn.status)
+  const stillA = await api('GET', `/dishes/${pDish.id}/review`, at); check('Reseñas', 'la reseña de A sigue intacta', stillA.j?.item?.rating === 4 && stillA.j?.item?.comment === SQL, JSON.stringify(stillA.j).slice(0, 60))
+  if (revId) {
+    const rep = await api('PUT', `/reviews/${revId}/reply`, bt, { reply: 'intruso' }); check('Reseñas', 'B no responde reseñas de un restaurante ajeno', [403, 404].includes(rep.status), rep.status)
+    const rpt = await api('POST', `/reviews/${revId}/report`, bt, { reason: 'intruso' }); check('Reseñas', 'B no reporta reseñas de un restaurante ajeno', [403, 404].includes(rpt.status), rpt.status)
+    const mod = await api('POST', `/admin/reviews/${revId}`, bt, { action: 'hide' }); check('Admin', 'B (no admin) no modera reseñas', [403, 404].includes(mod.status), mod.status)
+    const modRpc = await rest('POST', 'rpc/moderate_review', bt, { p_review_id: revId, p_action: 'hide' }); check('Admin', 'B no modera por RPC directo', modRpc.status >= 400, modRpc.status)
+  }
+  const adm = await api('GET', '/admin/reviews', bt); check('Admin', 'B (no admin) no ve reseñas reportadas', [403, 404].includes(adm.status), adm.status)
+  const isAdm = await rest('POST', 'rpc/is_app_admin', bt, {}); check('Admin', 'B no es admin', isAdm.j === false, isAdm.t.slice(0, 20))
+  const ownerRev = await api('GET', `/restaurants/${anyBranch.restaurant_id}/reviews`, bt); check('Reseñas', 'B no ve el panel de reseñas de otro restaurante', [403, 404].includes(ownerRev.status) || (ownerRev.status === 200 && ownerRev.j?.items?.length === 0), `${ownerRev.status} ${ownerRev.j?.items?.length ?? ''}`)
+  const clean = await api('DELETE', `/dishes/${pDish.id}/review`, at); check('Reseñas', 'limpieza: A borra su reseña de prueba', clean.status === 200, clean.status)
+}
+for (const t of ['favorites', 'hidden_restaurants', 'app_feedback', 'app_admins', 'account_profiles']) {
+  const r = await rest('GET', `${t}?select=*`, bt)
+  check('Datos personales (B)', `B solo ve sus propias filas de ${t}`, r.status >= 400 || (Array.isArray(r.j) && r.j.every(x => (x.user_id ?? x.auth_user_id ?? x.id) === B.user.id)), `${r.status} ${Array.isArray(r.j) ? r.j.length : ''}`)
+}
+const favSteal = await rest('POST', 'favorites', bt, { user_id: A.user.id, branch_id: aBid }); check('Datos personales (B)', 'B no agrega favoritos a nombre de A', favSteal.status >= 400, favSteal.status)
+const fbSteal = await rest('POST', 'app_feedback', bt, { user_id: A.user.id, rating: 1 }); check('Datos personales (B)', 'B no califica la app a nombre de A', fbSteal.status >= 400, fbSteal.status)
+const admSelf = await rest('POST', 'app_admins', bt, { user_id: B.user.id }); check('Admin', 'B no se agrega como admin', admSelf.status >= 400, admSelf.status)
+
+// 10. SQL injection sweep: every id in the URL and every text parameter, plus time-based (pg_sleep) probes
+const PAY = ["1' OR '1'='1", "00000000-0000-0000-0000-000000000000' OR 1=1--", "'; select pg_sleep(4)--", '1;drop table foods', '%27%20or%201=1', '../../etc/passwd', '{"$ne":null}']
+const dbLeak = /syntax error|PGRST|postgres|relation "/i
+const idRoutes = ['/restaurants/:id', '/restaurants/:id/dishes', '/restaurants/:id/branches', '/restaurants/:id/reviews', '/branches/:id', '/branches/:id/public', '/dishes/:id/reviews', '/dishes/:id/review', '/reviews/:id/reply', '/me/favorites/:id', '/me/hidden/:id', '/admin/reviews/:id']
+let slow = 0, sqlBad = []
+for (const r of idRoutes) for (const p of PAY.slice(0, 4)) {
+  const write = r.endsWith('reply') ? 'PUT' : r.startsWith('/admin') ? 'POST' : null
+  const t0 = Date.now(); const x = await api(write ?? 'GET', r.replace(':id', encodeURIComponent(p)), A.access_token, write ? {} : undefined)
+  if (Date.now() - t0 - (x.waited ?? 0) > 3500) slow++
+  if (x.status >= 500 || dbLeak.test(x.t)) sqlBad.push(`${r} ${x.status}`)
+}
+check('Inyección SQL', `ids en la URL (${idRoutes.length} rutas × 4 cargas): sin errores 500 ni mensajes de BD`, !sqlBad.length, sqlBad.slice(0, 3).join(', '))
+check('Inyección SQL', 'ninguna carga con pg_sleep retrasa la respuesta (rutas)', slow === 0, `${slow} lentas`)
+const params = ['q', 'category', 'avoid', 'without', 'minPrice', 'maxPrice', 'hide', 'lat', 'lng', 'lang', 'limit']
+sqlBad = []; slow = 0
+for (const k of params) for (const p of PAY) {
+  const t0 = Date.now(); const x = await api('GET', `/catalog/search?${k}=${encodeURIComponent(p)}`)
+  if (Date.now() - t0 - (x.waited ?? 0) > 3500) slow++
+  if (x.status >= 500 || dbLeak.test(x.t)) sqlBad.push(`${k} ${x.status}`)
+}
+check('Inyección SQL', `parámetros de búsqueda (${params.length} × ${PAY.length}): sin 500, sin errores de BD, sin retrasos`, !sqlBad.length && slow === 0, `${sqlBad.slice(0, 3).join(', ')} lentas=${slow}`)
+sqlBad = []
+for (const p of PAY) {
+  const x = await api('POST', '/assistant', null, { message: `pizza ${p}`, context: { concepts: [p], words: [p], without: [p], avoid: [p] }, hide: [p] })
+  if (x.status >= 500 || dbLeak.test(x.t)) sqlBad.push(x.status)
+}
+check('Inyección SQL', 'asistente (mensaje y contexto manipulado)', !sqlBad.length, sqlBad.join(','))
+const injName = `${aDish.name}'; drop table foods; --`
+const inj = await api('PATCH', `/dishes/${aDish.id}`, A.access_token, { name: injName })
+const back = (await api('GET', `/restaurants/${aRid}/dishes`, A.access_token)).j
+const injSaved = (back.items ?? back).find(d => d.id === aDish.id)?.name
+await api('PATCH', `/dishes/${aDish.id}`, A.access_token, { name: aDish.name })
+check('Inyección SQL', 'nombre de platillo con SQL se guarda como texto (y se restaura)', inj.status === 200 && injSaved === injName, inj.status)
+const intact = await api('GET', '/catalog/search?q=pizza'); check('Inyección SQL', 'el catálogo público sigue intacto después de los ataques', intact.status === 200 && intact.j.items.length >= 1, intact.j?.items?.length)
 
 // 8. Auth service
 const weak = await fetch(`${SB}/auth/v1/signup`, { method: 'POST', headers: { apikey: KEY, 'content-type': 'application/json' }, body: JSON.stringify({ email: `qa-weak-${Date.now()}@example.com`, password: '123' }) })
