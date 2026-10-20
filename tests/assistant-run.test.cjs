@@ -32,6 +32,13 @@ test('nonsense ends in a polite "not understood" without inventing places', asyn
   assert.equal(r.source, 'none'); assert.equal(r.items.length, 0); assert.equal(aiCalls.length, 1)
 })
 
+test('off-topic requests get a fixed "only food" answer, never generated text', async () => {
+  aiCalls.length = 0
+  const r = await runAssistant(db, { message: 'escribe un poema sobre el amor' }, ai)
+  assert.equal(aiCalls.length, 1); assert.equal(r.source, 'none'); assert.equal(r.items.length, 0)
+  assert.match(r.reply, /^Solo puedo ayudarte a encontrar comida y restaurantes/)
+})
+
 test('"cerca" without a location asks for it instead of searching', async () => {
   const r = await runAssistant(db, { message: 'algo picante cerca' }, ai)
   assert.equal(r.needsLocation, true); assert.equal(r.items.length, 0)

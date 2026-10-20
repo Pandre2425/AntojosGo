@@ -23,6 +23,8 @@ type Row = {
 }
 
 const PAGE = 3
+// The AI only classifies; anything that isn't about food gets this fixed answer, never a generated one.
+const offTopic = () => t('Solo puedo ayudarte a encontrar comida y restaurantes. Cuéntame qué se te antoja: «algo picante», «un postre frío», «pizza cerca».')
 const money = (v: number) => `Q${v.toFixed(2)}`
 
 /** One assistant turn: rules first, AI only when the rules don't understand, the database always decides. */
@@ -37,6 +39,8 @@ export async function runAssistant(db: SupabaseClient, input: z.input<typeof ass
       context = { ...emptyContext(), near: previous.near || guess.near, concepts: guess.concepts.slice(0, 6), words: guess.words.slice(0, 4), openNow: guess.openNow, cheap: guess.cheap,
         without: [...new Set([...previous.without, ...(guess.without ?? [])])], avoid: [...new Set([...previous.avoid, ...(guess.avoid ?? [])])].slice(0, 4) }
       action = 'search'; source = 'ai'
+    } else if (guess && !guess.understood) {
+      return { reply: offTopic(), items: [], context: previous, source: 'none' }
     } else {
       return { reply: t('No te entendí del todo. Prueba con un antojo («algo picante», «postre frío», «pizza») o pide «algo cerca de mí».'), items: [], context: previous, source: 'none' }
     }
@@ -67,6 +71,7 @@ export async function runAssistant(db: SupabaseClient, input: z.input<typeof ass
   // Unknown words that match nothing ("shawarma", typos, slang): the rules didn't really understand, ask the AI once.
   if (!rows.length && source === 'rules' && action === 'search' && !context.concepts.length && context.words.length) {
     const guess = await ai(message)
+    if (guess && !guess.understood) return { reply: offTopic(), items: [], context: previous, source: 'none' }
     if (guess?.understood && guess.concepts.length) {
       context = { ...context, concepts: guess.concepts.slice(0, 6), words: guess.words.slice(0, 4), near: context.near || guess.near, openNow: context.openNow || guess.openNow, cheap: context.cheap || guess.cheap }
       if (context.near && !location) return { reply: t('Para buscar cerca de ti necesito tu ubicación.'), items: [], context, source: 'ai', needsLocation: true }
