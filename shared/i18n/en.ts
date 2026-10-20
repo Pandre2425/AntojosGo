@@ -884,4 +884,6 @@ export const en: Record<string, string> = {
   "{n}% completo": "{n}% complete",
   "Ir": "Go",
   "Revisando…": "Checking…",
+  "Al crear tu cuenta o continuar con Google aceptas los": "By creating an account or continuing with Google you accept the",
+  "Términos y condiciones": "Terms of use",
 }

@@ -107,6 +107,7 @@ export default function AccountAccess({ audience, onBack }: { audience: 'custome
         {unconfirmed && <Button variant="link" size="sm" disabled={busy} onClick={() => emailLink('resend')}>{t('Reenviar confirmación')}</Button>}
       </div>}
       <Button className="w-full" variant="outline" disabled={busy} onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setError(''); setNotice(''); setPassword(''); setConfirmPassword('') }}>{mode === 'login' ? t('No tengo cuenta · Registrarme') : t('Ya tengo cuenta · Iniciar sesión')}</Button>
+      <p className="text-center text-xs text-muted-foreground">{t('Al crear tu cuenta o continuar con Google aceptas los')} <a href="/terminos" target="_blank" className="font-semibold text-[#173F35] underline">{t('Términos y condiciones')}</a>.</p>
       <p className="text-xs text-muted-foreground">{t('El correo identifica tu cuenta. Tu nombre personal y el nombre comercial se guardan por separado.')}</p>
     </section>
   </main>

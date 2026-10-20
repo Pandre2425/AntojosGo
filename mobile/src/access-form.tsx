@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Image } from 'react-native'
+import { Image, Linking } from 'react-native'
 import { supabase } from './supabase'
 import { useSession } from './session'
 import { Action, Card, Field, Loading, Message, Page, Title } from './ui'
@@ -64,5 +64,7 @@ export function AccessForm() {
     {!register && <Action title={t('¿Olvidaste tu contraseña?')} secondary onPress={() => emailLink('reset')} disabled={busy} />}
     {unconfirmed && <Action title={t('Reenviar confirmación')} secondary onPress={() => emailLink('resend')} disabled={busy} />}
     <Action title={register ? t('Ya tengo cuenta') : t('Crear una cuenta')} secondary onPress={() => { setRegister(!register); setMessage('') }} disabled={busy} />
+    <Message>{t('Al crear tu cuenta o continuar con Google aceptas los')} {t('Términos y condiciones')}.</Message>
+    <Action title={t('Términos y condiciones')} secondary onPress={() => void Linking.openURL(`${getServerUrl()}/terminos`)} />
   </Card><Card><LanguageSelector /></Card><AccessibilityCard /><ServerSettings /></Page>
 }
