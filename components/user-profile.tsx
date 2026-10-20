@@ -38,6 +38,7 @@ export default function UserProfile({ user, onLogin }: { user: AccountUser | nul
     <Button onClick={onLogin}>{t('Iniciar sesión o crear cuenta')}</Button>
     <LanguageSelector />
     <TextSizeControl />
+    <HelpLinks />
   </div>
   return <div className="space-y-4">
     {accountError && <p role="alert" className="text-sm text-red-700">{accountError}</p>}
@@ -50,7 +51,12 @@ export default function UserProfile({ user, onLogin }: { user: AccountUser | nul
     <LanguageSelector />
     <TextSizeControl />
     <AppFeedback />
+    <HelpLinks />
   </div>
+}
+
+function HelpLinks() {
+  return <p className="flex flex-wrap gap-x-4 text-sm"><a href="/guia" className="font-semibold text-[#173F35] underline">{t('Guía de uso')}</a><a href="/terminos" className="text-stone-600 underline">{t('Términos y condiciones')}</a></p>
 }
 
 /** «No me interesa»: restaurants left out of this diner's searches and assistant; each can be shown again. */

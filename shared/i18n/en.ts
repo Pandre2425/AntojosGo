@@ -887,4 +887,5 @@ export const en: Record<string, string> = {
   "Al crear tu cuenta o continuar con Google aceptas los": "By creating an account or continuing with Google you accept the",
   "Términos y condiciones": "Terms of use",
   "Solo puedo ayudarte a encontrar comida y restaurantes. Cuéntame qué se te antoja: «algo picante», «un postre frío», «pizza cerca».": "I can only help you find food and restaurants. Tell me what you're craving: \"something spicy\", \"a cold dessert\", \"pizza nearby\".",
+  "Guía de uso": "User guide",
 }

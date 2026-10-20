@@ -5,7 +5,7 @@ import { supabase } from './supabase'
 import { Action, Card, Field, Loading, Message, Page, Title, Txt } from './ui'
 import { api } from './api'
 import { AppFeedback } from './app-feedback'
-import { AccessibilityCard, HiddenRestaurantsCard } from './account-extras'
+import { AccessibilityCard, HelpLinks, HiddenRestaurantsCard } from './account-extras'
 import { LanguageSelector } from './language'
 import { displayNameSchema, metadataName } from '../../shared/contracts/names'
 import type { OwnedRestaurant } from '../../shared/contracts/restaurants'
@@ -47,6 +47,7 @@ export function MyRestaurants() {
     <Card><LanguageSelector /></Card>
     <AccessibilityCard />
     <AppFeedback />
+    <HelpLinks />
     <Action title={t('Cerrar sesión')} secondary disabled={busy} onPress={async () => { if (lock.current) return; lock.current = true; setBusy(true); try { const result = await supabase!.auth.signOut(); if (result.error) setError(t('No pudimos cerrar sesión. Reintenta.')) } catch { setError(t('No pudimos cerrar sesión.')) } finally { lock.current = false; setBusy(false) } }} />
   </Page>
 }

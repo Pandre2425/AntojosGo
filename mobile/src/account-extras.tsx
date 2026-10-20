@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import { Linking, Pressable, Text, View } from 'react-native'
 import { api } from './api'
 import { unhideRestaurant, useHiddenIds } from './hidden'
-import { Card, Message, Txt, colors, spacing, type } from './ui'
+import { Action, Card, Message, Txt, colors, spacing, type } from './ui'
+import { getServerUrl } from './server'
 import type { HiddenRestaurant } from '../../lib/api-client'
 import { t } from '../../shared/i18n'
 
@@ -41,5 +42,13 @@ export function HiddenRestaurantsCard() {
         <Text style={[type.body, { color: colors.green, fontWeight: '700' }]}>{t('Mostrar de nuevo')}</Text>
       </Pressable>
     </View>)}
+  </Card>
+}
+
+/** Links to the web guide and terms (both pages are bilingual). */
+export function HelpLinks() {
+  return <Card>
+    <Action title={t('Guía de uso')} secondary onPress={() => void Linking.openURL(`${getServerUrl()}/guia`)} />
+    <Action title={t('Términos y condiciones')} secondary onPress={() => void Linking.openURL(`${getServerUrl()}/terminos`)} />
   </Card>
 }
