@@ -143,7 +143,7 @@ AntojosGo ayuda a los comensales de Guatemala (piloto en Quetzaltenango) a encon
 8. Mover «Pablo pizza» a una cuenta con correo real (la actual usa un correo inventado).
 9. ✅ «Para que te encuentren»: lista con porcentaje en el panel del restaurante (web y app), con atajos para resolver cada punto.
 10. ✅ «Copiar el lunes a todos los días» en el horario (web y app).
-11. Pulir la web: inicio y Explorar con el mismo nivel visual que la app; «Ver detalles» del platillo en la web.
+11. ✅ Pulir la web: tarjetas de Explorar como en la app (abierto, distancia, platillo encontrado, «Ver sede» y «Cómo llegar») y «Ver detalles» del platillo en la web (panel con todo lo del platillo y sus reseñas).
 
 ### Del documento del producto (PRODUCT-SPEC): hecho el 18 de octubre
 

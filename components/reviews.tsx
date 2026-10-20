@@ -35,8 +35,8 @@ export function StarInput({ value, onChange, disabled }: { value: number; onChan
 const when = (iso: string) => new Date(iso).toLocaleDateString(locale(), { day: 'numeric', month: 'short', year: 'numeric' })
 
 /** «Reseñas» of a dish, opened on demand: public list, more pages, and the signed-in diner's own review. */
-export function DishReviews({ dishId, rating }: { dishId: string; rating?: Rating }) {
-  const [open, setOpen] = useState(false)
+export function DishReviews({ dishId, rating, defaultOpen = false }: { dishId: string; rating?: Rating; defaultOpen?: boolean }) {
+  const [open, setOpen] = useState(defaultOpen)
   const [items, setItems] = useState<PublicReview[] | null>(null)
   const [translated, setTranslated] = useState(false)
   const [page, setPage] = useState(0)

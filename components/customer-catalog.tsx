@@ -11,7 +11,8 @@ import { ALLERGEN_LABELS, ALLERGENS, DISH_TAGS, DISH_TAG_LABELS, allergenNames, 
 import { Button } from './ui/button'
 import { Input } from './ui/input'
 import FoodLoader from './food-loader'
-import { DishReviews, RatingSummary } from './reviews'
+import { RatingSummary } from './reviews'
+import { DishDetail, DishRow } from './dish-detail'
 import VoiceButton from './voice-button'
 import { PRICE_RANGES, pickSurprise } from '@/shared/contracts/catalog-query'
 import { t, contentNote } from '@/shared/i18n'
@@ -137,20 +138,31 @@ function Logo({ url, name, size = 'h-14 w-14' }: { url?: string | null; name: st
 
 function BranchList({ items, onSelect, restricted = false }: { items: PublicCatalogItem[]; onSelect: (id: string) => void; restricted?: boolean }) {
   return <ul className="space-y-3">{items.map((item) => <li key={item.id}>
-    <button type="button" onClick={() => onSelect(item.id)} className="flex w-full gap-3 rounded-2xl border bg-white p-4 text-left hover:border-primary focus-visible:outline-2 focus-visible:outline-primary">
-      <Logo url={item.logo_url} name={item.name} />
-      <div className="min-w-0 flex-1">
-      <p className="font-semibold">{item.name}{item.category && <span className="font-normal text-muted-foreground"> · {item.category}</span>}</p>
-      <RatingSummary rating={item.rating} />
-      <p className="text-sm">{item.branch_name} · {item.address}, {item.municipality}</p>
-      {item.description && <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{item.description}</p>}
-      {item.dish && <p className="mt-1 text-sm"><span className="font-medium">{item.dish.name}</span> <span className="tabular-nums">Q{item.dish.price.toFixed(2)}</span>
-        {restricted && !item.dish.allergensDeclared && <span className="ml-2 rounded-full border border-dashed border-amber-500 px-2 py-0.5 text-xs text-amber-900">{t('Alérgenos sin declarar')}</span>}</p>}
-      <p className="mt-1 flex flex-wrap gap-x-3 text-xs text-muted-foreground">
-        {item.openNow === true && <span className="font-semibold text-green-700">{t('Abierto ahora')}</span>}{item.openNow === false && <span>{t('Cerrado ahora')}</span>}
-        {distance(item.distanceKm) && <span>{distance(item.distanceKm)}</span>}</p>
+    <article className="space-y-3 rounded-2xl border bg-white p-4 shadow-sm transition-colors hover:border-[#173F35]/40">
+      <button type="button" onClick={() => onSelect(item.id)} className="flex w-full gap-3 text-left focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#173F35]">
+        <Logo url={item.logo_url} name={item.name} />
+        <span className="min-w-0 flex-1 space-y-0.5">
+          <span className="block text-lg font-bold leading-tight text-[#173F35]">{item.name}</span>
+          {item.category && <span className="block text-sm text-stone-600">{item.category}</span>}
+          <RatingSummary rating={item.rating} />
+        </span>
+      </button>
+      <div className="flex flex-wrap items-center gap-2 text-xs">
+        {item.openNow === true && <span className="rounded-full bg-[#173F35] px-2.5 py-1 font-semibold text-white">{t('Abierto ahora')}</span>}
+        {item.openNow === false && <span className="rounded-full border border-stone-300 px-2.5 py-1 text-stone-600">{t('Cerrado ahora')}</span>}
+        {distance(item.distanceKm) && <span className="rounded-full bg-stone-100 px-2.5 py-1 text-stone-700">{distance(item.distanceKm)}</span>}
       </div>
-    </button>
+      <p className="text-sm text-stone-700">{item.branch_name} · {item.address}, {item.municipality}</p>
+      {item.description && <p className="line-clamp-2 text-sm text-muted-foreground">{item.description}</p>}
+      {item.dish && <p className="flex flex-wrap items-center gap-2 rounded-xl bg-[#BD481F]/5 px-3 py-2 text-sm">
+        <span aria-hidden>🍽️</span><span className="font-medium">{item.dish.name}</span><span className="font-semibold tabular-nums text-[#BD481F]">Q{item.dish.price.toFixed(2)}</span>
+        {restricted && !item.dish.allergensDeclared && <span className="rounded-full border border-dashed border-amber-500 px-2 py-0.5 text-xs text-amber-900">{t('Alérgenos sin declarar')}</span>}</p>}
+      <div className="flex gap-2">
+        <Button variant="outline" className="flex-1" onClick={() => onSelect(item.id)}>{t('Ver sede')}</Button>
+        {item.latitude != null && item.longitude != null && <a href={directionsUrl(item.latitude, item.longitude)} target="_blank" rel="noreferrer"
+          className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-md bg-[#BD481F] px-3 text-sm font-semibold text-white hover:bg-[#9a3a18]"><MapPin className="h-4 w-4" />{t('Cómo llegar')}</a>}
+      </div>
+    </article>
   </li>)}</ul>
 }
 
@@ -201,6 +213,7 @@ export function BranchDetail({ id, onBack, onHide, surprise, onSurpriseAgain }: 
   id: string; onBack: () => void; onHide?: (restaurantId: string) => void; surprise?: PublicCatalogItem | null; onSurpriseAgain?: () => void
 }) {
   const [hiding, setHiding] = useState(false)
+  const [dish, setDish] = useState<PublicDish | null>(null)
   const [hideError, setHideError] = useState('')
   const [data, setData] = useState<{ branch: PublicCatalogItem & PublicBranchExtras; menu: PublicDish[]; translated?: boolean } | null>(null)
   const [error, setError] = useState('')
@@ -241,19 +254,9 @@ export function BranchDetail({ id, onBack, onHide, surprise, onSurpriseAgain }: 
         <h3 className="text-lg font-semibold">{t('Menú')}</h3>
         {contentNote(data.translated) && <p className="text-xs text-muted-foreground">{contentNote(data.translated)}</p>}
         {data.menu.length === 0 ? <p className="text-sm text-muted-foreground">{t('Este restaurante aún no ha publicado su menú.')}</p> :
-          <ul className="divide-y">{data.menu.map((dish) => <li key={dish.id} className="flex gap-3 py-3">
-            {dish.image_url && <img src={dish.image_url} alt={t('Foto de {name}', { name: dish.name })} loading="lazy" className="h-20 w-20 shrink-0 rounded-xl object-cover" />}
-            <div className="min-w-0 flex-1">
-              <p className="font-medium">{dish.name} <span className="whitespace-nowrap">· Q{dish.price.toFixed(2)}</span></p>
-              {dish.category && <p className="text-xs text-muted-foreground">{dish.category.split(', ').map(c => t(c)).join(', ')}</p>}
-              {dish.description && <p className="text-sm text-muted-foreground">{dish.description}</p>}
-              {dish.ingredients?.length ? <p className="text-sm text-muted-foreground">{t('Ingredientes:')} {dish.ingredients.join(', ')}</p> : null}
-              <DishAllergens allergens={dish.allergens} other={dish.allergens_other} />
-              {!dish.is_available && <p className="text-xs font-semibold text-red-700">{t('Agotado por ahora')}</p>}
-              <DishReviews dishId={dish.id} rating={dish.rating} />
-            </div>
-          </li>)}</ul>}
+          <ul className="-mx-3 divide-y">{data.menu.map((dish) => <li key={dish.id}><DishRow dish={dish} onOpen={() => setDish(dish)} /></li>)}</ul>}
       </section>
+      <DishDetail dish={dish} onClose={() => setDish(null)} />
     </>}
   </div>
 }
@@ -265,9 +268,3 @@ function Hours({ hours }: { hours: NonNullable<PublicBranchExtras['opening_hours
     <ul className="mt-1">{describeHours(hours).map((line) => <li key={line}>{line}</li>)}</ul></details>
 }
 
-function DishAllergens({ allergens, other = [] }: { allergens?: readonly string[]; other?: readonly string[] }) {
-  const { declared, contains } = allergenStatus(allergens, other)
-  if (!declared) return <p className="text-xs text-amber-900">{t('Alérgenos no declarados por el restaurante')}</p>
-  if (!contains.length && !other.length) return <p className="text-xs text-green-800">{t('Sin alérgenos comunes, según el restaurante')}</p>
-  return <p className="flex flex-wrap gap-1">{allergenNames(allergens, other).map((a) => <span key={a} className="rounded-full border border-[#BD481F] px-2 py-0.5 text-xs text-[#9a3a18]">{t('Contiene {allergen}', { allergen: t(a).toLowerCase() })}</span>)}</p>
-}
