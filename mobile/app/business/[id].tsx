@@ -10,6 +10,7 @@ import { normalize } from '../../../shared/contracts/assistant'
 import { Chip, Txt } from '../../src/ui'
 import { pickAndUploadRestaurantImage } from '../../src/dish-photo'
 import { t } from '../../../shared/i18n'
+import { FindabilityCard } from '../../src/findability-card'
 export default function Business() {
   const { id } = useLocalSearchParams<{ id: string }>()
   const { session, ready } = useSession()
@@ -51,7 +52,7 @@ export default function Business() {
   // Suggestions under the field: types that contain what was typed (all when empty), excluding an exact match.
   const typed = normalize(form.category)
   const suggestions = types.filter(t => normalize(t) !== typed && (!typed || normalize(t).includes(typed))).slice(0, 8)
-  return <Page><Title>{t('Mi negocio')}</Title><Message>{error}</Message>{!loaded ? error ? <Action title={t('Reintentar')} onPress={() => setRetry(v => v + 1)} /> : <Loading /> : <>
+  return <Page><Title>{t('Mi negocio')}</Title><FindabilityCard restaurantId={id} onOpenMenu={() => router.push({ pathname: '/menu/[id]', params: { id } })} /><Message>{error}</Message>{!loaded ? error ? <Action title={t('Reintentar')} onPress={() => setRetry(v => v + 1)} /> : <Loading /> : <>
     <Card>
       {(['logo', 'cover'] as const).map(kind => <View key={kind} style={{ gap: 8 }}>
         <Txt variant="label">{kind === 'logo' ? 'Logo' : t('Foto del restaurante')}</Txt>

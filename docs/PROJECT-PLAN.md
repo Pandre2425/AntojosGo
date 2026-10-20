@@ -141,7 +141,7 @@ AntojosGo ayuda a los comensales de Guatemala (piloto en Quetzaltenango) a encon
 6. **Publicar la app 0.6.0** (precio, «Sorpréndeme», «No me interesa», voz, reseñas, logo e ícono, animación de carga, inicio nuevo, pestañas, formulario de platillos, «Cómo llegar», «Ver detalles», campana, recuperación de contraseña, calificar la app): subirla a Drive y, para el aviso automático, a GitHub Releases.
 7. ✅ Despublicadas «QA Claude Cocina» y «QA Antojos Cocina» (16 de octubre). Falta decidir «Restaurante prueba1».
 8. Mover «Pablo pizza» a una cuenta con correo real (la actual usa un correo inventado).
-9. Lista «Para que te encuentren» para el restaurante (qué le falta para aparecer en búsquedas).
+9. ✅ «Para que te encuentren»: lista con porcentaje en el panel del restaurante (web y app), con atajos para resolver cada punto.
 10. ✅ «Copiar el lunes a todos los días» en el horario (web y app).
 11. Pulir la web: inicio y Explorar con el mismo nivel visual que la app; «Ver detalles» del platillo en la web.
 

@@ -44,3 +44,16 @@ test('email links use the domain without www', () => {
   assert.equal(authOrigin('https://antojosgo.com/restaurant'), 'https://antojosgo.com/restaurant')
   assert.equal(accountLink(authOrigin('https://www.antojosgo.com'), 'confirmar'), 'https://antojosgo.com/cuenta?accion=confirmar')
 })
+
+test('«Para que te encuentren»: required items decide visibility; score weights them double', () => {
+  const { findabilityChecklist, findabilityScore } = require('../shared/contracts/findability.ts')
+  const branch = (o = {}) => ({ id: 'b', name: 'Centro', status: 'published', latitude: 14.8, longitude: -91.5, opening_hours: [{ day: 1, open: '08:00', close: '17:00' }], phone: '77654321', whatsapp: true, ...o })
+  const dish = (o = {}) => ({ id: Math.random().toString(), status: 'published', is_available: true, image_url: 'x.jpg', allergens: ['ninguno'], dish_types: ['Plato fuerte'], cuisines: [], ...o })
+  const full = findabilityChecklist({ description: 'x'.repeat(40), category: 'Pizzería', logo_url: 'l', cover_url: 'c' }, [branch()], [dish(), dish(), dish()])
+  assert.ok(full.every(i => i.done)); assert.equal(findabilityScore(full), 100)
+  const empty = findabilityChecklist({ description: null, category: null, logo_url: null, cover_url: null }, [branch({ status: 'draft', latitude: null, opening_hours: [], phone: null })], [dish({ status: 'draft' })])
+  assert.deepEqual(empty.filter(i => i.required && !i.done).map(i => i.key), ['published', 'location', 'menu'])
+  assert.equal(findabilityScore(empty), 0)
+  const photos = findabilityChecklist({ description: '', category: 'x', logo_url: null, cover_url: null }, [branch()], [dish(), dish({ image_url: null })]).find(i => i.key === 'photos')
+  assert.deepEqual(photos.detail, { done: 1, total: 2 })
+})
