@@ -481,6 +481,7 @@ export const en: Record<string, string> = {
   "No pudimos abrir {name}": "We couldn't open {name}",
   "No pudimos actualizar el platillo.": "We couldn't update the dish.",
   "No pudimos aplicar la decisión.": "We couldn't apply the decision.",
+  "No pudimos completar la acción.": "We couldn't complete the action.",
   "No pudimos borrar tu reseña.": "We couldn't delete your review.",
   "No pudimos buscar en este momento. Intenta de nuevo.": "We couldn't search right now. Try again.",
   "No pudimos cambiar la publicación.": "We couldn't change the publishing status.",

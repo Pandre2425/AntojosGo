@@ -80,7 +80,7 @@ const after = (await api('GET', `/restaurants/${aRid}/dishes`, A.access_token)).
 check('Autorización (B contra A)', 'el platillo de A sigue intacto', (after.items ?? after).some(d => d.id === aDish.id && d.name === aDish.name))
 
 // 4. Direct database access (PostgREST) with the public key
-for (const t of ['restaurants', 'foods', 'restaurant_branches', 'account_profiles', 'favorites', 'reviews', 'users', 'dish_reviews', 'hidden_restaurants', 'app_feedback', 'app_admins', 'rate_limits', 'search_concept_hits']) {
+for (const t of ['restaurants', 'foods', 'restaurant_branches', 'account_profiles', 'favorites', 'reviews', 'users', 'dish_reviews', 'hidden_restaurants', 'app_feedback', 'app_admins', 'admin_audit_log', 'rate_limits', 'search_concept_hits']) {
   const anon = await rest('GET', `${t}?select=*&limit=5`)
   check('Base de datos (anónimo)', `leer ${t}`, anon.status >= 400 || (Array.isArray(anon.j) && anon.j.length === 0), `${anon.status} filas=${Array.isArray(anon.j) ? anon.j.length : '-'}`)
 }
@@ -162,15 +162,39 @@ else {
   if (revId) {
     const rep = await api('PUT', `/reviews/${revId}/reply`, bt, { reply: 'intruso' }); check('Reseñas', 'B no responde reseñas de un restaurante ajeno', [403, 404].includes(rep.status), rep.status)
     const rpt = await api('POST', `/reviews/${revId}/report`, bt, { reason: 'intruso' }); check('Reseñas', 'B no reporta reseñas de un restaurante ajeno', [403, 404].includes(rpt.status), rpt.status)
-    const mod = await api('POST', `/admin/reviews/${revId}`, bt, { action: 'hide' }); check('Admin', 'B (no admin) no modera reseñas', [403, 404].includes(mod.status), mod.status)
+    const mod = await api('POST', '/admin/review-moderate', bt, { p_id: revId, p_action: 'hide', p_reason: 'intruso' }); check('Admin', 'B (no admin) no modera reseñas', [403, 404].includes(mod.status), mod.status)
     const modRpc = await rest('POST', 'rpc/moderate_review', bt, { p_review_id: revId, p_action: 'hide' }); check('Admin', 'B no modera por RPC directo', modRpc.status >= 400, modRpc.status)
   }
-  const adm = await api('GET', '/admin/reviews', bt); check('Admin', 'B (no admin) no ve reseñas reportadas', [403, 404].includes(adm.status), adm.status)
+  // Superadmin panel: every action refused for B through the API and through direct RPC (supabase/migrations/20261026090000_superadmin.sql)
+  const fake = '00000000-0000-0000-0000-000000000000'
+  const adminCalls = {
+    overview: ['admin_overview', {}], restaurants: ['admin_restaurants', {}], users: ['admin_users', {}], reviews: ['admin_reviews', { p_filter: 'all' }],
+    admins: ['admin_admins', {}], audit: ['admin_audit', {}],
+    'branch-status': ['admin_set_branch_status', { p_branch_id: aBid, p_publish: false, p_reason: 'intruso' }],
+    'restaurant-suspend': ['admin_suspend_restaurant', { p_id: anyBranch.restaurant_id, p_suspend: true, p_reason: 'intruso' }],
+    'restaurant-delete': ['admin_delete_restaurant', { p_id: anyBranch.restaurant_id, p_delete: true, p_reason: 'intruso' }],
+    'restaurant-transfer': ['admin_transfer_restaurant', { p_id: anyBranch.restaurant_id, p_email: qa.b.email, p_reason: 'intruso' }],
+    'user-ban': ['admin_ban_user', { p_user_id: A.user.id, p_days: 1, p_reason: 'intruso' }],
+    'user-signout': ['admin_signout_user', { p_user_id: A.user.id, p_reason: 'intruso' }],
+    'user-delete': ['admin_delete_user', { p_user_id: A.user.id, p_confirm_email: qa.a.email, p_reason: 'intruso' }],
+    'admin-set': ['admin_set_admin', { p_email: qa.b.email, p_add: true, p_reason: 'intruso' }],
+    'review-moderate': ['admin_moderate_review', { p_id: revId ?? fake, p_action: 'hide', p_reason: 'intruso' }],
+  }
+  const admBad = []
+  for (const [action, [rpc, args]] of Object.entries(adminCalls)) {
+    const viaApi = await api('POST', `/admin/${action}`, bt, args); if (viaApi.status !== 403) admBad.push(`api ${action} ${viaApi.status}`)
+    const viaRpc = await rest('POST', `rpc/${rpc}`, bt, args); if (viaRpc.status < 400) admBad.push(`rpc ${rpc} ${viaRpc.status}`)
+  }
+  check('Admin', `B (no admin) recibe 403 en las ${Object.keys(adminCalls).length} acciones del panel, por API y por RPC`, !admBad.length, admBad.slice(0, 3).join(', '))
+  const anonAdm = await api('POST', '/admin/overview', null, {}); check('Admin', 'sin sesión no se entra al panel', anonAdm.status === 401, anonAdm.status)
+  const who = await api('POST', '/admin/whoami', bt, {}); check('Admin', 'B no figura como admin (whoami)', who.status === 200 && who.j?.result === false, who.status)
+  const helper = await rest('POST', 'rpc/admin_log', bt, { p_action: 'x', p_type: 'x', p_id: null, p_label: null, p_reason: null, p_before: null, p_after: null }); check('Admin', 'B no escribe en la auditoría', helper.status >= 400, helper.status)
+  const proto = await api('POST', '/admin/constructor', bt, {}); check('Admin', 'acciones inexistentes dan 404 (no 500)', proto.status === 404, proto.status)
   const isAdm = await rest('POST', 'rpc/is_app_admin', bt, {}); check('Admin', 'B no es admin', isAdm.j === false, isAdm.t.slice(0, 20))
   const ownerRev = await api('GET', `/restaurants/${anyBranch.restaurant_id}/reviews`, bt); check('Reseñas', 'B no ve el panel de reseñas de otro restaurante', [403, 404].includes(ownerRev.status) || (ownerRev.status === 200 && ownerRev.j?.items?.length === 0), `${ownerRev.status} ${ownerRev.j?.items?.length ?? ''}`)
   const clean = await api('DELETE', `/dishes/${pDish.id}/review`, at); check('Reseñas', 'limpieza: A borra su reseña de prueba', clean.status === 200, clean.status)
 }
-for (const t of ['favorites', 'hidden_restaurants', 'app_feedback', 'app_admins', 'account_profiles']) {
+for (const t of ['favorites', 'hidden_restaurants', 'app_feedback', 'app_admins', 'admin_audit_log', 'account_profiles']) {
   const r = await rest('GET', `${t}?select=*`, bt)
   check('Datos personales (B)', `B solo ve sus propias filas de ${t}`, r.status >= 400 || (Array.isArray(r.j) && r.j.every(x => (x.user_id ?? x.auth_user_id ?? x.id) === B.user.id)), `${r.status} ${Array.isArray(r.j) ? r.j.length : ''}`)
 }
@@ -181,7 +205,7 @@ const admSelf = await rest('POST', 'app_admins', bt, { user_id: B.user.id }); ch
 // 10. SQL injection sweep: every id in the URL and every text parameter, plus time-based (pg_sleep) probes
 const PAY = ["1' OR '1'='1", "00000000-0000-0000-0000-000000000000' OR 1=1--", "'; select pg_sleep(4)--", '1;drop table foods', '%27%20or%201=1', '../../etc/passwd', '{"$ne":null}']
 const dbLeak = /syntax error|PGRST|postgres|relation "/i
-const idRoutes = ['/restaurants/:id', '/restaurants/:id/dishes', '/restaurants/:id/branches', '/restaurants/:id/reviews', '/branches/:id', '/branches/:id/public', '/dishes/:id/reviews', '/dishes/:id/review', '/reviews/:id/reply', '/me/favorites/:id', '/me/hidden/:id', '/admin/reviews/:id']
+const idRoutes = ['/restaurants/:id', '/restaurants/:id/dishes', '/restaurants/:id/branches', '/restaurants/:id/reviews', '/branches/:id', '/branches/:id/public', '/dishes/:id/reviews', '/dishes/:id/review', '/reviews/:id/reply', '/me/favorites/:id', '/me/hidden/:id', '/admin/:id']
 let slow = 0, sqlBad = []
 for (const r of idRoutes) for (const p of PAY.slice(0, 4)) {
   const write = r.endsWith('reply') ? 'PUT' : r.startsWith('/admin') ? 'POST' : null

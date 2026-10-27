@@ -8,7 +8,6 @@ import type { AssistantResponse } from '../modules/catalog/data/assistant'
 import type { AccountProfile } from '../shared/contracts/accounts'
 import type { Feedback, FeedbackInput } from '../shared/contracts/feedback'
 import type { MyReview, OwnerReview, PublicReview, ReviewInput } from '../shared/contracts/reviews'
-import type { ReportedReview } from '../modules/admin/data/moderation'
 export type HiddenRestaurant = { restaurant_id: string; name: string; hidden_at: string }
 import type { BranchInput, BranchLocation, RestaurantBranch } from '../shared/contracts/branches'
 import type { Dish, DishInput, DishPatch } from '../shared/contracts/menu'
@@ -118,9 +117,8 @@ export function createApiClient({ baseUrl, getToken, refreshToken }: Options) {
     ownerReviews: (restaurantId: string, page = 0) => call<{ items: OwnerReview[]; hasMore: boolean }>('GET', `/restaurants/${restaurantId}/reviews${qs({ page })}`),
     replyToReview: (reviewId: string, reply: string) => call<{ ok: true }>('PUT', `/reviews/${reviewId}/reply`, { reply }),
     reportReview: (reviewId: string, reason: string) => call<{ ok: true }>('POST', `/reviews/${reviewId}/report`, { reason }),
-    /** AntojosGo administrators: reported reviews. */
-    reportedReviews: () => call<{ items: ReportedReview[] }>('GET', '/admin/reviews').then(r => r.items),
-    moderateReview: (reviewId: string, action: 'keep' | 'hide' | 'unhide') => call<{ ok: true }>('POST', `/admin/reviews/${reviewId}`, { action }),
+    /** Superadmin panel: action name and admin_* arguments (modules/admin/data/admin.ts). */
+    admin: <T>(action: string, args: Record<string, unknown> = {}) => call<{ result: T }>('POST', `/admin/${action}`, args).then(r => r.result),
     /** Diner assistant turn; send back the returned context with the next message. */
     assistant: (message: string, context?: AssistantContext, location?: { latitude: number; longitude: number }, hide?: readonly string[]) =>
       call<AssistantResponse>('POST', '/assistant', { message, context, location, hide }, {}, false),
