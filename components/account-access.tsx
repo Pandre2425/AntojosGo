@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { getSupabase, isSupabaseConfigured } from '@/lib/supabase/client'
-import { accountEmailSent, accountLink, authErrorMessage, authOrigin, isGoogleEnabled, loginSchema, registrationSchema, sendAccountEmail } from '@/lib/auth-validation'
+import { accountEmailSent, accountExists, accountLink, authErrorMessage, authOrigin, isGoogleEnabled, loginSchema, isRepeatedSignup, registrationSchema, sendAccountEmail } from '@/lib/auth-validation'
 import { supabasePublicKey, supabaseUrl } from '@/lib/supabase/config'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
@@ -40,7 +40,8 @@ export default function AccountAccess({ audience, onBack }: { audience: 'custome
           options: { data: { display_name: name.trim() }, emailRedirectTo: accountLink(authOrigin(window.location.origin), 'confirmar') } })
         if (error) throw error
         setPassword(''); setConfirmPassword('')
-        if (!data.session) {
+        if (isRepeatedSignup(data.user)) { setError(accountExists()); setMode('login') }
+        else if (!data.session) {
           setNotice(t('Revisa tu correo para confirmar la cuenta. Después vuelve aquí e inicia sesión. Si ya tenías una cuenta, usa tu contraseña habitual.'))
           setMode('login')
         }

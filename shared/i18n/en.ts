@@ -680,6 +680,7 @@ export const en: Record<string, string> = {
   "Resultados ordenados por cercanía.": "Results sorted by distance.",
   "Revisa los datos enviados.": "Check the data you sent.",
   "Revisa nombre, departamento, municipio y dirección.": "Check the name, department, town and address.",
+  "Ya existe una cuenta con este correo, así que no es posible crear otra. Inicia sesión o usa «¿Olvidaste tu contraseña?».": "An account with this email already exists, so another one can't be created. Sign in or use «Forgot your password?».",
   "Revisa tu correo o inicia sesión si ya tienes una cuenta.": "Check your email, or sign in if you already have an account.",
   "Revisa tu correo para confirmar la cuenta. Después vuelve aquí e inicia sesión. Si ya tenías una cuenta, usa tu contraseña habitual.": "Check your email to confirm your account. Then come back here and sign in. If you already had an account, use your usual password.",
   "Saludable": "Healthy",

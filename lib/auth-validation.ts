@@ -31,6 +31,10 @@ export const accountEmailSent = (kind: 'reset' | 'resend') => kind === 'reset'
   ? t('Si hay una cuenta con ese correo, te enviamos un enlace para crear una contraseña nueva. Revisa también la carpeta de spam.')
   : t('Te enviamos otro correo de confirmación. Abre el enlace y después inicia sesión. Revisa también la carpeta de spam.')
 
+/** Supabase answers a sign-up for an already registered e-mail with success and a user without identities (no e-mail is sent). */
+export const isRepeatedSignup = (user: { identities?: unknown[] } | null | undefined) => user?.identities?.length === 0
+export const accountExists = () => t('Ya existe una cuenta con este correo, así que no es posible crear otra. Inicia sesión o usa «¿Olvidaste tu contraseña?».')
+
 export function authErrorMessage(error: { code?: string; message?: string; status?: number; name?: string } | null | undefined): string {
   switch (error?.code) {
     case 'email_address_not_authorized': return t('El servicio de correo de AntojosGo todavía no permite enviar confirmaciones a esta dirección. Debemos configurar el envío de correos para habilitar el registro.')
@@ -40,7 +44,7 @@ export function authErrorMessage(error: { code?: string; message?: string; statu
     case 'captcha_failed': return t('No se pudo verificar la protección del formulario. Intenta nuevamente.')
     case 'invalid_credentials': return t('Correo o contraseña incorrectos.')
     case 'email_not_confirmed': return t('Confirma tu correo antes de iniciar sesión.')
-    case 'user_already_exists': return t('Revisa tu correo o inicia sesión si ya tienes una cuenta.')
+    case 'user_already_exists': return accountExists()
     case 'weak_password': return t('Usa una contraseña más segura, de al menos 10 caracteres.')
     case 'over_email_send_rate_limit': return t('Se alcanzó el límite de correos de confirmación de AntojosGo. El registro no pudo completarse. Espera a que se restablezca el cupo; si persiste, debemos revisar el servicio de envío de correos.')
     case 'over_request_rate_limit': return t('Espera unos minutos antes de volver a intentarlo.')
