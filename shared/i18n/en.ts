@@ -537,6 +537,7 @@ export const en: Record<string, string> = {
   "No pudimos mostrar esta sección.": "We couldn't show this section.",
   "No pudimos mostrarlo de nuevo.": "We couldn't show it again.",
   "No pudimos obtener tu ubicación. Puedes buscar por nombre o municipio.": "We couldn't get your location. You can search by name or town.",
+  "El navegador no tiene permiso de ubicación. En iPhone: Ajustes › Privacidad y seguridad › Localización › Safari (o Chrome) › «Al usar la app» y recarga la página. También puedes mover el mapa.": "The browser has no location permission. On iPhone: Settings › Privacy & Security › Location Services › Safari (or Chrome) › «While Using the App», then reload the page. You can also move the map.",
   "No pudimos obtener tu ubicación. Revisa el permiso del navegador o mueve el mapa.": "We couldn't get your location. Check the browser permission or move the map.",
   "No pudimos obtener tu ubicación. Revisa el permiso o mueve el mapa.": "We couldn't get your location. Check the permission or move the map.",
   "No pudimos ocultar el restaurante.": "We couldn't hide the restaurant.",

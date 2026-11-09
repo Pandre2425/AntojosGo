@@ -27,11 +27,19 @@ export default function BranchLocationEditor({ branch, onSaved, onClose }: { bra
   function pickCurrentLocation() {
     if (!navigator.geolocation) { setError(t('Este navegador no permite obtener la ubicación. Mueve el mapa o escribe las coordenadas.')); return }
     setLocating(true); setError('')
-    navigator.geolocation.getCurrentPosition(
+    // GPS first; iPhones indoors often time out or report «unavailable», so retry with the network position.
+    const locate = (precise: boolean) => navigator.geolocation.getCurrentPosition(
       (p) => { setLocating(false); select({ latitude: p.coords.latitude, longitude: p.coords.longitude }) },
-      () => { setLocating(false); setError(t('No pudimos obtener tu ubicación. Revisa el permiso del navegador o mueve el mapa.')) },
-      { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 },
+      (e) => {
+        if (precise && e.code !== e.PERMISSION_DENIED) return locate(false)
+        setLocating(false)
+        setError(e.code === e.PERMISSION_DENIED
+          ? t('El navegador no tiene permiso de ubicación. En iPhone: Ajustes › Privacidad y seguridad › Localización › Safari (o Chrome) › «Al usar la app» y recarga la página. También puedes mover el mapa.')
+          : t('No pudimos obtener tu ubicación. Revisa el permiso del navegador o mueve el mapa.'))
+      },
+      precise ? { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 } : { enableHighAccuracy: false, timeout: 20000, maximumAge: 300000 },
     )
+    locate(true)
   }
   async function submit(event: FormEvent) {
     event.preventDefault()
